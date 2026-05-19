@@ -4,11 +4,14 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import * as SplashScreen from 'expo-splash-screen';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { queryClient } from '../lib/queryClient';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
+
+SplashScreen.preventAutoHideAsync();
 
 async function registerForPushNotifications(): Promise<string | null> {
   if (!Device.isDevice) return null;
@@ -45,15 +48,17 @@ export default function RootLayout() {
       if (session) {
         fetchProfile(session.user.id).then(async () => {
           setLoading(false);
+          SplashScreen.hideAsync();
           const token = await registerForPushNotifications();
           if (token) {
             useAuthStore.getState().updatePushToken(token);
           }
-        }).catch(() => setLoading(false));
+        }).catch(() => { setLoading(false); SplashScreen.hideAsync(); });
       } else {
         setLoading(false);
+        SplashScreen.hideAsync();
       }
-    }).catch(() => setLoading(false));
+    }).catch(() => { setLoading(false); SplashScreen.hideAsync(); });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
