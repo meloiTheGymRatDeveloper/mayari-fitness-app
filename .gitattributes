@@ -1,0 +1,9 @@
+# Normalize line endings — ensures LF on macOS build servers (EAS)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.jar binary
+*.keystore binary
