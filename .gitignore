@@ -46,3 +46,7 @@ yarn-error.*
 .mcp.json
 .agents/
 skills-lock.json
+.superpowers/
+docs/superpowers/
+PROMPTS.md
+test_state.ts
