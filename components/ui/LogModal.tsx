@@ -23,7 +23,7 @@ export default function LogModal() {
 
   function handleOption(key: string) {
     closeLogModal();
-    const params = { meal_slot: logModalMealSlot, date: logModalDate };
+    const params = { meal_slot: logModalMealSlot, date: logModalDate, origin: 'home' };
     if (key === 'search') router.push({ pathname: '/(tabs)/nutrition/search', params });
     else if (key === 'barcode') router.push({ pathname: '/(tabs)/nutrition/barcode', params });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

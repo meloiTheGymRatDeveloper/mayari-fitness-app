@@ -10,6 +10,8 @@ export type BuddyRequestStatus = 'pending' | 'accepted' | 'rejected' | 'blocked'
 export type FastingStatus = 'active' | 'completed' | 'cancelled';
 export type UnitsPref = 'metric' | 'imperial';
 export type ReferralStatus = 'pending' | 'active' | 'expired';
+export type Gender = 'male' | 'female' | 'prefer_not_to_say';
+export type ActivityLevel = 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extremely_active';
 
 export interface PlannedExercise {
   exercise_id: string;
@@ -43,6 +45,9 @@ export interface UserProfile {
   session_duration_min: number;
   body_weight_kg: number | null;
   height_cm: number | null;
+  gender: Gender | null;
+  activity_level: ActivityLevel | null;
+  body_fat_pct: number | null;
   target_weight_kg: number | null;
   language_pref: 'en' | 'fil';
   meal_time_style: 'filipino' | 'generic';

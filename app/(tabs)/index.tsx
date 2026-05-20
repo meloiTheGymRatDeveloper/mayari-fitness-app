@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -34,6 +35,8 @@ function SlotRow({ slot, date, daily }: { slot: MealSlot; date: string; daily: R
       slot={slot}
       calories={slotData.calories}
       itemCount={slotData.itemCount}
+      logs={slotData.logs}
+      date={date}
       hasYesterdayData={hasYesterday}
       isCopying={smartCopy.isPending}
       onAdd={() => openLogModal(slot, date)}
@@ -44,6 +47,7 @@ function SlotRow({ slot, date, daily }: { slot: MealSlot; date: string; daily: R
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const profile = useAuthStore((s) => s.profile);
   const [date, setDate] = useState(todayStr);
   const daily = useDailyNutrition(date);
@@ -68,7 +72,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.screenWrapper}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
         <View style={styles.greetRow}>
           <View>
             <Text style={styles.greeting}>Kumusta, {name}! 💪</Text>
@@ -123,7 +127,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screenWrapper: { flex: 1, backgroundColor: colors.bg.primary },
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
-  container: { paddingTop: spacing.xl, paddingBottom: spacing['2xl'] },
+  container: { paddingBottom: spacing['2xl'] },
   greetRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
     paddingHorizontal: spacing.lg, marginBottom: spacing.md,

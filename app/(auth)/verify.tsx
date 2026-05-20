@@ -24,8 +24,9 @@ export default function VerifyScreen() {
       });
       if (error) {
         Alert.alert('Verification failed', error.message);
+        return;
       }
-      // Auth state change in _layout.tsx handles redirect to onboarding
+      router.replace('/(auth)/onboarding/1');
     } finally {
       setLoading(false);
     }
@@ -47,7 +48,7 @@ export default function VerifyScreen() {
       <Text style={styles.emoji}>📧</Text>
       <Text style={styles.title}>Check your email</Text>
       <Text style={styles.body}>
-        We sent a 6-digit code to{'\n'}
+        We sent a verification code to{'\n'}
         <Text style={styles.email}>{email}</Text>
       </Text>
 
@@ -56,8 +57,7 @@ export default function VerifyScreen() {
         value={token}
         onChangeText={setToken}
         keyboardType="number-pad"
-        maxLength={6}
-        placeholder="000000"
+        placeholder="········"
         style={styles.codeInput}
       />
 

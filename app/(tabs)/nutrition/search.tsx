@@ -9,13 +9,14 @@ import type { FoodItem, MealSlot, WeekDay } from '../../../types/database';
 export default function FoodSearchScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { meal_slot, date, context, week_start_date, plan_day } =
+  const { meal_slot, date, context, week_start_date, plan_day, origin } =
     useLocalSearchParams<{
       meal_slot: MealSlot;
       date: string;
       context?: string;
       week_start_date?: string;
       plan_day?: WeekDay;
+      origin?: string;
     }>();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodItem[]>([]);
@@ -42,7 +43,7 @@ export default function FoodSearchScreen() {
   function goFood(food: FoodItem) {
     router.push({
       pathname: '/(tabs)/nutrition/food/[id]',
-      params: { id: food.id, meal_slot, date, context, week_start_date, plan_day },
+      params: { id: food.id, meal_slot, date, context, week_start_date, plan_day, origin },
     });
   }
 

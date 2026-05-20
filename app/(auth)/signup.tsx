@@ -50,8 +50,10 @@ export default function SignupScreen() {
       if (!data.session) {
         // Email confirmation is ON — send user to OTP verify screen.
         router.push({ pathname: '/(auth)/verify', params: { email: email.trim() } });
+      } else {
+        // Email confirmation is OFF — go straight to onboarding.
+        router.replace('/(auth)/onboarding/1');
       }
-      // If session exists (confirmation OFF), onAuthStateChange handles redirect.
     } finally {
       setLoading(false);
     }

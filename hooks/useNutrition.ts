@@ -4,8 +4,10 @@ import { useAuthStore } from '../stores/authStore';
 import type { FoodLogWithItem, WaterLog, MealSlot, FoodItem } from '../types/database';
 
 function dayRange(date: string): { gte: string; lte: string } {
-  const gte = new Date(date + 'T00:00:00Z').toISOString();
-  const lte = new Date(date + 'T23:59:59Z').toISOString();
+  // Use local midnight (no Z suffix) so the range matches the device's local date,
+  // not UTC — important for PH timezone (UTC+8) users logging between midnight–8am.
+  const gte = new Date(date + 'T00:00:00').toISOString();
+  const lte = new Date(date + 'T23:59:59').toISOString();
   return { gte, lte };
 }
 
@@ -109,14 +111,15 @@ export function useLogFood() {
 
 export function useDeleteFoodLog() {
   const queryClient = useQueryClient();
-  const userId = useAuthStore(s => s.session?.user.id);
   return useMutation({
-    mutationFn: async ({ logId, date }: { logId: string; date: string }) => {
+    mutationFn: async ({ logId }: { logId: string; date: string }) => {
       const { error } = await supabase.from('food_logs').delete().eq('id', logId);
       if (error) throw error;
     },
-    onSuccess: (_data, { date }) => {
-      queryClient.invalidateQueries({ queryKey: ['food_logs', userId, date] });
+    onSuccess: () => {
+      // Invalidate all food_log queries (any date/user) so every
+      // subscriber — home screen, nutrition tab — refreshes immediately.
+      queryClient.invalidateQueries({ queryKey: ['food_logs'] });
     },
   });
 }

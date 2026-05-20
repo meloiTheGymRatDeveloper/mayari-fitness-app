@@ -5,6 +5,7 @@ import {
   StyleSheet, KeyboardAvoidingView, Platform,
   ActivityIndicator, Animated,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, type Href } from 'expo-router';
 import { colors, typography, spacing } from '../../../constants/theme';
 import {
@@ -80,6 +81,7 @@ function TypingIndicator() {
 
 export default function CoachScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [input, setInput] = useState('');
   const flatRef = useRef<FlatList<CoachMessage>>(null);
   const { data: messages = [], isLoading } = useCoachMessages();
@@ -121,7 +123,7 @@ export default function CoachScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}
     >
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.headerTitle}>🌙 Coach Mayari</Text>
         <Text style={styles.headerSub}>Science-based · Always here</Text>
       </View>
@@ -209,7 +211,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg.primary },
   header: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,

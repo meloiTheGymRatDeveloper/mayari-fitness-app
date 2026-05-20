@@ -4,6 +4,8 @@ import {
   ActivityIndicator, Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
@@ -21,6 +23,12 @@ const NAV_SECTIONS = [
     items: [
       { label: 'Body Measurements', route: '/(tabs)/profile/measurements', emoji: '📊' },
       { label: 'Progress Charts', route: '/(tabs)/profile/progress', emoji: '📈' },
+    ],
+  },
+  {
+    label: 'NUTRITION',
+    items: [
+      { label: 'Calorie & Macro Goals', route: '/(tabs)/nutrition/goals', emoji: '🎯' },
     ],
   },
   {
@@ -42,9 +50,10 @@ const NAV_SECTIONS = [
 
 export default function MoreScreen() {
   const router = useRouter();
-  const { profile, clear } = useAuthStore();
+  const { profile, clear, updateAvatar } = useAuthStore();
   const [stats, setStats] = useState<Stats>({ workoutStreak: 0, nutritionStreak: 0, buddyCount: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -71,6 +80,47 @@ export default function MoreScreen() {
     clear();
   }
 
+  async function handleAvatarPress() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow access to your photo library to set a profile picture.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+
+    const asset = result.assets[0];
+    setUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not logged in');
+
+      const ext = asset.uri.split('.').pop() ?? 'jpg';
+      const path = `${user.id}/avatar.${ext}`;
+
+      const response = await fetch(asset.uri);
+      const blob = await response.blob();
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, blob, { contentType: asset.mimeType ?? 'image/jpeg', upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+      await updateAvatar(publicUrl);
+    } catch (e: unknown) {
+      Alert.alert('Upload failed', e instanceof Error ? e.message : 'Something went wrong');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   const initials = (profile?.display_name ?? profile?.username ?? '?')
     .split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
 
@@ -80,7 +130,7 @@ export default function MoreScreen() {
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       {/* Header row */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.avatarWrap} onPress={() => router.push('/(tabs)/profile/settings' as never)}>
+        <TouchableOpacity style={styles.avatarWrap} onPress={handleAvatarPress} disabled={uploading}>
           {profile?.avatar_url ? (
             <Image source={{ uri: profile.avatar_url }} style={styles.avatar} contentFit="cover" />
           ) : (
@@ -88,14 +138,16 @@ export default function MoreScreen() {
               <Text style={styles.avatarInitials}>{initials}</Text>
             </View>
           )}
+          <View style={styles.avatarEditBadge}>
+            {uploading
+              ? <ActivityIndicator size="small" color="#fff" />
+              : <Ionicons name="camera" size={12} color="#fff" />}
+          </View>
         </TouchableOpacity>
         <View style={styles.headerText}>
           <Text style={styles.displayName}>{profile?.display_name ?? profile?.username ?? ''}</Text>
           <Text style={styles.username}>@{profile?.username ?? ''} · {profile?.subscription_status ?? 'free'}</Text>
         </View>
-        <TouchableOpacity style={styles.settingsBtn} onPress={() => router.push('/(tabs)/profile/settings' as never)}>
-          <Text style={styles.settingsIcon}>⚙️</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Streak banner */}
@@ -143,6 +195,13 @@ const styles = StyleSheet.create({
   container: { paddingHorizontal: spacing.lg, paddingTop: spacing['2xl'], paddingBottom: spacing['2xl'] },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.md },
   avatarWrap: { position: 'relative' },
+  avatarEditBadge: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: 20, height: 20, borderRadius: 10,
+    backgroundColor: colors.brand.primary,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: colors.bg.primary,
+  },
   avatar: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: colors.brand.primary },
   avatarPlaceholder: {
     width: 52, height: 52, borderRadius: 26,
@@ -153,11 +212,6 @@ const styles = StyleSheet.create({
   headerText: { flex: 1 },
   displayName: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
   username: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
-  settingsBtn: {
-    backgroundColor: colors.bg.secondary, borderRadius: 10,
-    padding: spacing.sm, borderWidth: 1, borderColor: colors.border,
-  },
-  settingsIcon: { fontSize: 18 },
   streakBanner: {
     backgroundColor: colors.bg.elevated, borderRadius: 12,
     padding: spacing.md, borderWidth: 1, borderColor: colors.warning,

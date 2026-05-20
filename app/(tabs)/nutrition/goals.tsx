@@ -5,28 +5,27 @@ import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { UserProfile } from '../../../types/database';
-
-function calcTDEE(profile: UserProfile): number {
-  const age = profile.birthdate
-    ? Math.floor((Date.now() - new Date(profile.birthdate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-    : 25;
-  const weight = profile.body_weight_kg ?? 70;
-  const height = profile.height_cm ?? 170;
-  const bmr = 10 * weight + 6.25 * height - 5 * age;
-  const days = profile.workout_days?.length ?? 3;
-  const activity = days <= 1 ? 1.2 : days <= 3 ? 1.375 : days <= 5 ? 1.55 : 1.725;
-  const tdee = Math.round(bmr * activity);
-  if (profile.primary_goal === 'lose_fat') return tdee - 400;
-  if (profile.primary_goal === 'build_muscle') return tdee + 250;
-  return tdee;
-}
+import { computeAllTargets } from '../../../lib/calories';
 
 function calcDefaultGoals(profile: UserProfile) {
-  const calories = calcTDEE(profile);
-  const protein = Math.round((profile.body_weight_kg ?? 70) * 1.8);
-  const fat = Math.round((profile.body_weight_kg ?? 70) * 0.8);
-  const carbs = Math.round((calories - protein * 4 - fat * 9) / 4);
-  return { calories, protein, fat, carbs: Math.max(carbs, 50) };
+  if (!profile.body_weight_kg || !profile.height_cm || !profile.birthdate) {
+    return { calories: 2000, protein: 120, fat: 55, carbs: 230 };
+  }
+  const targets = computeAllTargets({
+    body_weight_kg: profile.body_weight_kg,
+    height_cm: profile.height_cm,
+    birthdate: profile.birthdate,
+    gender: profile.gender ?? 'prefer_not_to_say',
+    body_fat_pct: profile.body_fat_pct,
+    activity_level: profile.activity_level ?? 'lightly_active',
+    primary_goal: profile.primary_goal ?? 'maintain',
+  });
+  return {
+    calories: targets.calorie_target,
+    protein: targets.protein_g,
+    fat: targets.fat_g,
+    carbs: targets.carbs_g,
+  };
 }
 
 export default function MacroGoalsScreen() {

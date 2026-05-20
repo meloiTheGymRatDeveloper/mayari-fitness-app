@@ -13,6 +13,7 @@ interface AuthState {
   fetchProfile: (userId: string) => Promise<void>;
   updateNetCarbsDisplay: (value: boolean) => Promise<void>;
   updatePushToken: (token: string) => Promise<void>;
+  updateAvatar: (avatarUrl: string) => Promise<void>;
   clear: () => void;
 }
 
@@ -48,6 +49,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!error && state.profile) {
       set({ profile: { ...state.profile, push_token: token } });
     }
+  },
+  updateAvatar: async (avatarUrl: string) => {
+    const state = get();
+    if (!state.session?.user.id) return;
+    await supabase.from('users').update({ avatar_url: avatarUrl }).eq('id', state.session.user.id);
+    if (state.profile) set({ profile: { ...state.profile, avatar_url: avatarUrl } });
   },
   clear: () => set({ session: null, profile: null }),
 }));

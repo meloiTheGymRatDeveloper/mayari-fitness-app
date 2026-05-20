@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { colors, typography, spacing } from '../../../constants/theme';
@@ -52,6 +53,7 @@ function SessionCard({ session, onPress }: { session: WorkoutSession; onPress?: 
 
 export default function WorkoutScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { data: activePlan, isLoading: planLoading, isError: planError, refetch: refetchPlan } = useActivePlan();
   const { data: recentSessions = [] } = useRecentSessions(3);
@@ -104,7 +106,7 @@ export default function WorkoutScreen() {
 
   if (planLoading) {
     return (
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
         <Skeleton width={280} height={28} style={{ marginBottom: spacing.lg }} />
         <Skeleton width={340} height={200} style={{ marginBottom: spacing.lg }} />
         <View style={styles.linksRow}>
@@ -127,7 +129,7 @@ export default function WorkoutScreen() {
   }
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
       <Text style={styles.heading}>Workout</Text>
 
       {todayPlan ? (

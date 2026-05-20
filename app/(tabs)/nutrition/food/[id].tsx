@@ -33,7 +33,7 @@ export default function FoodDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id, meal_slot, date, aiEstimated, foodName, calories, protein: proteinParam, carbs: carbsParam, fat: fatParam,
-    context, week_start_date, plan_day } =
+    context, week_start_date, plan_day, origin } =
     useLocalSearchParams<{
       id: string;
       meal_slot: MealSlot;
@@ -47,9 +47,11 @@ export default function FoodDetailScreen() {
       context?: string;
       week_start_date?: string;
       plan_day?: WeekDay;
+      origin?: string;
     }>();
 
   const isAI = aiEstimated === 'true';
+  const afterLogDest = origin === 'home' ? '/(tabs)/' : '/(tabs)/nutrition';
   const [food, setFood] = useState<FoodItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -170,13 +172,13 @@ export default function FoodDetailScreen() {
         ai_estimated: true,
       });
       if (logErr) { Alert.alert('Error', logErr.message); return; }
-      router.back();
+      router.navigate(afterLogDest as never);
       return;
     }
 
     try {
       await logFood.mutateAsync({ foodItemId: food.id, mealSlot: slot, quantityG: q, date });
-      router.back();
+      router.navigate(afterLogDest as never);
     } catch (e: unknown) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Could not log food');
     }

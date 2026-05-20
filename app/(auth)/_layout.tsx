@@ -4,14 +4,14 @@ import { useAuthStore } from '../../stores/authStore';
 
 export default function AuthLayout() {
   const router = useRouter();
-  const { session, isLoading } = useAuthStore();
+  const { session, profile, isLoading } = useAuthStore();
 
   useEffect(() => {
     if (isLoading) return;
-    if (session) {
+    if (session && profile?.username) {
       router.replace('/(tabs)');
     }
-  }, [session, isLoading]);
+  }, [session, profile, isLoading]);
 
   return <Stack screenOptions={{ headerShown: false }} />;
 }
