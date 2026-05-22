@@ -8,7 +8,7 @@ import { supabase } from '../../../../lib/supabase';
 import { colors, typography, spacing } from '../../../../constants/theme';
 import Button from '../../../../components/ui/Button';
 import { useFindNearbyUsers, useSendBuddyRequest } from '../../../../hooks/useBuddies';
-import type { NearbyUser, PrimaryGoal, ExperienceLevel } from '../../../../types/database';
+import type { PrimaryGoal } from '../../../../types/database';
 
 const GOAL_LABELS: Record<PrimaryGoal, string> = {
   build_muscle: 'Build Muscle',
