@@ -8,9 +8,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore } from '../../../stores/authStore';
 import {
   useLatestGroceryList, useUpsertGroceryList,
-  generateGroceryItems, categorizeItem,
+  useMealPlanById, generateGroceryItems, categorizeItem,
 } from '../../../hooks/useMealPlan';
-import { supabase } from '../../../lib/supabase';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { GroceryItem, GroceryCategory, MealPlanData } from '../../../types/database';
 
@@ -54,6 +53,7 @@ export default function GroceryScreen() {
   useAuthStore(s => s.session?.user.id);
   const { data: existingList, isLoading, refetch } = useLatestGroceryList();
   const upsertList = useUpsertGroceryList();
+  const { data: mealPlanForGrocery } = useMealPlanById(meal_plan_id ?? null);
 
   const [groceryId, setGroceryId] = useState<string | null>(null);
   const [items, setItems] = useState<GroceryItem[]>([]);
@@ -69,9 +69,12 @@ export default function GroceryScreen() {
 
   useEffect(() => {
     if (isLoading) return;
-    if (meal_plan_id && isFirstLoad.current) {
+    if (meal_plan_id && mealPlanForGrocery && isFirstLoad.current) {
       isFirstLoad.current = false;
-      loadFromPlan(meal_plan_id);
+      const generated = generateGroceryItems(mealPlanForGrocery.plan_data as MealPlanData);
+      setGroceryId(existingList?.id ?? null);
+      setItems(generated);
+      scheduleSave(existingList?.id ?? null, meal_plan_id, generated);
       return;
     }
     if (existingList && isFirstLoad.current) {
@@ -79,16 +82,7 @@ export default function GroceryScreen() {
       setGroceryId(existingList.id);
       setItems(existingList.items);
     }
-  }, [isLoading, existingList, meal_plan_id]);
-
-  async function loadFromPlan(planId: string) {
-    const { data } = await supabase.from('meal_plans').select('plan_data, id').eq('id', planId).single();
-    if (!data) return;
-    const generated = generateGroceryItems(data.plan_data as MealPlanData);
-    setGroceryId(existingList?.id ?? null);
-    setItems(generated);
-    scheduleSave(existingList?.id ?? null, planId, generated);
-  }
+  }, [isLoading, existingList, meal_plan_id, mealPlanForGrocery]);
 
   function scheduleSave(gId: string | null, planId: string | null, newItems: GroceryItem[]) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
