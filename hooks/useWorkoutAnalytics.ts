@@ -142,8 +142,9 @@ export function useWorkoutAnalytics() {
           core: 0,
         };
         (setsRes.data ?? []).forEach((s) => {
-          const mg = muscleMap[s.exercise_id] ?? 'push';
-          mgVolume[mg] = (mgVolume[mg] ?? 0) + s.weight_kg * s.reps;
+          const mg = muscleMap[s.exercise_id];
+          if (!mg || !(mg in mgVolume)) return;
+          mgVolume[mg] += s.weight_kg * s.reps;
         });
 
         const totalVol = Object.values(mgVolume).reduce((a, b) => a + b, 0);
