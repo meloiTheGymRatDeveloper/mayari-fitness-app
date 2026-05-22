@@ -1,23 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList,
   TouchableOpacity, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../../../../lib/supabase';
 import { colors, typography, spacing } from '../../../../constants/theme';
 import Button from '../../../../components/ui/Button';
 import Skeleton from '../../../../components/ui/Skeleton';
 import EmptyState from '../../../../components/ui/EmptyState';
-import type { BuddyRequest, BuddyConnection } from '../../../../types/database';
-
-interface RequestWithUser extends BuddyRequest {
-  user: { id: string; display_name: string; avatar_url: string | null; primary_goal: string };
-}
-
-interface ConnectionWithUser extends BuddyConnection {
-  other_user: { id: string; display_name: string; avatar_url: string | null; primary_goal: string };
-}
+import { useBuddyRequests, useBuddyConnections, useAcceptRequest, useDeclineRequest } from '../../../../hooks/useBuddies';
+import type { RequestWithUser, ConnectionWithUser } from '../../../../hooks/useBuddies';
 
 const GOAL_LABELS: Record<string, string> = {
   build_muscle: 'Build Muscle',
@@ -41,110 +33,27 @@ type Tab = 'requests' | 'connected';
 export default function BuddyListScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('requests');
-  const [incoming, setIncoming] = useState<RequestWithUser[]>([]);
-  const [outgoing, setOutgoing] = useState<RequestWithUser[]>([]);
-  const [connections, setConnections] = useState<ConnectionWithUser[]>([]);
-  const [loading, setLoading] = useState(true);
   const [outgoingExpanded, setOutgoingExpanded] = useState(false);
-  const [actionInProgress, setActionInProgress] = useState(false);
 
-  const load = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    setLoading(true);
+  const { data: requestsData, isLoading: loading } = useBuddyRequests();
+  const incoming = requestsData?.incoming ?? [];
+  const outgoing = requestsData?.outgoing ?? [];
+  const { data: connections = [] } = useBuddyConnections();
+  const acceptMutation = useAcceptRequest();
+  const declineMutation = useDeclineRequest();
 
-    try {
-      const [incomingRes, outgoingRes, connectionsRes] = await Promise.all([
-        supabase
-          .from('buddy_requests')
-          .select('*, user:sender_id(id, display_name, avatar_url, primary_goal)')
-          .eq('receiver_id', user.id)
-          .eq('status', 'pending'),
-        supabase
-          .from('buddy_requests')
-          .select('*, user:receiver_id(id, display_name, avatar_url, primary_goal)')
-          .eq('sender_id', user.id)
-          .eq('status', 'pending'),
-        supabase
-          .from('buddy_connections')
-          .select('*')
-          .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`),
-      ]);
-
-      const myId = user.id;
-
-      const connectionIds = (connectionsRes.data ?? []).map(c =>
-        c.user_a_id === myId ? c.user_b_id : c.user_a_id
-      );
-
-      let userMap: Record<string, { id: string; display_name: string; avatar_url: string | null; primary_goal: string }> = {};
-      if (connectionIds.length > 0) {
-        const { data: buddyUsers } = await supabase
-          .from('users')
-          .select('id, display_name, avatar_url, primary_goal')
-          .in('id', connectionIds);
-        (buddyUsers ?? []).forEach(u => { userMap[u.id] = u; });
-      }
-
-      const connWithUser: ConnectionWithUser[] = (connectionsRes.data ?? []).map(c => ({
-        ...c,
-        other_user: userMap[c.user_a_id === myId ? c.user_b_id : c.user_a_id] ?? {
-          id: '', display_name: 'Unknown', avatar_url: null, primary_goal: 'build_muscle',
-        },
-      }));
-
-      setIncoming((incomingRes.data ?? []) as RequestWithUser[]);
-      setOutgoing((outgoingRes.data ?? []) as RequestWithUser[]);
-      setConnections(connWithUser);
-    } catch {
-      Alert.alert('Error', 'Could not load buddy data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  async function acceptRequest(requestId: string, senderId: string) {
-    if (actionInProgress) return;
-    setActionInProgress(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { error: connError } = await supabase.from('buddy_connections').insert({
-        user_a_id: user.id,
-        user_b_id: senderId,
-      });
-      if (connError && !connError.message.includes('duplicate')) {
-        Alert.alert('Error', connError.message);
-        return;
-      }
-      const { error: reqError } = await supabase
-        .from('buddy_requests')
-        .update({ status: 'accepted' })
-        .eq('id', requestId);
-      if (reqError) { Alert.alert('Error', reqError.message); return; }
-      await load();
-    } finally {
-      setActionInProgress(false);
-    }
+  function acceptRequest(requestId: string, senderId: string) {
+    acceptMutation.mutate(
+      { requestId, senderId },
+      { onError: (e) => Alert.alert('Error', e instanceof Error ? e.message : 'Could not accept request.') }
+    );
   }
 
-  async function declineRequest(requestId: string) {
-    if (actionInProgress) return;
-    setActionInProgress(true);
-    try {
-      const { error } = await supabase
-        .from('buddy_requests')
-        .update({ status: 'rejected' })
-        .eq('id', requestId);
-      if (error) { Alert.alert('Error', error.message); return; }
-      await load();
-    } catch {
-      Alert.alert('Error', 'Could not decline request. Please try again.');
-    } finally {
-      setActionInProgress(false);
-    }
+  function declineRequest(requestId: string) {
+    declineMutation.mutate(
+      requestId,
+      { onError: (e) => Alert.alert('Error', e instanceof Error ? e.message : 'Could not decline request.') }
+    );
   }
 
   function navigateToChat(connection: ConnectionWithUser) {
@@ -230,12 +139,14 @@ export default function BuddyListScreen() {
                   label="Accept"
                   onPress={() => acceptRequest(item.id, item.sender_id)}
                   style={styles.acceptBtn}
+                  disabled={acceptMutation.isPending || declineMutation.isPending}
                 />
                 <Button
                   label="Decline"
                   variant="outline"
                   onPress={() => declineRequest(item.id)}
                   style={styles.declineBtn}
+                  disabled={acceptMutation.isPending || declineMutation.isPending}
                 />
               </View>
             </View>
