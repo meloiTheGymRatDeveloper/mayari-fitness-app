@@ -34,7 +34,7 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
       duration: 1400,
       useNativeDriver: false,
     }).start();
-  }, [score]);
+  }, [score, progress]);
 
   const strokeDashoffset = progress.interpolate({
     inputRange: [0, 1],
@@ -61,7 +61,7 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
         strokeWidth={16}
         fill="none"
         strokeDasharray={`${CIRCUMFERENCE}`}
-        strokeDashoffset={strokeDashoffset as unknown as number}
+        strokeDashoffset={strokeDashoffset as unknown as string}
         strokeLinecap="round"
         transform={`rotate(-90, ${RING_SIZE / 2}, ${RING_SIZE / 2})`}
       />
@@ -200,12 +200,10 @@ export default function ProgressScreen() {
                 <Chip
                   label={weightChangeLabel}
                   color={
-                    weightChange30 !== null
-                      ? ((weightChange30 < 0 && profile?.primary_goal === 'lose_fat') ||
-                        (weightChange30 > 0 && profile?.primary_goal === 'build_muscle')
-                          ? colors.success
-                          : colors.error)
-                      : undefined
+                    (weightChange30! < 0 && profile?.primary_goal === 'lose_fat') ||
+                    (weightChange30! > 0 && profile?.primary_goal === 'build_muscle')
+                      ? colors.success
+                      : colors.error
                   }
                 />
               )}
