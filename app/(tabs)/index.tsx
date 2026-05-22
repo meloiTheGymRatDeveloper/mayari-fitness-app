@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../../stores/authStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useDailyNutrition } from '../../hooks/useDailyNutrition';
+import { useDailyTip } from '../../hooks/useCoach';
 import { useSmartCopy, useYesterdaySlotHasData } from '../../hooks/useSmartCopy';
 import { useStreaks } from '../../hooks/useStreaks';
 import DayStrip from '../../components/home/DayStrip';
@@ -53,6 +54,7 @@ export default function HomeScreen() {
   const daily = useDailyNutrition(date);
   const name = profile?.display_name ?? 'Ka-tropa';
 
+  const { data: dailyTip, isLoading: tipLoading } = useDailyTip();
   const { data: streaks } = useStreaks();
   const [activeMilestone, setActiveMilestone] = useState<number | null>(null);
 
@@ -98,6 +100,8 @@ export default function HomeScreen() {
           protein={{ consumed: daily.totals.protein, goal: daily.proteinGoal }}
           carbs={{ consumed: daily.totals.carbs, goal: daily.carbsGoal }}
           fat={{ consumed: daily.totals.fat, goal: daily.fatGoal }}
+          showNetCarbs={profile?.net_carbs_display}
+          fiber={daily.totals.fiber}
         />
 
         <Text style={styles.sectionLabel}>Meals</Text>
@@ -110,6 +114,19 @@ export default function HomeScreen() {
           iron={daily.micros.iron}
           calcium={daily.micros.calcium}
         />
+
+        <TouchableOpacity
+          style={styles.coachCard}
+          onPress={() => router.push('/(tabs)/coach')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.coachTitle}>🌙 Coach Mayari</Text>
+          <Text style={styles.coachBody}>
+            {tipLoading
+              ? 'Loading today\'s tip...'
+              : dailyTip ?? 'Ready to start? Tap Coach to generate your first workout plan!'}
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.plannerCard} onPress={() => router.push('/(tabs)/nutrition/mealplan' as never)} activeOpacity={0.8}>
           <View>
@@ -143,6 +160,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1, textTransform: 'uppercase',
     paddingHorizontal: spacing.lg, marginBottom: spacing.xs, marginTop: spacing.xs,
   },
+  coachCard: {
+    marginHorizontal: spacing.lg, marginTop: spacing.sm,
+    backgroundColor: colors.bg.elevated, borderRadius: 14,
+    padding: spacing.md, borderWidth: 1, borderColor: colors.brand.primary,
+  },
+  coachTitle: { color: colors.brand.secondary, fontSize: typography.sm, fontWeight: '600', marginBottom: spacing.xs },
+  coachBody: { color: colors.text.secondary, fontSize: typography.sm, lineHeight: 20 },
   plannerCard: {
     marginHorizontal: spacing.lg, marginTop: spacing.sm,
     backgroundColor: colors.bg.elevated, borderRadius: 14,

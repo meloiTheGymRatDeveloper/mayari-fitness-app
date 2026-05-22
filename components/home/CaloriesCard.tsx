@@ -28,10 +28,14 @@ interface Props {
   protein: { consumed: number; goal: number };
   carbs: { consumed: number; goal: number };
   fat: { consumed: number; goal: number };
+  showNetCarbs?: boolean;
+  fiber?: number;
 }
 
-export default function CaloriesCard({ consumed, goal, caloriesBurned, protein, carbs, fat }: Props) {
+export default function CaloriesCard({ consumed, goal, caloriesBurned, protein, carbs, fat, showNetCarbs, fiber }: Props) {
   const pct = goal > 0 ? Math.min(consumed / goal, 1) : 0;
+  const carbsLabel = showNetCarbs ? 'Net Carbs' : 'Carbs';
+  const carbsConsumed = showNetCarbs ? Math.max(0, carbs.consumed - (fiber ?? 0)) : carbs.consumed;
   return (
     <View style={styles.card}>
       <View style={styles.titleRow}>
@@ -49,7 +53,7 @@ export default function CaloriesCard({ consumed, goal, caloriesBurned, protein, 
       )}
       <View style={styles.macroRow}>
         <MacroBar label="Protein" consumed={protein.consumed} goal={protein.goal} color={colors.brand.primary} />
-        <MacroBar label="Carbs" consumed={carbs.consumed} goal={carbs.goal} color={colors.warning} />
+        <MacroBar label={carbsLabel} consumed={carbsConsumed} goal={carbs.goal} color={colors.warning} />
         <MacroBar label="Fat" consumed={fat.consumed} goal={fat.goal} color={colors.success} />
       </View>
     </View>
