@@ -83,10 +83,11 @@ export function useBuddyConnections() {
       );
       if (connectionIds.length === 0) return [];
 
-      const { data: buddyUsers } = await supabase
+      const { data: buddyUsers, error: usersError } = await supabase
         .from('users')
         .select('id, display_name, avatar_url, primary_goal')
         .in('id', connectionIds);
+      if (usersError) throw usersError;
 
       const userMap: Record<string, { id: string; display_name: string; avatar_url: string | null; primary_goal: string }> = {};
       (buddyUsers ?? []).forEach(u => { userMap[u.id] = u; });
@@ -125,11 +126,12 @@ export function useAcceptRequest() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ requestId, senderId }: { requestId: string; senderId: string }) => {
+      if (!userId) throw new Error('Not authenticated');
       const { error: connError } = await supabase.from('buddy_connections').insert({
         user_a_id: userId,
         user_b_id: senderId,
       });
-      if (connError && !connError.message.includes('duplicate')) throw connError;
+      if (connError && (connError as any).code !== '23505') throw connError;
       const { error: reqError } = await supabase
         .from('buddy_requests')
         .update({ status: 'accepted' })
