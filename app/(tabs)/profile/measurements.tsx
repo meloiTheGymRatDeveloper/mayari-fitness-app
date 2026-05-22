@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Alert, ActivityIndicator,
 } from 'react-native';
-import { supabase } from '../../../lib/supabase';
+import { useMeasurements, useAddMeasurement } from '../../../hooks/useBodyMeasurements';
 import { colors, typography, spacing } from '../../../constants/theme';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
@@ -49,31 +49,8 @@ function measurementToForm(m: BodyMeasurement): FormState {
 export default function MeasurementsScreen() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [editingDate, setEditingDate] = useState<string | null>(null);
-  const [history, setHistory] = useState<BodyMeasurement[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  const loadHistory = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    setLoadingHistory(true);
-    try {
-      const { data, error } = await supabase
-        .from('body_measurements')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('measured_at', { ascending: false })
-        .limit(10);
-      if (error) throw error;
-      setHistory(data ?? []);
-    } catch {
-      Alert.alert('Error', 'Could not load measurement history.');
-    } finally {
-      setLoadingHistory(false);
-    }
-  }, []);
-
-  useEffect(() => { loadHistory(); }, [loadHistory]);
+  const { data: history = [], isLoading: loadingHistory } = useMeasurements();
+  const addMeasurement = useAddMeasurement();
 
   function setField(key: keyof FormState, value: string) {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -89,61 +66,42 @@ export default function MeasurementsScreen() {
     setForm(EMPTY_FORM);
   }
 
-  async function save() {
+  function save() {
     if (!form.weight_kg.trim()) {
       Alert.alert('Weight required', 'Please enter your weight to save a measurement.');
       return;
     }
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     const targetDate = editingDate ?? todayStr();
-
-    if (!editingDate) {
-      const { data: existing } = await supabase
-        .from('body_measurements')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('measured_at', targetDate)
-        .maybeSingle();
-
-      if (existing) {
-        Alert.alert(
-          'Entry exists',
-          'You already have a measurement for today. Update it?',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Update', onPress: () => upsert(user.id, targetDate) },
-          ]
-        );
-        return;
-      }
+    const existing = history.find(m => m.measured_at === targetDate);
+    if (!editingDate && existing) {
+      Alert.alert(
+        'Entry exists',
+        'You already have a measurement for today. Update it?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Update', onPress: () => doSave(targetDate) },
+        ]
+      );
+      return;
     }
-
-    await upsert(user.id, targetDate);
+    doSave(targetDate);
   }
 
-  async function upsert(userId: string, date: string) {
-    setSaving(true);
+  function doSave(targetDate: string) {
     const payload = {
-      user_id: userId,
-      measured_at: date,
+      measured_at: targetDate,
       weight_kg: form.weight_kg.trim() ? parseFloat(form.weight_kg) : null,
       body_fat_pct: form.body_fat_pct.trim() ? parseFloat(form.body_fat_pct) : null,
       waist_cm: form.waist_cm.trim() ? parseFloat(form.waist_cm) : null,
       chest_cm: form.chest_cm.trim() ? parseFloat(form.chest_cm) : null,
       arms_cm: form.arms_cm.trim() ? parseFloat(form.arms_cm) : null,
       legs_cm: form.legs_cm.trim() ? parseFloat(form.legs_cm) : null,
+      notes: null,
     };
-
-    const { error } = await supabase
-      .from('body_measurements')
-      .upsert(payload, { onConflict: 'user_id,measured_at' });
-
-    setSaving(false);
-    if (error) { Alert.alert('Error', error.message); return; }
-    resetForm();
-    await loadHistory();
+    addMeasurement.mutate(payload, {
+      onSuccess: resetForm,
+      onError: (e) => Alert.alert('Error', e instanceof Error ? e.message : 'Could not save measurement.'),
+    });
   }
 
   return (
@@ -176,7 +134,7 @@ export default function MeasurementsScreen() {
           <Button
             label={editingDate ? 'Update Entry' : 'Save Measurement'}
             onPress={save}
-            loading={saving}
+            loading={addMeasurement.isPending}
             style={editingDate ? styles.halfBtn : styles.fullBtn}
           />
         </View>
