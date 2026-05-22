@@ -14,6 +14,7 @@ interface Totals {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
   vitaminC: number;
   iron: number;
   calcium: number;
@@ -29,12 +30,13 @@ function calcTotals(logs: FoodLogWithItem[]): Totals {
         protein: acc.protein + (item?.protein_per_100g ?? 0) * r,
         carbs: acc.carbs + (item?.carbs_per_100g ?? 0) * r,
         fat: acc.fat + (item?.fat_per_100g ?? 0) * r,
+        fiber: acc.fiber + (item?.fiber_per_100g ?? 0) * r,
         vitaminC: acc.vitaminC + (item?.vitamin_c_mg_per_100g ?? 0) * r,
         iron: acc.iron + (item?.iron_mg_per_100g ?? 0) * r,
         calcium: acc.calcium + (item?.calcium_mg_per_100g ?? 0) * r,
       };
     },
-    { calories: 0, protein: 0, carbs: 0, fat: 0, vitaminC: 0, iron: 0, calcium: 0 }
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, vitaminC: 0, iron: 0, calcium: 0 }
   );
 }
 
