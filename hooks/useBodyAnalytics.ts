@@ -61,10 +61,9 @@ export function useBodyAnalytics() {
         };
       }
 
+      const stride = Math.max(1, Math.ceil((rawBody.length - 1) / 11));
       const sampled = rawBody.filter(
-        (_, i) =>
-          i % Math.max(1, Math.floor(rawBody.length / 12)) === 0 ||
-          i === rawBody.length - 1,
+        (_, i) => i % stride === 0 || i === rawBody.length - 1,
       );
 
       const weightLineData = sampled.map((p, i) => ({
