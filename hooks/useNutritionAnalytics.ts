@@ -16,8 +16,8 @@ interface DayNutrition {
 function buildWeeklyMacros(
   daily: Record<string, DayNutrition>,
   numWeeks: number,
+  now: Date,
 ): { label: string; stackData: { value: number; color: string }[] }[] {
-  const now = new Date();
   const weeks: {
     key: string;
     label: string;
@@ -92,7 +92,7 @@ export function useNutritionAnalytics() {
         calLineData: [],
         weeklyMacroStack: [],
         netCarbsData: [],
-        showNetCarbs: false,
+        showNetCarbs: true,
         calorieGoal: 2000,
         bestNutritionDay: null,
         worstNutritionDay: null,
@@ -161,7 +161,7 @@ export function useNutritionAnalytics() {
             : colors.bg.elevated,
       }));
 
-      const weeklyMacroStack = buildWeeklyMacros(daily, 8);
+      const weeklyMacroStack = buildWeeklyMacros(daily, 8, now);
 
       const netCarbsData = last30Dates.map(date => ({
         value: Math.max(
@@ -187,7 +187,7 @@ export function useNutritionAnalytics() {
           .sort((a, b) => b[1].protein - a[1].protein)[0];
         bestNutritionDay = bestDay ? shortDate(bestDay[0]) : null;
 
-        const worstDay = last30LoggedDays.sort(
+        const worstDay = [...last30LoggedDays].sort(
           (a, b) => b[1].calories - cGoal - (a[1].calories - cGoal),
         )[0];
         worstNutritionDay =
