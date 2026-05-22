@@ -409,6 +409,26 @@ export function generateGroceryItems(planData: MealPlanData): GroceryItem[] {
   });
 }
 
+// ─── Fetch single plan by ID ─────────────────────────────────────────────────
+
+export function useMealPlanById(planId: string | null) {
+  return useQuery<Pick<MealPlan, 'id' | 'plan_data'> | null>({
+    queryKey: ['meal_plan_by_id', planId],
+    queryFn: async () => {
+      if (!planId) return null;
+      const { data, error } = await supabase
+        .from('meal_plans')
+        .select('plan_data, id')
+        .eq('id', planId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!planId,
+    staleTime: 300_000,
+  });
+}
+
 // ─── Debounce hook ────────────────────────────────────────────────────────────
 
 export function useDebounce(fn: (...args: unknown[]) => void, delay: number) {
