@@ -90,7 +90,8 @@ export function useWorkoutAnalytics() {
         supabase
           .from('personal_records')
           .select('exercise_name, weight_kg, reps, achieved_at')
-          .eq('user_id', userId),
+          .eq('user_id', userId)
+          .order('achieved_at', { ascending: false }),
       ]);
 
       if (sessionRes.error) throw sessionRes.error;
@@ -187,14 +188,14 @@ export function useWorkoutAnalytics() {
         { weight_kg: number; reps: number; achieved_at: string }
       > = {};
       (prRes.data ?? []).forEach((pr) => {
-        if (keyLifts.includes(pr.exercise_name)) prMap[pr.exercise_name] = pr;
+        if (keyLifts.includes(pr.exercise_name) && !prMap[pr.exercise_name]) prMap[pr.exercise_name] = pr;
       });
       const prCards = keyLifts
         .filter((name) => prMap[name])
         .map((name) => ({
           exercise: name,
           ...prMap[name]!,
-          date: shortDate(prMap[name]!.achieved_at),
+          date: shortDate(prMap[name]!.achieved_at.split('T')[0]),
         }));
 
       return {
