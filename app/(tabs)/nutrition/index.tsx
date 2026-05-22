@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, AppState } from 'react-native';
+import { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../stores/authStore';
 import { useFoodLogs, useWaterLogs, useAddWater, useRemoveWater } from '../../../hooks/useNutrition';
@@ -7,11 +7,11 @@ import MacroSummaryCard from '../../../components/nutrition/MacroSummaryCard';
 import MealSection from '../../../components/nutrition/MealSection';
 import WaterBar from '../../../components/nutrition/WaterBar';
 import { colors, typography, spacing } from '../../../constants/theme';
-import { supabase } from '../../../lib/supabase';
 import { useLatestGroceryList } from '../../../hooks/useMealPlan';
 import Skeleton from '../../../components/ui/Skeleton';
 import EmptyState from '../../../components/ui/EmptyState';
-import type { FastingLog, MealSlot } from '../../../types/database';
+import { useActiveFast } from '../../../hooks/useFasting';
+import type { MealSlot } from '../../../types/database';
 
 const MEAL_SLOTS: MealSlot[] = ['almusal', 'tanghalian', 'merienda', 'hapunan'];
 
@@ -46,37 +46,7 @@ export default function NutritionScreen() {
   const router = useRouter();
   const profile = useAuthStore(s => s.profile);
   const [date, setDate] = useState(todayStr);
-  const [activeFast, setActiveFast] = useState<FastingLog | null>(null);
-  const appStateRef = useRef(AppState.currentState);
-
-  async function loadActiveFast() {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
-        .from('fasting_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      setActiveFast(data ?? null);
-    } catch {
-      // silently fail — fasting banner is optional
-    }
-  }
-
-  useEffect(() => {
-    loadActiveFast();
-    const sub = AppState.addEventListener('change', nextState => {
-      if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
-        loadActiveFast();
-      }
-      appStateRef.current = nextState;
-    });
-    return () => sub.remove();
-  }, []);
+  const { data: activeFast = null } = useActiveFast();
 
   function isSlotOutsideWindow(slot: MealSlot): boolean {
     if (!activeFast?.eating_window_start || !activeFast?.eating_window_end) return false;
