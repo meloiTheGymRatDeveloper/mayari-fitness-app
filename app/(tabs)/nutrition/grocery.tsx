@@ -50,7 +50,6 @@ function formatShareText(items: GroceryItem[]): string {
 
 export default function GroceryScreen() {
   const { meal_plan_id } = useLocalSearchParams<{ meal_plan_id?: string }>();
-  useAuthStore(s => s.session?.user.id);
   const { data: existingList, isLoading, refetch } = useLatestGroceryList();
   const upsertList = useUpsertGroceryList();
   const { data: mealPlanForGrocery } = useMealPlanById(meal_plan_id ?? null);
