@@ -31,6 +31,7 @@ export function useBodyAnalytics() {
   return useQuery<BodyAnalytics>({
     queryKey: ['body_analytics', userId],
     queryFn: async (): Promise<BodyAnalytics> => {
+      if (!userId) return { weightLineData: [], weightAvgData: [], weightChange30: null, currentWeight: null, targetWeight: profile?.target_weight_kg ?? null, hasData: false };
       const now = new Date();
       const d90 = subDays(now, 90);
       const d30 = subDays(now, 30);
