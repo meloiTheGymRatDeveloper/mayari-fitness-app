@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList,
   TouchableOpacity, ActivityIndicator, Alert, Linking,
@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import { supabase } from '../../../../lib/supabase';
 import { colors, typography, spacing } from '../../../../constants/theme';
 import Button from '../../../../components/ui/Button';
+import { useFindNearbyUsers, useSendBuddyRequest } from '../../../../hooks/useBuddies';
 import type { NearbyUser, PrimaryGoal, ExperienceLevel } from '../../../../types/database';
 
 const GOAL_LABELS: Record<PrimaryGoal, string> = {
@@ -36,20 +37,16 @@ function Initials({ name, size = 44 }: { name: string; size?: number }) {
 
 export default function BuddyFinderScreen() {
   const [permissionStatus, setPermissionStatus] = useState<'checking' | 'granted' | 'denied'>('checking');
-  const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<NearbyUser[]>([]);
-  const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
   const [radius, setRadius] = useState<number>(5000);
   const [goalFilter, setGoalFilter] = useState<PrimaryGoal | null>(null);
   const [myCoords, setMyCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
+  const { data: users = [], isFetching } = useFindNearbyUsers(myCoords, radius, goalFilter);
+  const sendRequest = useSendBuddyRequest();
 
   useEffect(() => {
     requestPermissionAndLoad();
   }, []);
-
-  useEffect(() => {
-    if (myCoords) fetchNearby(myCoords.lat, myCoords.lng);
-  }, [radius, goalFilter, myCoords]);
 
   async function requestPermissionAndLoad() {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -79,52 +76,6 @@ export default function BuddyFinderScreen() {
     }
   }
 
-  const fetchNearby = useCallback(async (lat: number, lng: number) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.rpc('find_nearby_users', {
-        my_lat: lat,
-        my_lng: lng,
-        radius_m: radius,
-        my_user_id: user.id,
-        goal_filter: goalFilter,
-      });
-
-      if (error) throw error;
-
-      const results: NearbyUser[] = data ?? [];
-
-      const { data: existingRequests } = await supabase
-        .from('buddy_requests')
-        .select('receiver_id')
-        .eq('sender_id', user.id)
-        .in('status', ['pending', 'accepted']);
-
-      const alreadySent = new Set((existingRequests ?? []).map(r => r.receiver_id as string));
-      setSentRequests(alreadySent);
-      setUsers(results);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Could not load nearby users.';
-      Alert.alert('Error', msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [radius, goalFilter]);
-
-  async function sendRequest(targetUserId: string) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { error } = await supabase.from('buddy_requests').insert({
-      sender_id: user.id,
-      receiver_id: targetUserId,
-      status: 'pending',
-    });
-    if (error) { Alert.alert('Error', error.message); return; }
-    setSentRequests(prev => new Set([...prev, targetUserId]));
-  }
 
   if (permissionStatus === 'checking') {
     return (
@@ -197,7 +148,7 @@ export default function BuddyFinderScreen() {
         </View>
       </View>
 
-      {loading ? (
+      {isFetching ? (
         <ActivityIndicator color={colors.brand.primary} style={styles.listLoader} />
       ) : (
         <FlatList
@@ -223,8 +174,14 @@ export default function BuddyFinderScreen() {
                 </View>
                 <TouchableOpacity
                   style={[styles.requestBtn, sent && styles.requestBtnSent]}
-                  onPress={() => !sent && sendRequest(item.id)}
-                  disabled={sent}
+                  onPress={() => {
+                    if (sent) return;
+                    sendRequest.mutate(item.id, {
+                      onSuccess: () => setSentRequests(prev => new Set([...prev, item.id])),
+                      onError: (e) => Alert.alert('Error', e instanceof Error ? e.message : 'Could not send request.'),
+                    });
+                  }}
+                  disabled={sent || sendRequest.isPending}
                 >
                   <Text style={[styles.requestBtnText, sent && styles.requestBtnTextSent]}>
                     {sent ? 'Sent ✓' : 'Connect'}
