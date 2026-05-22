@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   Animated,
   Dimensions,
@@ -9,142 +9,14 @@ import {
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { LineChart, BarChart, PieChart } from 'react-native-gifted-charts';
-import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { colors, spacing, typography } from '../../../constants/theme';
+import { useBodyAnalytics } from '../../../hooks/useBodyAnalytics';
+import { useNutritionAnalytics } from '../../../hooks/useNutritionAnalytics';
+import { useWorkoutAnalytics } from '../../../hooks/useWorkoutAnalytics';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CHART_W = SCREEN_W - 48;
-
-// ─── date helpers ────────────────────────────────────────────────────────────
-
-function subDays(base: Date, days: number): Date {
-  const d = new Date(base);
-  d.setDate(d.getDate() - days);
-  return d;
-}
-
-function toDateStr(d: Date): string {
-  return d.toISOString().split('T')[0];
-}
-
-function getMonday(d: Date): Date {
-  const copy = new Date(d);
-  const day = copy.getDay();
-  copy.setDate(copy.getDate() - ((day + 6) % 7));
-  copy.setHours(0, 0, 0, 0);
-  return copy;
-}
-
-function shortDate(dateStr: string): string {
-  const d = new Date(dateStr + 'T12:00:00Z');
-  return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
-}
-
-function shortWeek(dateStr: string): string {
-  const d = new Date(dateStr + 'T12:00:00Z');
-  return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
-}
-
-// ─── data processing ─────────────────────────────────────────────────────────
-
-function rollingAvg(
-  data: { date: string; weight: number }[],
-  window: number,
-): { value: number }[] {
-  return data.map((_, i) => {
-    const start = Math.max(0, i - window + 1);
-    const slice = data.slice(start, i + 1);
-    const avg = slice.reduce((s, p) => s + p.weight, 0) / slice.length;
-    return { value: parseFloat(avg.toFixed(1)) };
-  });
-}
-
-interface DayNutrition {
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  slots: Set<string>;
-}
-
-function buildWeeklyMacros(
-  daily: Record<string, DayNutrition>,
-  numWeeks: number,
-): { label: string; stackData: { value: number; color: string }[] }[] {
-  const now = new Date();
-  const weeks: { key: string; label: string; protein: number; carbs: number; fat: number; count: number }[] = [];
-
-  for (let i = numWeeks - 1; i >= 0; i--) {
-    const start = getMonday(subDays(now, i * 7));
-    weeks.push({
-      key: toDateStr(start),
-      label: shortWeek(toDateStr(start)),
-      protein: 0, carbs: 0, fat: 0, count: 0,
-    });
-  }
-
-  Object.entries(daily).forEach(([date, d]) => {
-    const weekKey = toDateStr(getMonday(new Date(date + 'T12:00:00Z')));
-    const week = weeks.find(w => w.key === weekKey);
-    if (week) {
-      week.protein += d.protein;
-      week.carbs += d.carbs;
-      week.fat += d.fat;
-      week.count++;
-    }
-  });
-
-  return weeks.map(w => ({
-    label: w.label,
-    stackData: [
-      { value: w.count > 0 ? Math.round(w.protein / w.count) : 0, color: colors.brand.primary },
-      { value: w.count > 0 ? Math.round(w.carbs / w.count) : 0, color: colors.brand.secondary },
-      { value: w.count > 0 ? Math.round(w.fat / w.count) : 0, color: colors.brand.accent },
-    ],
-  }));
-}
-
-function buildWeeklySessions(
-  sessions: { started_at: string; total_volume_kg: number }[],
-  numWeeks: number,
-  plannedPerWeek: number,
-) {
-  const now = new Date();
-  const volumeMap: Record<string, number> = {};
-  const countMap: Record<string, number> = {};
-  const labels: string[] = [];
-
-  for (let i = numWeeks - 1; i >= 0; i--) {
-    const key = toDateStr(getMonday(subDays(now, i * 7)));
-    volumeMap[key] = 0;
-    countMap[key] = 0;
-    labels.push(shortWeek(key));
-  }
-
-  sessions.forEach(s => {
-    const key = toDateStr(getMonday(new Date(s.started_at)));
-    if (key in volumeMap) {
-      volumeMap[key] += s.total_volume_kg;
-      countMap[key]++;
-    }
-  });
-
-  const volData = Object.keys(volumeMap).map((key, i) => ({
-    value: Math.round(volumeMap[key]),
-    label: labels[i],
-    frontColor: colors.brand.primary,
-  }));
-
-  const freqData = Object.keys(countMap).map((key, i) => ({
-    value: countMap[key],
-    label: labels[i],
-    frontColor: countMap[key] >= plannedPerWeek ? colors.success : colors.error,
-  }));
-
-  return { volData, freqData };
-}
 
 // ─── animated score ring ─────────────────────────────────────────────────────
 
@@ -228,256 +100,17 @@ function Chip({ label, color }: { label: string; color?: string }) {
 
 export default function ProgressScreen() {
   const { profile } = useAuthStore();
-  const [loading, setLoading] = useState(true);
 
-  // Section 1 — Body
-  const [weightLineData, setWeightLineData] = useState<{ value: number; label?: string }[]>([]);
-  const [weightAvgData, setWeightAvgData] = useState<{ value: number }[]>([]);
-  const [weightChange30, setWeightChange30] = useState<number | null>(null);
-  const [currentWeight, setCurrentWeight] = useState<number | null>(null);
-  const [targetWeight, setTargetWeight] = useState<number | null>(null);
-  const [hasBodyData, setHasBodyData] = useState(false);
+  const { data: body, isLoading: bodyLoading } = useBodyAnalytics();
+  const { data: nutrition, isLoading: nutritionLoading } = useNutritionAnalytics();
+  const { data: workout, isLoading: workoutLoading } = useWorkoutAnalytics();
+  const loading = bodyLoading || nutritionLoading || workoutLoading;
 
-  // Section 2 — Nutrition
-  const [calLineData, setCalLineData] = useState<{ value: number; dataPointColor?: string }[]>([]);
-  const [weeklyMacroStack, setWeeklyMacroStack] = useState<{ label: string; stackData: { value: number; color: string }[] }[]>([]);
-  const [netCarbsData, setNetCarbsData] = useState<{ value: number }[]>([]);
-  const [showNetCarbs, setShowNetCarbs] = useState(false);
-  const [calorieGoal, setCalorieGoal] = useState(2000);
-  const [bestNutritionDay, setBestNutritionDay] = useState<string | null>(null);
-  const [worstNutritionDay, setWorstNutritionDay] = useState<string | null>(null);
-  const [hasNutritionData, setHasNutritionData] = useState(false);
-
-  // Section 3 — Workout
-  const [weeklyVolData, setWeeklyVolData] = useState<{ value: number; label: string; frontColor: string }[]>([]);
-  const [weeklyFreqData, setWeeklyFreqData] = useState<{ value: number; label: string; frontColor: string }[]>([]);
-  const [muscleData, setMuscleData] = useState<{ value: number; color: string; text: string }[]>([]);
-  const [prCards, setPRCards] = useState<{ exercise: string; weight_kg: number; reps: number; date: string }[]>([]);
-  const [hasWorkoutData, setHasWorkoutData] = useState(false);
-  const [plannedDaysPerWeek, setPlannedDaysPerWeek] = useState(3);
-
-  // Section 4 — Consistency
-  const [totalScore, setTotalScore] = useState(0);
-  const [wScore, setWScore] = useState(0);
-  const [nScore, setNScore] = useState(0);
-
-  useEffect(() => {
-    if (!profile?.id) return;
-    loadAnalytics(profile.id);
-  }, [profile?.id]);
-
-  async function loadAnalytics(uid: string) {
-    setLoading(true);
-    try {
-      const now = new Date();
-      const d30 = subDays(now, 30);
-      const d56 = subDays(now, 56);
-      const d84 = subDays(now, 84);
-      const d90 = subDays(now, 90);
-
-      const [bodyRes, foodRes, sessionRes, prRes, userRes] = await Promise.all([
-        supabase
-          .from('body_measurements')
-          .select('measured_at, weight_kg')
-          .eq('user_id', uid)
-          .gte('measured_at', toDateStr(d90))
-          .not('weight_kg', 'is', null)
-          .order('measured_at', { ascending: true }),
-
-        supabase
-          .from('food_logs')
-          .select('logged_at, meal_slot, quantity_g, food_item:food_items(calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g)')
-          .eq('user_id', uid)
-          .gte('logged_at', d56.toISOString()),
-
-        supabase
-          .from('workout_sessions')
-          .select('id, started_at, total_volume_kg')
-          .eq('user_id', uid)
-          .gte('started_at', d84.toISOString())
-          .order('started_at', { ascending: true }),
-
-        supabase
-          .from('personal_records')
-          .select('exercise_name, weight_kg, reps, achieved_at')
-          .eq('user_id', uid),
-
-        supabase
-          .from('users')
-          .select('calorie_goal, workout_days, target_weight_kg, net_carbs_display, body_weight_kg')
-          .eq('id', uid)
-          .single(),
-      ]);
-
-      // ── user profile ──
-      const userD = userRes.data;
-      const cGoal = userD?.calorie_goal ?? 2000;
-      const wDays = userD?.workout_days?.length ?? 3;
-      setCalorieGoal(cGoal);
-      setTargetWeight(userD?.target_weight_kg ?? null);
-      setShowNetCarbs(userD?.net_carbs_display ?? true);
-      setPlannedDaysPerWeek(wDays);
-
-      // ── Section 1: Body Weight ──
-      const rawBody = (bodyRes.data ?? []).map(b => ({
-        date: b.measured_at,
-        weight: b.weight_kg as number,
-      }));
-
-      if (rawBody.length >= 2) {
-        setHasBodyData(true);
-
-        // Downsample for chart (show every 7th point with weekly labels)
-        const sampled = rawBody.filter((_, i) => i % Math.max(1, Math.floor(rawBody.length / 12)) === 0 || i === rawBody.length - 1);
-        setWeightLineData(
-          sampled.map((p, i) => ({
-            value: p.weight,
-            label: i % 3 === 0 ? shortDate(p.date) : '',
-          })),
-        );
-        setWeightAvgData(rollingAvg(sampled, 7));
-
-        const last30Body = rawBody.filter(b => b.date >= toDateStr(d30));
-        if (last30Body.length >= 2) {
-          setWeightChange30(
-            parseFloat((last30Body[last30Body.length - 1].weight - last30Body[0].weight).toFixed(1)),
-          );
-        }
-        setCurrentWeight(rawBody[rawBody.length - 1].weight);
-      }
-
-      // ── Section 2: Nutrition ──
-      const daily: Record<string, DayNutrition> = {};
-      const foodLogs = foodRes.data ?? [];
-
-      foodLogs.forEach(log => {
-        const date = log.logged_at.split('T')[0];
-        const fi = log.food_item as unknown as { calories_per_100g: number | null; protein_per_100g: number | null; carbs_per_100g: number | null; fat_per_100g: number | null; fiber_per_100g: number | null } | null;
-        if (!fi) return;
-        const q = log.quantity_g / 100;
-        if (!daily[date]) daily[date] = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, slots: new Set() };
-        daily[date].calories += (fi.calories_per_100g ?? 0) * q;
-        daily[date].protein += (fi.protein_per_100g ?? 0) * q;
-        daily[date].carbs += (fi.carbs_per_100g ?? 0) * q;
-        daily[date].fat += (fi.fat_per_100g ?? 0) * q;
-        daily[date].fiber += (fi.fiber_per_100g ?? 0) * q;
-        daily[date].slots.add(log.meal_slot);
-      });
-
-      const last30Dates: string[] = [];
-      for (let i = 29; i >= 0; i--) last30Dates.push(toDateStr(subDays(now, i)));
-
-      const calData = last30Dates.map(date => ({
-        value: Math.round(daily[date]?.calories ?? 0),
-        dataPointColor: (daily[date]?.calories ?? 0) > 0
-          ? ((daily[date]?.calories ?? 0) <= cGoal ? colors.success : colors.error)
-          : colors.bg.elevated,
-      }));
-
-      setCalLineData(calData);
-      setWeeklyMacroStack(buildWeeklyMacros(daily, 8));
-
-      const ncData = last30Dates.map(date => ({
-        value: Math.max(0, Math.round((daily[date]?.carbs ?? 0) - (daily[date]?.fiber ?? 0))),
-      }));
-      setNetCarbsData(ncData);
-
-      // Insight chips: best day (highest protein within goal), watch day (most over goal)
-      const last30LoggedDays = Object.entries(daily).filter(([d]) => d >= toDateStr(d30));
-      if (last30LoggedDays.length >= 3) {
-        setHasNutritionData(true);
-
-        const bestDay = last30LoggedDays
-          .filter(([, d]) => d.calories <= cGoal)
-          .sort((a, b) => b[1].protein - a[1].protein)[0];
-        setBestNutritionDay(bestDay ? shortDate(bestDay[0]) : null);
-
-        const worstDay = last30LoggedDays
-          .sort((a, b) => (b[1].calories - cGoal) - (a[1].calories - cGoal))[0];
-        setWorstNutritionDay(worstDay && worstDay[1].calories > cGoal ? shortDate(worstDay[0]) : null);
-      }
-
-      // ── Section 3: Workout ──
-      const sessions = sessionRes.data ?? [];
-      if (sessions.length > 0) {
-        setHasWorkoutData(true);
-      }
-
-      const { volData, freqData } = buildWeeklySessions(sessions, 12, wDays);
-      setWeeklyVolData(volData);
-      setWeeklyFreqData(freqData);
-
-      // Muscle group breakdown (last 30 days)
-      const last30SessionIds = sessions
-        .filter(s => s.started_at >= d30.toISOString())
-        .map(s => s.id);
-
-      if (last30SessionIds.length > 0) {
-        const setsRes = await supabase
-          .from('workout_sets')
-          .select('weight_kg, reps, exercise_id')
-          .in('session_id', last30SessionIds);
-
-        const exerciseIds = [...new Set((setsRes.data ?? []).map(s => s.exercise_id))];
-
-        let muscleMap: Record<string, string> = {};
-        if (exerciseIds.length > 0) {
-          const exRes = await supabase
-            .from('exercises')
-            .select('id, muscle_group')
-            .in('id', exerciseIds);
-          muscleMap = Object.fromEntries((exRes.data ?? []).map(e => [e.id, e.muscle_group]));
-        }
-
-        const mgVolume: Record<string, number> = { push: 0, pull: 0, legs: 0, core: 0 };
-        (setsRes.data ?? []).forEach(s => {
-          const mg = muscleMap[s.exercise_id] ?? 'push';
-          mgVolume[mg] = (mgVolume[mg] ?? 0) + s.weight_kg * s.reps;
-        });
-
-        const totalVol = Object.values(mgVolume).reduce((a, b) => a + b, 0);
-        if (totalVol > 0) {
-          setMuscleData([
-            { value: Math.round((mgVolume.push / totalVol) * 100), color: colors.brand.primary, text: 'Push' },
-            { value: Math.round((mgVolume.pull / totalVol) * 100), color: colors.brand.secondary, text: 'Pull' },
-            { value: Math.round((mgVolume.legs / totalVol) * 100), color: colors.brand.accent, text: 'Legs' },
-            { value: Math.round((mgVolume.core / totalVol) * 100), color: colors.success, text: 'Core' },
-          ].filter(d => d.value > 0));
-        }
-      }
-
-      // PR cards
-      const keyLifts = ['Bench Press', 'Squat', 'Deadlift', 'Overhead Press', 'Barbell Row'];
-      const prMap: Record<string, { weight_kg: number; reps: number; achieved_at: string }> = {};
-      (prRes.data ?? []).forEach(pr => {
-        if (keyLifts.includes(pr.exercise_name)) prMap[pr.exercise_name] = pr;
-      });
-      setPRCards(
-        keyLifts
-          .filter(name => prMap[name])
-          .map(name => ({ exercise: name, ...prMap[name]!, date: shortDate(prMap[name]!.achieved_at) })),
-      );
-
-      // ── Section 4: Consistency Score ──
-      const last30Sessions = sessions.filter(s => s.started_at >= d30.toISOString());
-      const uniqueWorkoutDays = new Set(last30Sessions.map(s => s.started_at.split('T')[0]));
-      const rawWScore = (uniqueWorkoutDays.size / (wDays * 4)) * 50;
-      const computedWScore = Math.min(50, rawWScore);
-
-      const nutritionDays = Object.entries(daily).filter(([d, nd]) => d >= toDateStr(d30) && nd.slots.size >= 3);
-      const computedNScore = Math.min(50, (nutritionDays.length / 30) * 50);
-
-      const score = Math.min(100, Math.round(computedWScore + computedNScore));
-      setWScore(Math.round((computedWScore / 50) * 100));
-      setNScore(Math.round((computedNScore / 50) * 100));
-      setTotalScore(score);
-
-    } catch {
-      // silently ignore; sections show empty states
-    } finally {
-      setLoading(false);
-    }
-  }
+  const wRaw = Math.min(50, ((workout?.uniqueWorkoutDays ?? 0) / ((workout?.plannedDaysPerWeek ?? 3) * 4)) * 50);
+  const nRaw = Math.min(50, ((nutrition?.nutritionDays ?? 0) / 30) * 50);
+  const totalScore = Math.min(100, Math.round(wRaw + nRaw));
+  const wScore = Math.round((wRaw / 50) * 100);
+  const nScore = Math.round((nRaw / 50) * 100);
 
   if (loading) {
     return (
@@ -495,6 +128,7 @@ export default function ProgressScreen() {
         ? 'Getting there! Keep the habit going 📈'
         : 'Magsimula ulit tayo 🌙 Every day is a fresh start.';
 
+  const weightChange30 = body?.weightChange30 ?? null;
   const weightChangeLabel =
     weightChange30 !== null
       ? `${weightChange30 > 0 ? '▲' : '▼'} ${Math.abs(weightChange30)}kg in 30 days`
@@ -511,12 +145,31 @@ export default function ProgressScreen() {
     hideDataPoints: false,
   };
 
+  const weightLineData = body?.weightLineData ?? [];
+  const weightAvgData = body?.weightAvgData ?? [];
+  const currentWeight = body?.currentWeight ?? null;
+  const targetWeight = body?.targetWeight ?? null;
+
+  const calLineData = nutrition?.calLineData ?? [];
+  const weeklyMacroStack = nutrition?.weeklyMacroStack ?? [];
+  const netCarbsData = nutrition?.netCarbsData ?? [];
+  const showNetCarbs = nutrition?.showNetCarbs ?? true;
+  const calorieGoal = nutrition?.calorieGoal ?? 2000;
+  const bestNutritionDay = nutrition?.bestNutritionDay ?? null;
+  const worstNutritionDay = nutrition?.worstNutritionDay ?? null;
+
+  const weeklyVolData = workout?.weeklyVolData ?? [];
+  const weeklyFreqData = workout?.weeklyFreqData ?? [];
+  const muscleData = workout?.muscleData ?? [];
+  const prCards = workout?.prCards ?? [];
+  const plannedDaysPerWeek = workout?.plannedDaysPerWeek ?? 3;
+
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
 
       {/* ─── SECTION 1: Body & Weight ─── */}
       <Section title="Body & Weight">
-        {!hasBodyData ? (
+        {!body?.hasData ? (
           <EmptyState text="Log your weight in Measurements to see your trend 📊" />
         ) : (
           <>
@@ -573,7 +226,7 @@ export default function ProgressScreen() {
 
       {/* ─── SECTION 2: Nutrition Trends ─── */}
       <Section title="Nutrition Trends">
-        {!hasNutritionData ? (
+        {!nutrition?.hasData ? (
           <EmptyState text="Log food for at least 3 days to see your nutrition trends 🥗" />
         ) : (
           <>
@@ -668,7 +321,7 @@ export default function ProgressScreen() {
 
       {/* ─── SECTION 3: Workout Analytics ─── */}
       <Section title="Workout Analytics">
-        {!hasWorkoutData ? (
+        {!workout?.hasData ? (
           <EmptyState text="Complete your first workout to see analytics 💪" />
         ) : (
           <>
