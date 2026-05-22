@@ -9,6 +9,10 @@ export default function NutritionLayout() {
       <Stack.Screen name="food/[id]" />
       <Stack.Screen name="barcode" />
       <Stack.Screen name="goals" />
+      <Stack.Screen name="fasting" />
+      <Stack.Screen name="mealplan" />
+      <Stack.Screen name="grocery" />
+      <Stack.Screen name="mealbuilder" />
     </Stack>
   );
 }
