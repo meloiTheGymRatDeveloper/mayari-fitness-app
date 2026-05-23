@@ -314,7 +314,7 @@ async function getFoodByUPCItemDB(barcode: string): Promise<FoodItem | null> {
       folate_mcg_per_100g: null,
       cholesterol_mg_per_100g: null,
       barcode,
-      source: 'open_food_facts' as const,
+      source: 'custom' as const,
       source_id: barcode,
     };
     const { data } = await supabase
