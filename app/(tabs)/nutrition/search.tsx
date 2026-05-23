@@ -96,11 +96,7 @@ export default function FoodSearchScreen() {
         />
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
-      >
+      <View style={styles.filterGrid}>
         {FILTERS.map(f => (
           <TouchableOpacity
             key={f.key}
@@ -112,7 +108,7 @@ export default function FoodSearchScreen() {
             </Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
 
       {loading && <ActivityIndicator color={colors.brand.primary} style={{ marginTop: 24 }} />}
 
@@ -142,7 +138,11 @@ export default function FoodSearchScreen() {
         ListEmptyComponent={
           query && !loading ? (
             <View style={styles.emptyWrap}>
-              <Text style={styles.empty}>Wala pang results para sa "{query}".</Text>
+              <Text style={styles.empty}>
+                {results.length > 0 && filtered.length === 0
+                  ? `No ${FILTERS.find(f => f.key === filter)?.label ?? filter} results for "${query}". Try "All".`
+                  : `Wala pang results para sa "${query}".`}
+              </Text>
               <TouchableOpacity style={styles.addBtn} onPress={goAddCustom}>
                 <Text style={styles.addBtnText}>+ Add Custom Food</Text>
               </TouchableOpacity>
@@ -176,11 +176,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  filterRow: {
+  filterGrid: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
-    gap: spacing.xs,
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
   },
   filterChip: {
     paddingHorizontal: spacing.md,
@@ -189,7 +190,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.bg.secondary,
-    marginRight: spacing.xs,
   },
   filterChipActive: {
     borderColor: colors.brand.primary,

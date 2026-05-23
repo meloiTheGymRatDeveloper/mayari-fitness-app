@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, typography, spacing } from '../../constants/theme';
 import type { FoodLogWithItem, MealSlot } from '../../types/database';
@@ -60,6 +60,12 @@ export default function MealSection({ slot, logs, style, date, onDeleteLog, disa
                 pathname: '/(tabs)/nutrition/food/[id]',
                 params: { id: log.food_item.id, log_id: log.id, meal_slot: slot, quantity_g: String(log.quantity_g), date },
               })
+            }
+            onLongPress={() =>
+              Alert.alert('Remove food?', log.food_item.name, [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Remove', style: 'destructive', onPress: () => onDeleteLog(log.id) },
+              ])
             }
           >
             <View style={styles.foodLeft}>

@@ -44,6 +44,7 @@ export default function ScanConfirmScreen() {
           protein_per_100g: Number(protein),
           carbs_per_100g: Number(carbs),
           fat_per_100g: Number(fat),
+          source_id: null,
         })
         .select('id')
         .single();

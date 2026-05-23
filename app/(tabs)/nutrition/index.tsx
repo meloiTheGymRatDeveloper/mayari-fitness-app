@@ -9,8 +9,8 @@ import WaterBar from '../../../components/nutrition/WaterBar';
 import { colors, typography, spacing } from '../../../constants/theme';
 import { useLatestGroceryList } from '../../../hooks/useMealPlan';
 import Skeleton from '../../../components/ui/Skeleton';
-import EmptyState from '../../../components/ui/EmptyState';
 import { useActiveFast } from '../../../hooks/useFasting';
+import { useDeleteFoodLog } from '../../../hooks/useNutrition';
 import type { MealSlot } from '../../../types/database';
 
 const MEAL_SLOTS: MealSlot[] = ['almusal', 'tanghalian', 'merienda', 'hapunan'];
@@ -64,6 +64,7 @@ export default function NutritionScreen() {
   const { data: waterLogs = [], isLoading: waterLoading } = useWaterLogs(date);
   const addWater = useAddWater();
   const removeWater = useRemoveWater();
+  const deleteLog = useDeleteFoodLog();
 
   const { data: groceryList } = useLatestGroceryList();
   const groceryBadgeCount = (groceryList?.items ?? []).filter(i => !i.checked).length;
@@ -146,16 +147,6 @@ export default function NutritionScreen() {
 
           <MacroSummaryCard logs={foodLogs} profile={profile} />
 
-          {foodLogs.length === 0 && (
-            <EmptyState
-              emoji="🍽️"
-              title="Walang naka-log ngayon"
-              subtitle="Start tracking your meals"
-              ctaLabel="Mag-log"
-              onCta={() => router.push('/(tabs)/nutrition/log')}
-            />
-          )}
-
           {MEAL_SLOTS.map(slot => {
             const outside = activeFast ? isSlotOutsideWindow(slot) : false;
             return (
@@ -165,7 +156,7 @@ export default function NutritionScreen() {
                   logs={foodLogs.filter(l => l.meal_slot === slot)}
                   style={mealStyle}
                   date={date}
-                  onDeleteLog={() => {}}
+                  onDeleteLog={(logId) => deleteLog.mutate({ logId, date })}
                   disabled={outside}
                 />
               </View>

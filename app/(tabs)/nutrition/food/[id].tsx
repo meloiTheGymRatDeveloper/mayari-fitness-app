@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Alert,
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../../lib/supabase';
-import { useLogFood } from '../../../../hooks/useNutrition';
+import { useLogFood, useUpdateFoodLog, useDeleteFoodLog } from '../../../../hooks/useNutrition';
 import { useAddFoodToPlan } from '../../../../hooks/useMealPlan';
 import { colors, typography, spacing } from '../../../../constants/theme';
 import type { FoodItem, MealSlot, WeekDay } from '../../../../types/database';
@@ -32,12 +32,14 @@ const MEAL_LABELS: Record<MealSlot, string> = {
 export default function FoodDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { id, meal_slot, date, aiEstimated, foodName, calories, protein: proteinParam, carbs: carbsParam, fat: fatParam,
+  const { id, log_id, meal_slot, date, quantity_g: quantityGParam, aiEstimated, foodName, calories, protein: proteinParam, carbs: carbsParam, fat: fatParam,
     context, week_start_date, plan_day, origin } =
     useLocalSearchParams<{
       id: string;
+      log_id?: string;
       meal_slot: MealSlot;
       date: string;
+      quantity_g?: string;
       aiEstimated?: string;
       foodName?: string;
       calories?: string;
@@ -51,14 +53,17 @@ export default function FoodDetailScreen() {
     }>();
 
   const isAI = aiEstimated === 'true';
+  const isEditMode = !!log_id;
   const afterLogDest = origin === 'home' ? '/(tabs)/' : '/(tabs)/nutrition';
   const [food, setFood] = useState<FoodItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [qty, setQty] = useState('100');
+  const [qty, setQty] = useState(quantityGParam ?? '100');
   const [slot, setSlot] = useState<MealSlot>(meal_slot ?? 'almusal');
   const [expanded, setExpanded] = useState(false);
   const logFood = useLogFood();
+  const updateLog = useUpdateFoodLog();
+  const deleteLog = useDeleteFoodLog();
   const addFoodToPlan = useAddFoodToPlan();
   const isPlanContext = context === 'plan';
   const showNetCarbs = useAuthStore(s => s.profile?.net_carbs_display) !== false;
@@ -95,6 +100,7 @@ export default function FoodDetailScreen() {
         cholesterol_mg_per_100g: null,
         barcode: null,
         source: 'custom',
+        source_id: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -176,12 +182,39 @@ export default function FoodDetailScreen() {
       return;
     }
 
+    if (isEditMode && log_id) {
+      try {
+        await updateLog.mutateAsync({ logId: log_id, quantityG: q, mealSlot: slot });
+        router.navigate(afterLogDest as never);
+      } catch (e: unknown) {
+        Alert.alert('Error', e instanceof Error ? e.message : 'Could not update log');
+      }
+      return;
+    }
+
     try {
       await logFood.mutateAsync({ foodItemId: food.id, mealSlot: slot, quantityG: q, date });
       router.navigate(afterLogDest as never);
     } catch (e: unknown) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Could not log food');
     }
+  }
+
+  async function handleDelete() {
+    if (!log_id) return;
+    Alert.alert('Remove from diary?', food?.name ?? '', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove', style: 'destructive', onPress: async () => {
+          try {
+            await deleteLog.mutateAsync({ logId: log_id, date });
+            router.navigate(afterLogDest as never);
+          } catch (e: unknown) {
+            Alert.alert('Error', e instanceof Error ? e.message : 'Could not remove');
+          }
+        },
+      },
+    ]);
   }
 
   if (loading) {
@@ -315,16 +348,28 @@ export default function FoodDetailScreen() {
       )}
 
       <TouchableOpacity
-        style={[styles.addBtn, (logFood.isPending || addFoodToPlan.isPending) && styles.addBtnOff]}
+        style={[styles.addBtn, (logFood.isPending || addFoodToPlan.isPending || updateLog.isPending) && styles.addBtnOff]}
         onPress={handleAdd}
-        disabled={logFood.isPending || addFoodToPlan.isPending}
+        disabled={logFood.isPending || addFoodToPlan.isPending || updateLog.isPending}
       >
         <Text style={styles.addBtnText}>
-          {(logFood.isPending || addFoodToPlan.isPending)
-            ? 'Adding...'
-            : isPlanContext ? 'Add to Plan' : 'Add to Diary'}
+          {(logFood.isPending || addFoodToPlan.isPending || updateLog.isPending)
+            ? 'Saving...'
+            : isEditMode ? 'Save Changes' : isPlanContext ? 'Add to Plan' : 'Add to Diary'}
         </Text>
       </TouchableOpacity>
+
+      {isEditMode && (
+        <TouchableOpacity
+          style={[styles.removeBtn, deleteLog.isPending && styles.addBtnOff]}
+          onPress={handleDelete}
+          disabled={deleteLog.isPending}
+        >
+          <Text style={styles.removeBtnText}>
+            {deleteLog.isPending ? 'Removing...' : 'Remove from Diary'}
+          </Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 }
@@ -370,4 +415,6 @@ const styles = StyleSheet.create({
   addBtn: { backgroundColor: colors.brand.primary, borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.sm },
   addBtnOff: { opacity: 0.5 },
   addBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  removeBtn: { borderWidth: 1, borderColor: colors.error, borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.sm },
+  removeBtnText: { color: colors.error, fontSize: typography.base, fontWeight: '600' },
 });

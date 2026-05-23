@@ -117,8 +117,22 @@ export function useDeleteFoodLog() {
       if (error) throw error;
     },
     onSuccess: () => {
-      // Invalidate all food_log queries (any date/user) so every
-      // subscriber — home screen, nutrition tab — refreshes immediately.
+      queryClient.invalidateQueries({ queryKey: ['food_logs'] });
+    },
+  });
+}
+
+export function useUpdateFoodLog() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ logId, quantityG, mealSlot }: { logId: string; quantityG: number; mealSlot: MealSlot }) => {
+      const { error } = await supabase
+        .from('food_logs')
+        .update({ quantity_g: quantityG, meal_slot: mealSlot })
+        .eq('id', logId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['food_logs'] });
     },
   });

@@ -60,6 +60,7 @@ export default function VoiceConfirmScreen() {
             carbs_per_100g: food.carbs_g * per100,
             fat_per_100g: food.fat_g * per100,
             source: 'custom',
+            source_id: null,
           })
           .select('id')
           .single();
