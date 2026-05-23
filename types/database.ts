@@ -160,7 +160,7 @@ export interface FoodItem {
   folate_mcg_per_100g: number | null;
   cholesterol_mg_per_100g: number | null;
   barcode: string | null;
-  source: 'custom' | 'open_food_facts' | 'ph_seed' | 'usda' | 'community';
+  source: 'custom' | 'open_food_facts' | 'ph_seed' | 'usda';
   source_id: string | null;
   created_at: string;
   updated_at: string;

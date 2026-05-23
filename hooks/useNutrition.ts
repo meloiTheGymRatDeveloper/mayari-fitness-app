@@ -229,7 +229,7 @@ export function useApproveSubmission() {
         fat_per_100g: sub.fat_per_100g,
         fiber_per_100g: sub.fiber_per_100g,
         is_ph_local: sub.is_ph_local,
-        source: 'community' as const,
+        source: 'custom' as const,
       });
       if (insertErr) throw insertErr;
     },
