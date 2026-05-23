@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
-import type { FoodLogWithItem, WaterLog, MealSlot, FoodItem } from '../types/database';
+import type { FoodLogWithItem, WaterLog, MealSlot, FoodItem, FoodSubmission } from '../types/database';
 
 function dayRange(date: string): { gte: string; lte: string } {
   // Use local midnight (no Z suffix) so the range matches the device's local date,
@@ -166,27 +166,8 @@ export function useRecentFoods() {
   });
 }
 
-export interface FoodSubmission {
-  id: string;
-  submitted_by: string | null;
-  name: string;
-  name_fil: string | null;
-  brand: string | null;
-  barcode: string | null;
-  calories_per_100g: number | null;
-  protein_per_100g: number | null;
-  carbs_per_100g: number | null;
-  fat_per_100g: number | null;
-  fiber_per_100g: number | null;
-  is_ph_local: boolean;
-  status: 'pending' | 'approved' | 'rejected';
-  reviewed_by: string | null;
-  reviewed_at: string | null;
-  reject_reason: string | null;
-  created_at: string;
-}
-
 export function useSubmitFood() {
+  const queryClient = useQueryClient();
   const userId = useAuthStore(s => s.session?.user.id);
   return useMutation({
     mutationFn: async (data: {
@@ -207,6 +188,7 @@ export function useSubmitFood() {
         .insert({ ...data, submitted_by: userId, status: 'pending' });
       if (error) throw error;
     },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['food_submissions'] }),
   });
 }
 
@@ -230,6 +212,12 @@ export function useApproveSubmission() {
   const userId = useAuthStore(s => s.session?.user.id);
   return useMutation({
     mutationFn: async (sub: FoodSubmission) => {
+      // Update status first — prevents duplicate approvals if the insert fails.
+      const { error: updateErr } = await supabase
+        .from('food_submissions')
+        .update({ status: 'approved', reviewed_by: userId, reviewed_at: new Date().toISOString() })
+        .eq('id', sub.id);
+      if (updateErr) throw updateErr;
       const { error: insertErr } = await supabase.from('food_items').insert({
         name: sub.name,
         name_fil: sub.name_fil,
@@ -242,14 +230,8 @@ export function useApproveSubmission() {
         fiber_per_100g: sub.fiber_per_100g,
         is_ph_local: sub.is_ph_local,
         source: 'community' as const,
-        source_id: null,
       });
       if (insertErr) throw insertErr;
-      const { error: updateErr } = await supabase
-        .from('food_submissions')
-        .update({ status: 'approved', reviewed_by: userId, reviewed_at: new Date().toISOString() })
-        .eq('id', sub.id);
-      if (updateErr) throw updateErr;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['food_submissions'] }),
   });

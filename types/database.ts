@@ -378,6 +378,28 @@ export type AIWeeklyPlanResult = {
   plan: Partial<Record<WeekDay, AIWeeklyDayData>>;
 };
 
+// ─── Food Submissions ─────────────────────────────────────────────────────────
+
+export interface FoodSubmission {
+  id: string;
+  submitted_by: string | null;
+  name: string;
+  name_fil: string | null;
+  brand: string | null;
+  barcode: string | null;
+  calories_per_100g: number | null;
+  protein_per_100g: number | null;
+  carbs_per_100g: number | null;
+  fat_per_100g: number | null;
+  fiber_per_100g: number | null;
+  is_ph_local: boolean;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  reject_reason: string | null;
+  created_at: string;
+}
+
 // ─── Subscriptions ────────────────────────────────────────────────────────────
 
 export interface Subscription {
