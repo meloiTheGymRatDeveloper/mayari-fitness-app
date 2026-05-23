@@ -165,3 +165,112 @@ export function useRecentFoods() {
     enabled: !!userId,
   });
 }
+
+export interface FoodSubmission {
+  id: string;
+  submitted_by: string | null;
+  name: string;
+  name_fil: string | null;
+  brand: string | null;
+  barcode: string | null;
+  calories_per_100g: number | null;
+  protein_per_100g: number | null;
+  carbs_per_100g: number | null;
+  fat_per_100g: number | null;
+  fiber_per_100g: number | null;
+  is_ph_local: boolean;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  reject_reason: string | null;
+  created_at: string;
+}
+
+export function useSubmitFood() {
+  const userId = useAuthStore(s => s.session?.user.id);
+  return useMutation({
+    mutationFn: async (data: {
+      name: string;
+      name_fil?: string | null;
+      brand?: string | null;
+      barcode?: string | null;
+      calories_per_100g: number;
+      protein_per_100g: number;
+      carbs_per_100g: number;
+      fat_per_100g: number;
+      fiber_per_100g?: number | null;
+      is_ph_local?: boolean;
+    }) => {
+      if (!userId) throw new Error('Not logged in');
+      const { error } = await supabase
+        .from('food_submissions')
+        .insert({ ...data, submitted_by: userId, status: 'pending' });
+      if (error) throw error;
+    },
+  });
+}
+
+export function useAdminSubmissions() {
+  return useQuery({
+    queryKey: ['food_submissions', 'pending'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('food_submissions')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at');
+      if (error) throw error;
+      return (data ?? []) as FoodSubmission[];
+    },
+  });
+}
+
+export function useApproveSubmission() {
+  const queryClient = useQueryClient();
+  const userId = useAuthStore(s => s.session?.user.id);
+  return useMutation({
+    mutationFn: async (sub: FoodSubmission) => {
+      const { error: insertErr } = await supabase.from('food_items').insert({
+        name: sub.name,
+        name_fil: sub.name_fil,
+        brand: sub.brand,
+        barcode: sub.barcode,
+        calories_per_100g: sub.calories_per_100g,
+        protein_per_100g: sub.protein_per_100g,
+        carbs_per_100g: sub.carbs_per_100g,
+        fat_per_100g: sub.fat_per_100g,
+        fiber_per_100g: sub.fiber_per_100g,
+        is_ph_local: sub.is_ph_local,
+        source: 'custom' as const,
+        source_id: null,
+      });
+      if (insertErr) throw insertErr;
+      const { error: updateErr } = await supabase
+        .from('food_submissions')
+        .update({ status: 'approved', reviewed_by: userId, reviewed_at: new Date().toISOString() })
+        .eq('id', sub.id);
+      if (updateErr) throw updateErr;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['food_submissions'] }),
+  });
+}
+
+export function useRejectSubmission() {
+  const queryClient = useQueryClient();
+  const userId = useAuthStore(s => s.session?.user.id);
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const { error } = await supabase
+        .from('food_submissions')
+        .update({
+          status: 'rejected',
+          reviewed_by: userId,
+          reviewed_at: new Date().toISOString(),
+          reject_reason: reason,
+        })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['food_submissions'] }),
+  });
+}
