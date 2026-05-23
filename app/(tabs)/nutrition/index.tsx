@@ -22,6 +22,14 @@ const SLOT_HOURS: Record<MealSlot, number> = {
   hapunan: 19,
 };
 
+function currentMealSlot(): MealSlot {
+  const hour = new Date().getHours();
+  if (hour < 10) return 'almusal';
+  if (hour < 14) return 'tanghalian';
+  if (hour < 18) return 'merienda';
+  return 'hapunan';
+}
+
 function todayStr(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -73,6 +81,7 @@ export default function NutritionScreen() {
   const isLoading = logsLoading || waterLoading;
 
   return (
+    <View style={styles.root}>
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       {/* Date header */}
       <View style={styles.dateRow}>
@@ -171,11 +180,22 @@ export default function NutritionScreen() {
         </>
       )}
     </ScrollView>
+    <TouchableOpacity
+      style={styles.fab}
+      onPress={() => router.push({
+        pathname: '/(tabs)/nutrition/voice' as never,
+        params: { meal_slot: currentMealSlot(), date },
+      })}
+    >
+      <Text style={styles.fabIcon}>🎤</Text>
+    </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bg.primary },
+  root: { flex: 1, backgroundColor: colors.bg.primary },
+  scroll: { backgroundColor: colors.bg.primary },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.lg, marginBottom: spacing.sm },
   arrow: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
@@ -216,4 +236,21 @@ const styles = StyleSheet.create({
   errorText: { color: colors.text.secondary, fontSize: typography.base, marginBottom: spacing.md },
   retryBtn: { backgroundColor: colors.brand.primary, borderRadius: 12, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },
   retryBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.brand.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabIcon: { fontSize: 24 },
 });
