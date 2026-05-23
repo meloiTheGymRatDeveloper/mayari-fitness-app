@@ -158,7 +158,7 @@ async function cacheOFFProducts(products: OFFProduct[]): Promise<FoodItem[]> {
   if (rows.length === 0) return [];
   const { data } = await supabase
     .from('food_items')
-    .upsert(rows, { onConflict: 'barcode', ignoreDuplicates: false })
+    .upsert(rows, { onConflict: 'barcode', ignoreDuplicates: true })
     .select();
   return (data ?? []) as FoodItem[];
 }
