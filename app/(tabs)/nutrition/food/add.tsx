@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Switch,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../../lib/supabase';
 import { useAuthStore } from '../../../../stores/authStore';
+import { useSubmitFood } from '../../../../hooks/useNutrition';
 import { colors, typography, spacing } from '../../../../constants/theme';
 import type { MealSlot, WeekDay } from '../../../../types/database';
 
@@ -31,7 +32,7 @@ export default function AddCustomFoodScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { session } = useAuthStore();
-  const { meal_slot, date, context, week_start_date, plan_day, origin } =
+  const { meal_slot, date, context, week_start_date, plan_day, origin, barcode } =
     useLocalSearchParams<{
       meal_slot: MealSlot;
       date: string;
@@ -39,11 +40,16 @@ export default function AddCustomFoodScreen() {
       week_start_date?: string;
       plan_day?: WeekDay;
       origin?: string;
+      barcode?: string;
     }>();
 
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, string>>(
+    barcode ? { barcode } : {}
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [shareWithCommunity, setShareWithCommunity] = useState(!!barcode);
+  const submitFood = useSubmitFood();
 
   function setValue(key: string, val: string) {
     setValues(prev => ({ ...prev, [key]: val }));
@@ -63,24 +69,36 @@ export default function AddCustomFoodScreen() {
   }
 
   async function handleSave() {
-    if (!validate()) return;
-    if (!session) return;
+    if (!validate() || !session) return;
     setLoading(true);
     try {
-      const row = {
+      const base = {
         name: values.name.trim(),
         brand: values.brand?.trim() || null,
-        is_ph_local: false,
         calories_per_100g: parseFloat(values.calories_per_100g),
         protein_per_100g: parseFloat(values.protein_per_100g),
         carbs_per_100g: parseFloat(values.carbs_per_100g),
         fat_per_100g: parseFloat(values.fat_per_100g),
         fiber_per_100g: values.fiber_per_100g ? parseFloat(values.fiber_per_100g) : null,
         sodium_mg_per_100g: values.sodium_mg_per_100g ? parseFloat(values.sodium_mg_per_100g) : null,
-        source: 'custom' as const,
-        source_id: null,
+        is_ph_local: false,
       };
-      const { data, error } = await supabase.from('food_items').insert(row).select().single();
+
+      if (shareWithCommunity) {
+        await submitFood.mutateAsync({ ...base, barcode: barcode ?? null });
+        Alert.alert(
+          'Submitted!',
+          'Thanks for contributing. Your food will be reviewed and added to the community database.',
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('food_items')
+        .insert({ ...base, source: 'custom' })
+        .select()
+        .single();
       if (error) { Alert.alert('Error', error.message); return; }
       router.replace({
         pathname: '/(tabs)/nutrition/food/[id]',
@@ -105,6 +123,12 @@ export default function AddCustomFoodScreen() {
         <Text style={styles.subtitle}>All values are per 100g</Text>
       </View>
 
+      {barcode && (
+        <View style={styles.barcodeBanner}>
+          <Text style={styles.barcodeText}>Barcode: {barcode}</Text>
+        </View>
+      )}
+
       <View style={styles.form}>
         {FIELDS.map(f => (
           <View key={f.key} style={styles.field}>
@@ -125,12 +149,27 @@ export default function AddCustomFoodScreen() {
         ))}
       </View>
 
+      <View style={styles.toggleRow}>
+        <View style={styles.toggleLeft}>
+          <Text style={styles.toggleLabel}>Share with Mayari community</Text>
+          <Text style={styles.toggleSub}>Others can find this food after admin review</Text>
+        </View>
+        <Switch
+          value={shareWithCommunity}
+          onValueChange={setShareWithCommunity}
+          trackColor={{ false: colors.border, true: colors.brand.primary }}
+          thumbColor="#fff"
+        />
+      </View>
+
       <TouchableOpacity
         style={[styles.saveBtn, loading && styles.saveBtnDisabled]}
         onPress={handleSave}
         disabled={loading}
       >
-        <Text style={styles.saveBtnText}>{loading ? 'Saving...' : 'Save & Log Food'}</Text>
+        <Text style={styles.saveBtnText}>
+          {loading ? 'Saving...' : shareWithCommunity ? 'Submit for Review' : 'Save & Log Food'}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -143,28 +182,33 @@ const styles = StyleSheet.create({
   back: { color: colors.brand.primary, fontSize: typography.base, marginBottom: spacing.sm },
   title: { color: colors.text.primary, fontSize: typography.xl, fontWeight: 'bold' },
   subtitle: { color: colors.text.muted, fontSize: typography.sm },
+  barcodeBanner: {
+    backgroundColor: colors.bg.secondary, borderRadius: 8, padding: spacing.sm,
+    marginBottom: spacing.md, borderWidth: 1, borderColor: colors.border,
+  },
+  barcodeText: { color: colors.text.muted, fontSize: typography.xs, fontFamily: 'monospace' },
   form: { gap: spacing.md },
   field: { gap: spacing.xs },
   label: { color: colors.text.secondary, fontSize: typography.sm },
   required: { color: colors.error },
   input: {
-    backgroundColor: colors.bg.secondary,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    color: colors.text.primary,
-    fontSize: typography.base,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    backgroundColor: colors.bg.secondary, borderRadius: 10, borderWidth: 1,
+    borderColor: colors.border, color: colors.text.primary,
+    fontSize: typography.base, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
   },
   inputError: { borderColor: colors.error },
   errorText: { color: colors.error, fontSize: typography.xs },
+  toggleRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginTop: spacing.xl, padding: spacing.md,
+    backgroundColor: colors.bg.secondary, borderRadius: 12, borderWidth: 1, borderColor: colors.border,
+  },
+  toggleLeft: { flex: 1, marginRight: spacing.md },
+  toggleLabel: { color: colors.text.primary, fontSize: typography.sm, fontWeight: '600' },
+  toggleSub: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
   saveBtn: {
-    marginTop: spacing.xl,
-    backgroundColor: colors.brand.primary,
-    borderRadius: 12,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
+    marginTop: spacing.lg, backgroundColor: colors.brand.primary,
+    borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center',
   },
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
