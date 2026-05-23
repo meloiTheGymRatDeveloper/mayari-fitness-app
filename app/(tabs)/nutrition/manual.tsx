@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,10 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
+import { useLogFood } from '../../../hooks/useNutrition';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
 
@@ -49,9 +51,19 @@ export default function ManualEntryScreen() {
   const [macros, setMacros] = useState<Record<string, string>>({
     calories: '', protein: '', carbs: '', fat: '', fiber: '',
   });
-  const [saving, setSaving] = useState(false);
+  const logFood = useLogFood();
 
   const afterLogDest = origin === 'home' ? '/(tabs)/' : '/(tabs)/nutrition';
+
+  // Reset form every time the screen comes into focus so re-opens start clean
+  useFocusEffect(
+    useCallback(() => {
+      setName('');
+      setServingG('100');
+      setSlot(meal_slot ?? 'almusal');
+      setMacros({ calories: '', protein: '', carbs: '', fat: '', fiber: '' });
+    }, [meal_slot]),
+  );
 
   function setMacro(key: string, value: string) {
     setMacros(prev => ({ ...prev, [key]: value }));
@@ -83,11 +95,8 @@ export default function ManualEntryScreen() {
     // Convert per-serving values to per-100g for food_items storage
     const factor = 100 / serving;
 
-    setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { Alert.alert('Error', 'Not logged in'); return; }
-
+      // Step 1: save the food item so it's reusable by all users in Search
       const { data: inserted, error: insertErr } = await supabase
         .from('food_items')
         .insert({
@@ -108,22 +117,18 @@ export default function ManualEntryScreen() {
         return;
       }
 
-      const { error: logErr } = await supabase.from('food_logs').insert({
-        user_id: user.id,
-        food_item_id: inserted.id,
-        meal_slot: slot,
-        quantity_g: serving,
-        logged_at: new Date().toISOString(),
-        ai_estimated: false,
+      // Step 2: log via the mutation hook so TanStack Query invalidates the
+      // food_logs cache for this date and the nutrition diary updates immediately
+      await logFood.mutateAsync({
+        foodItemId: inserted.id,
+        mealSlot: slot,
+        quantityG: serving,
+        date,
       });
-
-      if (logErr) { Alert.alert('Error', logErr.message); return; }
 
       router.navigate(afterLogDest as never);
     } catch (e: unknown) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Could not save.');
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -143,6 +148,22 @@ export default function ManualEntryScreen() {
 
         <Text style={styles.heading}>Manual Entry</Text>
         <Text style={styles.sub}>Enter the name and macros for this food. It will be saved for everyone to find.</Text>
+
+        {/* Meal slot — shown first so it's never missed */}
+        <Text style={styles.label}>Meal Slot</Text>
+        <View style={styles.slotRow}>
+          {(['almusal', 'tanghalian', 'merienda', 'hapunan'] as MealSlot[]).map(s => (
+            <TouchableOpacity
+              key={s}
+              style={[styles.slotBtn, slot === s && styles.slotBtnActive]}
+              onPress={() => setSlot(s)}
+            >
+              <Text style={[styles.slotText, slot === s && styles.slotTextActive]}>
+                {MEAL_LABELS[s]}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         {/* Food name */}
         <Text style={styles.label}>Food Name *</Text>
@@ -195,28 +216,12 @@ export default function ManualEntryScreen() {
           ))}
         </View>
 
-        {/* Meal slot selector */}
-        <Text style={styles.label}>Meal Slot</Text>
-        <View style={styles.slotRow}>
-          {(['almusal', 'tanghalian', 'merienda', 'hapunan'] as MealSlot[]).map(s => (
-            <TouchableOpacity
-              key={s}
-              style={[styles.slotBtn, slot === s && styles.slotBtnActive]}
-              onPress={() => setSlot(s)}
-            >
-              <Text style={[styles.slotText, slot === s && styles.slotTextActive]}>
-                {MEAL_LABELS[s]}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
         <TouchableOpacity
-          style={[styles.saveBtn, saving && styles.saveBtnOff]}
+          style={[styles.saveBtn, logFood.isPending && styles.saveBtnOff]}
           onPress={handleSave}
-          disabled={saving}
+          disabled={logFood.isPending}
         >
-          {saving
+          {logFood.isPending
             ? <ActivityIndicator color="#fff" />
             : <Text style={styles.saveBtnText}>Add to Diary</Text>}
         </TouchableOpacity>
