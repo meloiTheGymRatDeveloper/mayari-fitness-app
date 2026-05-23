@@ -11,10 +11,12 @@ const SLOT_LABELS = {
 } as const;
 
 const OPTIONS = [
-  { key: 'search', emoji: '🔍', label: 'Search', sub: 'Find food by name', highlight: false },
-  { key: 'voice', emoji: '🎙️', label: 'Voice Log', sub: '"I had sinangag…"', highlight: true },
-  { key: 'scan', emoji: '📸', label: 'Meal Scan', sub: 'Photo → AI estimate', highlight: false },
-  { key: 'barcode', emoji: '▦', label: 'Barcode', sub: 'Scan packaged food', highlight: false },
+  { key: 'manual',  emoji: '✏️', label: 'Manual',    sub: 'Know your macros?',       highlight: false },
+  { key: 'search',  emoji: '🔍', label: 'Search',    sub: 'Find food by name',        highlight: false },
+  { key: 'voice',   emoji: '🎙️', label: 'Voice Log', sub: '"I had sinangag…"',        highlight: true  },
+  { key: 'scan',    emoji: '📸', label: 'Meal Scan', sub: 'Photo → AI estimate',      highlight: false },
+  { key: 'barcode', emoji: '▦',  label: 'Barcode',   sub: 'Scan packaged food',       highlight: false },
+  { key: 'usual',   emoji: '⭐', label: 'Usual',     sub: 'One-tap from favorites',   highlight: false },
 ] as const;
 
 export default function LogModal() {
@@ -27,11 +29,13 @@ export default function LogModal() {
     if (key === 'search') router.push({ pathname: '/(tabs)/nutrition/search', params });
     else if (key === 'barcode') router.push({ pathname: '/(tabs)/nutrition/barcode', params });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    else if (key === 'scan') router.push({ pathname: '/(tabs)/nutrition/photo' as any, params });
+    else if (key === 'scan')   router.push({ pathname: '/(tabs)/nutrition/photo' as any, params });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    else if (key === 'voice') router.push({ pathname: '/(tabs)/nutrition/voice-log' as any, params });
+    else if (key === 'voice')  router.push({ pathname: '/(tabs)/nutrition/voice' as any, params });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    else if (key === 'usual') router.push({ pathname: '/(tabs)/nutrition/usual' as any, params });
+    else if (key === 'manual') router.push({ pathname: '/(tabs)/nutrition/manual' as any, params });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    else if (key === 'usual')  router.push({ pathname: '/(tabs)/nutrition/usual' as any, params });
   }
 
   if (!logModalOpen) return null;
@@ -64,16 +68,6 @@ export default function LogModal() {
             </TouchableOpacity>
           ))}
         </View>
-        <TouchableOpacity style={styles.usual} onPress={() => handleOption('usual')}>
-          <View style={styles.usualIcon}>
-            <Text style={styles.emoji}>⭐</Text>
-          </View>
-          <View style={styles.usualTextWrap}>
-            <Text style={styles.optionLabel}>Usual</Text>
-            <Text style={styles.optionSub}>Frequent meals + saved favorites — log in one tap</Text>
-          </View>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
       </View>
     </Modal>
   );
@@ -117,15 +111,4 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 20 },
   optionLabel: { color: colors.text.primary, fontSize: typography.xs, fontWeight: '600' },
   optionSub: { color: colors.text.muted, fontSize: 10, textAlign: 'center' },
-  usual: {
-    backgroundColor: colors.bg.elevated, borderRadius: 14,
-    padding: spacing.md, flexDirection: 'row', alignItems: 'center',
-    gap: spacing.sm, borderWidth: 1, borderColor: colors.border,
-  },
-  usualIcon: {
-    width: 40, height: 40, backgroundColor: colors.bg.secondary,
-    borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-  },
-  usualTextWrap: { flex: 1 },
-  chevron: { color: colors.text.muted, fontSize: 20 },
 });

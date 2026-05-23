@@ -10,13 +10,17 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 import { supabase } from '../../../lib/supabase';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
 
 // expo-speech-recognition requires a native build — not available in Expo Go.
-// We lazy-load it via require() so the module-level import never crashes.
-// The app falls back to text input when the native module is absent.
+// requireOptionalNativeModule safely returns null when the native module is absent
+// (unlike requireNativeModule, which throws through Metro's guardedLoadModule and
+// calls reportFatalError — bypassing any try/catch in userland).
+// We guard the require() call with this check so the JS module is never loaded
+// unless the native side is actually present.
 type SpeechMod = {
   ExpoSpeechRecognitionModule: {
     requestPermissionsAsync(): Promise<{ granted: boolean }>;
@@ -34,13 +38,20 @@ let speechModChecked = false;
 
 function getSpeechMod(): SpeechMod | null {
   if (!speechModChecked) {
+    speechModChecked = true;
+    // requireOptionalNativeModule returns null (never throws) when the native module
+    // is not registered — safe to call in Expo Go.
+    const nativeExists = requireOptionalNativeModule('ExpoSpeechRecognition') != null;
+    if (!nativeExists) {
+      cachedSpeechMod = null;
+      return null;
+    }
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       cachedSpeechMod = require('expo-speech-recognition') as SpeechMod;
     } catch {
       cachedSpeechMod = null;
     }
-    speechModChecked = true;
   }
   return cachedSpeechMod;
 }

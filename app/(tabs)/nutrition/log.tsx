@@ -10,10 +10,11 @@ const SLOT_LABELS: Record<MealSlot, string> = {
 };
 
 const ACTIONS = [
-  { icon: '🔍', label: 'Search Food', route: '/(tabs)/nutrition/search' },
+  { icon: '✏️', label: 'Manual Entry', route: '/(tabs)/nutrition/manual' },
+  { icon: '🔍', label: 'Search Food',  route: '/(tabs)/nutrition/search' },
   { icon: '📷', label: 'Scan Barcode', route: '/(tabs)/nutrition/barcode' },
-  { icon: '🎤', label: 'Speak Food', route: '/(tabs)/nutrition/voice' },
-  { icon: '📸', label: 'Camera', route: '/(tabs)/nutrition/photo' },
+  { icon: '🎤', label: 'Speak Food',   route: '/(tabs)/nutrition/voice' },
+  { icon: '📸', label: 'Camera',       route: '/(tabs)/nutrition/photo' },
 ] as const;
 
 export default function LogFoodScreen() {
