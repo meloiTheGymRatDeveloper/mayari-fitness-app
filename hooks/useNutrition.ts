@@ -180,6 +180,7 @@ export function useSubmitFood() {
       carbs_per_100g: number;
       fat_per_100g: number;
       fiber_per_100g?: number | null;
+      sodium_mg_per_100g?: number | null;
       is_ph_local?: boolean;
     }) => {
       if (!userId) throw new Error('Not logged in');

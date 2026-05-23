@@ -392,6 +392,7 @@ export interface FoodSubmission {
   carbs_per_100g: number | null;
   fat_per_100g: number | null;
   fiber_per_100g: number | null;
+  sodium_mg_per_100g: number | null;
   is_ph_local: boolean;
   status: 'pending' | 'approved' | 'rejected';
   reviewed_by: string | null;
