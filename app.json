@@ -69,7 +69,14 @@
           }
         }
       ],
-      "./plugins/withExcludeLegacySupportLib"
+      "./plugins/withExcludeLegacySupportLib",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Mayari to use your microphone to log food by voice.",
+          "speechRecognitionPermission": "Allow Mayari to recognize your speech to identify food items."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
