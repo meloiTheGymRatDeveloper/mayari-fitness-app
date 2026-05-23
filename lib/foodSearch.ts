@@ -243,30 +243,124 @@ async function searchOFF(query: string): Promise<FoodItem[]> {
   }
 }
 
-export async function getFoodByBarcode(barcode: string): Promise<FoodItem | null> {
-  const { data: cached } = await supabase
-    .from('food_items')
-    .select('*')
-    .eq('barcode', barcode)
-    .maybeSingle();
-
-  if (cached) return cached as FoodItem;
-
+async function getFoodByUSDABarcode(barcode: string): Promise<FoodItem | null> {
+  const key = process.env.EXPO_PUBLIC_FDC_API_KEY ?? 'DEMO_KEY';
+  const params = new URLSearchParams({
+    query: barcode,
+    api_key: key,
+    dataType: 'Branded',
+    pageSize: '5',
+  });
   try {
-    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+    const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?${params}`);
     if (!res.ok) return null;
-    const json: OFFProductResponse = await res.json();
-    if (json.status !== 1 || !json.product?.product_name?.trim()) return null;
+    const json: FDCSearchResponse = await res.json();
+    const match = (json.foods ?? []).find(f => f.dataType === 'Branded');
+    if (!match) return null;
+    const rows = await cacheUSDAFoods([match]);
+    return rows[0] ?? null;
+  } catch {
+    return null;
+  }
+}
 
-    const row = mapOFFProduct({ ...json.product, code: barcode });
+async function getFoodByUPCItemDB(barcode: string): Promise<FoodItem | null> {
+  try {
+    const res = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
+    if (!res.ok) return null;
+    const json = await res.json() as {
+      code: string;
+      items?: Array<{
+        title?: string;
+        brand?: string;
+        nutrition?: {
+          energy?: number;
+          proteins?: number;
+          carbohydrates?: number;
+          fat?: number;
+          fiber?: number;
+          sugars?: number;
+        };
+      }>;
+    };
+    const item = json.items?.[0];
+    if (!item?.title) return null;
+    const n = item.nutrition ?? {};
+    const row: Omit<FoodItem, 'id' | 'created_at' | 'updated_at'> = {
+      name: item.title,
+      name_fil: null,
+      brand: item.brand ?? null,
+      is_ph_local: false,
+      calories_per_100g: n.energy ?? null,
+      protein_per_100g: n.proteins ?? null,
+      carbs_per_100g: n.carbohydrates ?? null,
+      fat_per_100g: n.fat ?? null,
+      fiber_per_100g: n.fiber ?? null,
+      sugar_per_100g: n.sugars ?? null,
+      saturated_fat_per_100g: null,
+      polyunsaturated_fat_per_100g: null,
+      monounsaturated_fat_per_100g: null,
+      sodium_mg_per_100g: null,
+      potassium_mg_per_100g: null,
+      calcium_mg_per_100g: null,
+      iron_mg_per_100g: null,
+      magnesium_mg_per_100g: null,
+      phosphorus_mg_per_100g: null,
+      zinc_mg_per_100g: null,
+      vitamin_a_mcg_per_100g: null,
+      vitamin_c_mg_per_100g: null,
+      vitamin_d_mcg_per_100g: null,
+      vitamin_b12_mcg_per_100g: null,
+      folate_mcg_per_100g: null,
+      cholesterol_mg_per_100g: null,
+      barcode,
+      source: 'open_food_facts' as const,
+      source_id: barcode,
+    };
     const { data } = await supabase
       .from('food_items')
       .upsert(row, { onConflict: 'barcode', ignoreDuplicates: false })
       .select()
       .single();
-
     return data as FoodItem | null;
   } catch {
     return null;
   }
+}
+
+export async function getFoodByBarcode(barcode: string): Promise<FoodItem | null> {
+  // 1. Supabase cache
+  const { data: cached } = await supabase
+    .from('food_items')
+    .select('*')
+    .eq('barcode', barcode)
+    .maybeSingle();
+  if (cached) return cached as FoodItem;
+
+  // 2. Open Food Facts
+  try {
+    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+    if (res.ok) {
+      const json: OFFProductResponse = await res.json();
+      if (json.status === 1 && json.product?.product_name?.trim()) {
+        const row = mapOFFProduct({ ...json.product, code: barcode });
+        const { data } = await supabase
+          .from('food_items')
+          .upsert(row, { onConflict: 'barcode', ignoreDuplicates: false })
+          .select()
+          .single();
+        if (data) return data as FoodItem;
+      }
+    }
+  } catch { /* fall through */ }
+
+  // 3. USDA Branded Foods
+  const usdaResult = await getFoodByUSDABarcode(barcode);
+  if (usdaResult) return usdaResult;
+
+  // 4. UPC Item DB
+  const upcResult = await getFoodByUPCItemDB(barcode);
+  if (upcResult) return upcResult;
+
+  return null;
 }

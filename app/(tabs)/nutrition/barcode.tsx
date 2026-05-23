@@ -34,10 +34,23 @@ export default function BarcodeScannerScreen() {
         });
       } else {
         Alert.alert(
-          'Not Found',
-          `Barcode ${barcode} is not in our database.`,
+          'Not in database',
+          `We couldn't find barcode ${barcode} in any database.`,
           [
-            { text: 'Search Manually', onPress: () => router.replace({ pathname: '/(tabs)/nutrition/search', params: { meal_slot, date } }) },
+            {
+              text: 'Add It',
+              onPress: () => router.replace({
+                pathname: '/(tabs)/nutrition/food/add',
+                params: { meal_slot, date, barcode },
+              } as never),
+            },
+            {
+              text: 'Search Manually',
+              onPress: () => router.replace({
+                pathname: '/(tabs)/nutrition/search',
+                params: { meal_slot, date },
+              }),
+            },
             { text: 'Try Again', onPress: () => setScanned(false) },
           ],
         );
