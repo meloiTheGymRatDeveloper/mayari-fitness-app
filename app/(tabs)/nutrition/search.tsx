@@ -43,6 +43,20 @@ function applyFilter(items: FoodItem[], filter: FoodFilter): FoodItem[] {
   return items;
 }
 
+// Returns true when no DB result matches ≥60% of the query words (3+ word queries only).
+// Signals a specific branded/restaurant item that probably isn't seeded yet.
+function isWeakMatch(items: FoodItem[], q: string): boolean {
+  const words = q.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+  if (words.length < 3 || items.length === 0) return false;
+  const best = Math.max(
+    ...items.map(item => {
+      const text = (item.name + ' ' + (item.brand ?? '')).toLowerCase();
+      return words.filter(w => text.includes(w)).length / words.length;
+    }),
+  );
+  return best < 0.6;
+}
+
 export default function FoodSearchScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -62,41 +76,28 @@ export default function FoodSearchScreen() {
   const [aiLoading, setAiLoading] = useState(false);
   const [filter, setFilter] = useState<FoodFilter>('all');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const aiAbortRef = useRef<boolean>(false);
+  // Tracks the query string that fired the current AI call.
+  // When a response arrives we compare against this to drop stale results.
+  const queryRef = useRef('');
 
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const trimmed = query.trim();
+    queryRef.current = trimmed;   // always in sync — used for staleness checks
     setAiEstimate(null);
-    aiAbortRef.current = true; // cancel any in-flight AI call from the previous query
-
-    if (!query.trim()) {
-      setResults([]);
-      setAiLoading(false);
-      return;
-    }
+    setAiLoading(false);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!trimmed) { setResults([]); return; }
 
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
-      aiAbortRef.current = false;
       try {
         const items = await searchFoods(query);
         setResults(items);
-
-        // Auto-trigger AI when the database (+ USDA + OFF) found nothing
-        if (items.length === 0 && !aiAbortRef.current) {
-          setAiLoading(true);
-          supabase.functions
-            .invoke('ai-food-lookup', { body: { food_name: query.trim() } })
-            .then(({ data, error }) => {
-              if (aiAbortRef.current) return; // query changed while AI was running
-              if (!error && data && !data.error) {
-                setAiEstimate(data as AIEstimate);
-              }
-            })
-            .catch(() => { /* silently ignore — manual entry is the fallback */ })
-            .finally(() => {
-              if (!aiAbortRef.current) setAiLoading(false);
-            });
+        // Auto-trigger AI when:
+        //   (a) DB+USDA+OFF found nothing, OR
+        //   (b) results exist but look like a weak match for the specific query
+        if (items.length === 0 || isWeakMatch(items, trimmed)) {
+          fireAI(trimmed);
         }
       } finally {
         setLoading(false);
@@ -105,6 +106,18 @@ export default function FoodSearchScreen() {
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query]);
+
+  function fireAI(snap: string) {
+    setAiLoading(true);
+    supabase.functions
+      .invoke('ai-food-lookup', { body: { food_name: snap } })
+      .then(({ data, error }) => {
+        if (queryRef.current !== snap) return; // query changed while AI was running
+        if (!error && data && !data.error) setAiEstimate(data as AIEstimate);
+      })
+      .catch(() => { /* silently ignore — manual entry is the fallback */ })
+      .finally(() => { if (queryRef.current === snap) setAiLoading(false); });
+  }
 
   const filtered = applyFilter(results, filter);
 
@@ -138,6 +151,25 @@ export default function FoodSearchScreen() {
       pathname: '/(tabs)/nutrition/manual' as never,
       params: { meal_slot, date, origin },
     });
+  }
+
+  // AI result row — reused in both the empty state and the footer
+  function renderAIRow() {
+    if (!aiEstimate) return null;
+    return (
+      <TouchableOpacity style={styles.item} onPress={goAIFood}>
+        <View style={styles.itemLeft}>
+          <View style={styles.nameRow}>
+            <Text style={styles.itemName}>{aiEstimate.name}</Text>
+            <Text style={styles.aiBadge}>AI</Text>
+          </View>
+          <Text style={styles.itemBrand}>
+            {aiEstimate.serving_description} typical · tap to confirm & log
+          </Text>
+        </View>
+        <Text style={styles.itemCal}>{aiEstimate.calories_per_100g} kcal/100g</Text>
+      </TouchableOpacity>
+    );
   }
 
   return (
@@ -195,6 +227,8 @@ export default function FoodSearchScreen() {
             </TouchableOpacity>
           );
         }}
+
+        // ── Empty state (0 DB results) ────────────────────────────────────────
         ListEmptyComponent={
           query && !loading ? (
             aiLoading ? (
@@ -204,21 +238,10 @@ export default function FoodSearchScreen() {
               </View>
             ) : aiEstimate ? (
               <View>
-                <Text style={styles.aiSectionLabel}>Not in database — AI estimate</Text>
-                <TouchableOpacity style={styles.item} onPress={goAIFood}>
-                  <View style={styles.itemLeft}>
-                    <View style={styles.nameRow}>
-                      <Text style={styles.itemName}>{aiEstimate.name}</Text>
-                      <Text style={styles.aiBadge}>AI</Text>
-                    </View>
-                    <Text style={styles.itemBrand}>
-                      {aiEstimate.serving_description} typical serving · tap to confirm
-                    </Text>
-                  </View>
-                  <Text style={styles.itemCal}>{aiEstimate.calories_per_100g} kcal/100g</Text>
-                </TouchableOpacity>
+                <Text style={styles.sectionLabel}>Not in database — AI estimate</Text>
+                {renderAIRow()}
                 <TouchableOpacity style={styles.manualBtnFooter} onPress={goManual}>
-                  <Text style={styles.addBtnText}>✏️ Not right? Enter Manually</Text>
+                  <Text style={styles.footerBtnText}>✏️ Not right? Enter Manually</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -235,11 +258,37 @@ export default function FoodSearchScreen() {
             )
           ) : null
         }
+
+        // ── Footer (DB results exist) ─────────────────────────────────────────
         ListFooterComponent={
           filtered.length > 0 ? (
-            <TouchableOpacity style={styles.manualBtnFooter} onPress={goManual}>
-              <Text style={styles.addBtnText}>+ Add Custom Food</Text>
-            </TouchableOpacity>
+            <View style={styles.footerBlock}>
+              {/* AI result or loading — shown when auto/manual triggered */}
+              {aiLoading && (
+                <View style={styles.aiLoadingRow}>
+                  <ActivityIndicator color={colors.brand.primary} size="small" />
+                  <Text style={styles.aiLoadingText}>Getting AI estimate...</Text>
+                </View>
+              )}
+              {aiEstimate && !aiLoading && (
+                <>
+                  <Text style={styles.sectionLabel}>🤖 AI estimate for "{query}"</Text>
+                  {renderAIRow()}
+                </>
+              )}
+              {/* Manual escape hatch — always visible when no AI result yet */}
+              {!aiEstimate && !aiLoading && (
+                <TouchableOpacity
+                  style={styles.askAIRow}
+                  onPress={() => fireAI(query.trim())}
+                >
+                  <Text style={styles.askAIText}>🤖 Not what you're looking for? Ask AI</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity style={styles.manualBtnFooter} onPress={goManual}>
+                <Text style={styles.footerBtnText}>✏️ Enter Manually</Text>
+              </TouchableOpacity>
+            </View>
           ) : null
         }
       />
@@ -316,15 +365,17 @@ const styles = StyleSheet.create({
   itemBrand: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
   nameFil: { color: colors.text.muted, fontSize: typography.xs, fontStyle: 'italic', marginTop: 1 },
   itemCal: { color: colors.text.muted, fontSize: typography.sm },
+  // AI loading
   aiLoadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.md,
     justifyContent: 'center',
   },
   aiLoadingText: { color: colors.text.muted, fontSize: typography.sm },
-  aiSectionLabel: {
+  // Section separators
+  sectionLabel: {
     color: colors.text.muted,
     fontSize: typography.xs,
     fontWeight: '600',
@@ -333,7 +384,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    marginTop: spacing.sm,
   },
+  // Empty state
   emptyWrap: { alignItems: 'center', marginTop: 40, gap: spacing.md },
   empty: { color: colors.text.muted, textAlign: 'center' },
   manualBtn: {
@@ -344,14 +397,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   manualBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
+  // Footer
+  footerBlock: { marginTop: spacing.lg, gap: spacing.xs },
+  askAIRow: { paddingVertical: spacing.sm, alignItems: 'center' },
+  askAIText: { color: colors.brand.primary, fontSize: typography.sm },
   manualBtnFooter: {
     alignSelf: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    marginTop: spacing.lg,
+    paddingHorizontal: spacing.md,
   },
-  addBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
+  footerBtnText: { color: colors.text.muted, fontSize: typography.sm },
 });
