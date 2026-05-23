@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,17 +10,40 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from 'expo-speech-recognition';
-import type {
-  ExpoSpeechRecognitionResultEvent,
-  ExpoSpeechRecognitionErrorEvent,
-} from 'expo-speech-recognition';
 import { supabase } from '../../../lib/supabase';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
+
+// expo-speech-recognition requires a native build — not available in Expo Go.
+// We lazy-load it via require() so the module-level import never crashes.
+// The app falls back to text input when the native module is absent.
+type SpeechMod = {
+  ExpoSpeechRecognitionModule: {
+    requestPermissionsAsync(): Promise<{ granted: boolean }>;
+    start(opts: { lang: string; interimResults: boolean; continuous: boolean }): void;
+    stop(): void;
+    addListener(
+      event: string,
+      handler: (e: { results?: Array<{ transcript: string }>; isFinal?: boolean }) => void
+    ): { remove(): void };
+  };
+};
+
+let cachedSpeechMod: SpeechMod | null = null;
+let speechModChecked = false;
+
+function getSpeechMod(): SpeechMod | null {
+  if (!speechModChecked) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      cachedSpeechMod = require('expo-speech-recognition') as SpeechMod;
+    } catch {
+      cachedSpeechMod = null;
+    }
+    speechModChecked = true;
+  }
+  return cachedSpeechMod;
+}
 
 type ScreenState = 'idle' | 'recording' | 'processing' | 'fallback';
 
@@ -37,47 +60,13 @@ export default function VoiceScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { meal_slot, date } = useLocalSearchParams<{ meal_slot: MealSlot; date: string }>();
-  const [state, setState] = useState<ScreenState>('idle');
+  const [state, setState] = useState<ScreenState>(() =>
+    getSpeechMod() ? 'idle' : 'fallback'
+  );
   const [transcript, setTranscript] = useState('');
   const [manualText, setManualText] = useState('');
 
-  useSpeechRecognitionEvent('result', (event: ExpoSpeechRecognitionResultEvent) => {
-    const firstResult = event.results[0];
-    if (firstResult) setTranscript(firstResult.transcript);
-    if (event.isFinal && firstResult?.transcript) {
-      stopAndParse(firstResult.transcript);
-    }
-  });
-
-  useSpeechRecognitionEvent('error', (_event: ExpoSpeechRecognitionErrorEvent) => {
-    setState('fallback');
-  });
-
-  async function startRecording() {
-    const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-    if (!granted) {
-      setState('fallback');
-      return;
-    }
-    setState('recording');
-    setTranscript('');
-    ExpoSpeechRecognitionModule.start({
-      lang: 'fil-PH',
-      interimResults: true,
-      continuous: false,
-    });
-  }
-
-  function stopRecording() {
-    ExpoSpeechRecognitionModule.stop();
-    if (transcript) {
-      stopAndParse(transcript);
-    } else {
-      setState('idle');
-    }
-  }
-
-  async function stopAndParse(text: string) {
+  const stopAndParse = useCallback(async (text: string) => {
     setState('processing');
     try {
       const { data, error } = await supabase.functions.invoke('voice-log', {
@@ -110,6 +99,52 @@ export default function VoiceScreen() {
         ],
       );
     }
+  }, [meal_slot, date, router]);
+
+  // Register speech event listeners using addListener (avoids useSpeechRecognitionEvent hook,
+  // which would crash at module load time in Expo Go)
+  useEffect(() => {
+    const mod = getSpeechMod();
+    if (!mod) return;
+
+    const sm = mod.ExpoSpeechRecognitionModule;
+
+    const resultSub = sm.addListener('result', (event) => {
+      const firstResult = event.results?.[0];
+      if (firstResult) setTranscript(firstResult.transcript);
+      if (event.isFinal && firstResult?.transcript) {
+        stopAndParse(firstResult.transcript);
+      }
+    });
+
+    const errorSub = sm.addListener('error', () => {
+      setState('fallback');
+    });
+
+    return () => {
+      resultSub.remove();
+      errorSub.remove();
+    };
+  }, [stopAndParse]);
+
+  async function startRecording() {
+    const mod = getSpeechMod();
+    if (!mod) { setState('fallback'); return; }
+    const { granted } = await mod.ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!granted) { setState('fallback'); return; }
+    setState('recording');
+    setTranscript('');
+    mod.ExpoSpeechRecognitionModule.start({
+      lang: 'fil-PH',
+      interimResults: true,
+      continuous: false,
+    });
+  }
+
+  function stopRecording() {
+    getSpeechMod()?.ExpoSpeechRecognitionModule.stop();
+    if (transcript) stopAndParse(transcript);
+    else setState('idle');
   }
 
   if (state === 'fallback') {
