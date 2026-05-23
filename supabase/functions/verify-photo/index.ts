@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     const claudeResponse = await anthropic.messages.create({
       model: "claude-haiku-4-5",
-      max_tokens: 256,
+      max_tokens: 1024,
       messages: [
         {
           role: "user",
@@ -67,11 +67,21 @@ Deno.serve(async (req) => {
             },
             {
               type: "text",
-              text: `This is a photo of food, likely Filipino home cooking or Filipino restaurant food.
-Estimate the nutritional content for what appears to be one typical serving.
+              text: `This is a photo of food, likely Filipino home cooking or restaurant food.
+Identify each distinct food item visible and estimate nutrition for the portion shown.
 Return ONLY valid JSON (no markdown, no explanation):
-{ "food_name": string, "description": string, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number, "confidence": "low"|"medium"|"high" }
-If the image is not food, return exactly: { "error": "not_food" }`,
+{
+  "items": [
+    {"name": string, "quantity_g": number, "calories": number, "protein_g": number, "carbs_g": number, "fat_g": number}
+  ],
+  "confidence": "low"|"medium"|"high"
+}
+Rules:
+- List each dish or ingredient separately (e.g., rice, ulam, vegetables as separate items)
+- quantity_g is the estimated grams of that specific item in the photo
+- calories/protein_g/carbs_g/fat_g are for the actual quantity shown (not per 100g)
+- Use Filipino serving sizes as defaults for common dishes
+- If the image is not food, return exactly: {"error": "not_food"}`,
             },
           ],
         },
