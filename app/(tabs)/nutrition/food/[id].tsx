@@ -149,36 +149,27 @@ export default function FoodDetailScreen() {
     }
 
     if (isAI) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { Alert.alert('Error', 'Not logged in'); return; }
-
-      const { data: inserted, error: insertErr } = await supabase
-        .from('food_items')
-        .insert({
-          name: food.name,
-          is_ph_local: false,
-          calories_per_100g: food.calories_per_100g,
-          protein_per_100g: food.protein_per_100g,
-          carbs_per_100g: food.carbs_per_100g,
-          fat_per_100g: food.fat_per_100g,
-          source: 'custom',
-        })
-        .select('id')
-        .single();
-      if (insertErr || !inserted) {
-        Alert.alert('Error', insertErr?.message ?? 'Could not save food');
-        return;
+      try {
+        // Save to food_items so it appears in future searches (no AI needed next time)
+        const { data: inserted, error: insertErr } = await supabase
+          .from('food_items')
+          .insert({
+            name: food.name,
+            is_ph_local: false,
+            calories_per_100g: food.calories_per_100g,
+            protein_per_100g: food.protein_per_100g,
+            carbs_per_100g: food.carbs_per_100g,
+            fat_per_100g: food.fat_per_100g,
+            source: 'custom',
+          })
+          .select('id')
+          .single();
+        if (insertErr || !inserted) throw new Error(insertErr?.message ?? 'Could not save food');
+        await logFood.mutateAsync({ foodItemId: inserted.id, mealSlot: slot, quantityG: q, date });
+        router.navigate(afterLogDest as never);
+      } catch (e: unknown) {
+        Alert.alert('Error', e instanceof Error ? e.message : 'Could not save');
       }
-      const { error: logErr } = await supabase.from('food_logs').insert({
-        user_id: user.id,
-        food_item_id: inserted.id,
-        meal_slot: slot,
-        quantity_g: q,
-        logged_at: new Date().toISOString(),
-        ai_estimated: true,
-      });
-      if (logErr) { Alert.alert('Error', logErr.message); return; }
-      router.navigate(afterLogDest as never);
       return;
     }
 

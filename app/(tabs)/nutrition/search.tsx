@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, FlatList, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert,
+  StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +18,17 @@ const FILTERS: { key: FoodFilter; label: string }[] = [
   { key: 'ingredients', label: 'Ingredients' },
   { key: 'branded', label: 'Branded' },
 ];
+
+interface AIEstimate {
+  name: string;
+  calories_per_100g: number;
+  protein_per_100g: number;
+  carbs_per_100g: number;
+  fat_per_100g: number;
+  fiber_per_100g: number;
+  serving_size_g: number;
+  serving_description: string;
+}
 
 function sourceLabel(item: FoodItem): string | null {
   if (item.source === 'usda') return 'USDA';
@@ -47,22 +58,51 @@ export default function FoodSearchScreen() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [aiEstimate, setAiEstimate] = useState<AIEstimate | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [filter, setFilter] = useState<FoodFilter>('all');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aiAbortRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!query.trim()) { setResults([]); return; }
+    setAiEstimate(null);
+    aiAbortRef.current = true; // cancel any in-flight AI call from the previous query
+
+    if (!query.trim()) {
+      setResults([]);
+      setAiLoading(false);
+      return;
+    }
+
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
+      aiAbortRef.current = false;
       try {
         const items = await searchFoods(query);
         setResults(items);
+
+        // Auto-trigger AI when the database (+ USDA + OFF) found nothing
+        if (items.length === 0 && !aiAbortRef.current) {
+          setAiLoading(true);
+          supabase.functions
+            .invoke('ai-food-lookup', { body: { food_name: query.trim() } })
+            .then(({ data, error }) => {
+              if (aiAbortRef.current) return; // query changed while AI was running
+              if (!error && data && !data.error) {
+                setAiEstimate(data as AIEstimate);
+              }
+            })
+            .catch(() => { /* silently ignore — manual entry is the fallback */ })
+            .finally(() => {
+              if (!aiAbortRef.current) setAiLoading(false);
+            });
+        }
       } finally {
         setLoading(false);
       }
     }, 300);
+
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query]);
 
@@ -75,41 +115,29 @@ export default function FoodSearchScreen() {
     });
   }
 
+  function goAIFood() {
+    if (!aiEstimate) return;
+    router.push({
+      pathname: '/(tabs)/nutrition/food/[id]',
+      params: {
+        id: '__ai__',
+        aiEstimated: 'true',
+        foodName: aiEstimate.name,
+        calories: String(aiEstimate.calories_per_100g),
+        protein: String(aiEstimate.protein_per_100g),
+        carbs: String(aiEstimate.carbs_per_100g),
+        fat: String(aiEstimate.fat_per_100g),
+        quantity_g: String(aiEstimate.serving_size_g),
+        meal_slot, date, context, week_start_date, plan_day, origin,
+      },
+    });
+  }
+
   function goManual() {
     router.push({
       pathname: '/(tabs)/nutrition/manual' as never,
       params: { meal_slot, date, origin },
     });
-  }
-
-  async function askAI() {
-    if (!query.trim()) return;
-    setAiLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('ai-food-lookup', {
-        body: { food_name: query.trim() },
-      });
-      if (error) throw error;
-      if (!data || data.error) throw new Error(data?.error ?? 'No estimate returned');
-      router.push({
-        pathname: '/(tabs)/nutrition/food/[id]',
-        params: {
-          id: '__ai__',
-          aiEstimated: 'true',
-          foodName: data.name ?? query.trim(),
-          calories: String(data.calories_per_100g ?? 0),
-          protein: String(data.protein_per_100g ?? 0),
-          carbs: String(data.carbs_per_100g ?? 0),
-          fat: String(data.fat_per_100g ?? 0),
-          quantity_g: String(data.serving_size_g ?? 100),
-          meal_slot, date, context, week_start_date, plan_day, origin,
-        },
-      });
-    } catch (e) {
-      Alert.alert('AI Estimate Failed', 'Could not get macros for this food. Try entering manually.');
-    } finally {
-      setAiLoading(false);
-    }
   }
 
   return (
@@ -169,32 +197,47 @@ export default function FoodSearchScreen() {
         }}
         ListEmptyComponent={
           query && !loading ? (
-            <View style={styles.emptyWrap}>
-              <Text style={styles.empty}>
-                {results.length > 0 && filtered.length === 0
-                  ? `No ${FILTERS.find(f => f.key === filter)?.label ?? filter} results for "${query}". Try "All".`
-                  : `Wala pang results para sa "${query}".`}
-              </Text>
-              <View style={styles.emptyActions}>
-                <TouchableOpacity
-                  style={[styles.aiBtn, aiLoading && styles.btnOff]}
-                  onPress={askAI}
-                  disabled={aiLoading}
-                >
-                  {aiLoading
-                    ? <ActivityIndicator color="#fff" size="small" />
-                    : <Text style={styles.aiBtnText}>🤖 Ask AI</Text>}
+            aiLoading ? (
+              <View style={styles.aiLoadingRow}>
+                <ActivityIndicator color={colors.brand.primary} size="small" />
+                <Text style={styles.aiLoadingText}>Getting AI estimate...</Text>
+              </View>
+            ) : aiEstimate ? (
+              <View>
+                <Text style={styles.aiSectionLabel}>Not in database — AI estimate</Text>
+                <TouchableOpacity style={styles.item} onPress={goAIFood}>
+                  <View style={styles.itemLeft}>
+                    <View style={styles.nameRow}>
+                      <Text style={styles.itemName}>{aiEstimate.name}</Text>
+                      <Text style={styles.aiBadge}>AI</Text>
+                    </View>
+                    <Text style={styles.itemBrand}>
+                      {aiEstimate.serving_description} typical serving · tap to confirm
+                    </Text>
+                  </View>
+                  <Text style={styles.itemCal}>{aiEstimate.calories_per_100g} kcal/100g</Text>
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.manualBtnFooter} onPress={goManual}>
+                  <Text style={styles.addBtnText}>✏️ Not right? Enter Manually</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.emptyWrap}>
+                <Text style={styles.empty}>
+                  {results.length > 0 && filtered.length === 0
+                    ? `No ${FILTERS.find(f => f.key === filter)?.label ?? filter} results for "${query}". Try "All".`
+                    : `Wala pang results para sa "${query}".`}
+                </Text>
                 <TouchableOpacity style={styles.manualBtn} onPress={goManual}>
                   <Text style={styles.manualBtnText}>✏️ Enter Manually</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            )
           ) : null
         }
         ListFooterComponent={
           filtered.length > 0 ? (
-            <TouchableOpacity style={styles.addBtnFooter} onPress={goManual}>
+            <TouchableOpacity style={styles.manualBtnFooter} onPress={goManual}>
               <Text style={styles.addBtnText}>+ Add Custom Food</Text>
             </TouchableOpacity>
           ) : null
@@ -261,22 +304,38 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
     borderRadius: 4,
   },
+  aiBadge: {
+    fontSize: typography.xs,
+    color: colors.brand.primary,
+    backgroundColor: colors.brand.primary + '22',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+    fontWeight: '700',
+  },
   itemBrand: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
   nameFil: { color: colors.text.muted, fontSize: typography.xs, fontStyle: 'italic', marginTop: 1 },
   itemCal: { color: colors.text.muted, fontSize: typography.sm },
+  aiLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xl,
+    justifyContent: 'center',
+  },
+  aiLoadingText: { color: colors.text.muted, fontSize: typography.sm },
+  aiSectionLabel: {
+    color: colors.text.muted,
+    fontSize: typography.xs,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
   emptyWrap: { alignItems: 'center', marginTop: 40, gap: spacing.md },
   empty: { color: colors.text.muted, textAlign: 'center' },
-  emptyActions: { flexDirection: 'row', gap: spacing.sm },
-  aiBtn: {
-    backgroundColor: colors.brand.primary,
-    borderRadius: 8,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    minWidth: 110,
-    alignItems: 'center',
-  },
-  btnOff: { opacity: 0.5 },
-  aiBtnText: { color: '#fff', fontSize: typography.sm, fontWeight: '600' },
   manualBtn: {
     borderWidth: 1,
     borderColor: colors.brand.primary,
@@ -285,7 +344,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   manualBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
-  addBtnFooter: {
+  manualBtnFooter: {
     alignSelf: 'center',
     borderWidth: 1,
     borderColor: colors.border,
