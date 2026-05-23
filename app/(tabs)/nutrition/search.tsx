@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, FlatList, TouchableOpacity,
-  StyleSheet, ActivityIndicator, ScrollView,
+  StyleSheet, ActivityIndicator, Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { searchFoods } from '../../../lib/foodSearch';
+import { supabase } from '../../../lib/supabase';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { FoodItem, MealSlot, WeekDay } from '../../../types/database';
 
@@ -46,6 +47,7 @@ export default function FoodSearchScreen() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [filter, setFilter] = useState<FoodFilter>('all');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -73,11 +75,41 @@ export default function FoodSearchScreen() {
     });
   }
 
-  function goAddCustom() {
+  function goManual() {
     router.push({
-      pathname: '/(tabs)/nutrition/food/add',
-      params: { meal_slot, date, context, week_start_date, plan_day, origin },
-    } as never);
+      pathname: '/(tabs)/nutrition/manual' as never,
+      params: { meal_slot, date, origin },
+    });
+  }
+
+  async function askAI() {
+    if (!query.trim()) return;
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-food-lookup', {
+        body: { food_name: query.trim() },
+      });
+      if (error) throw error;
+      if (!data || data.error) throw new Error(data?.error ?? 'No estimate returned');
+      router.push({
+        pathname: '/(tabs)/nutrition/food/[id]',
+        params: {
+          id: '__ai__',
+          aiEstimated: 'true',
+          foodName: data.name ?? query.trim(),
+          calories: String(data.calories_per_100g ?? 0),
+          protein: String(data.protein_per_100g ?? 0),
+          carbs: String(data.carbs_per_100g ?? 0),
+          fat: String(data.fat_per_100g ?? 0),
+          quantity_g: String(data.serving_size_g ?? 100),
+          meal_slot, date, context, week_start_date, plan_day, origin,
+        },
+      });
+    } catch (e) {
+      Alert.alert('AI Estimate Failed', 'Could not get macros for this food. Try entering manually.');
+    } finally {
+      setAiLoading(false);
+    }
   }
 
   return (
@@ -143,15 +175,26 @@ export default function FoodSearchScreen() {
                   ? `No ${FILTERS.find(f => f.key === filter)?.label ?? filter} results for "${query}". Try "All".`
                   : `Wala pang results para sa "${query}".`}
               </Text>
-              <TouchableOpacity style={styles.addBtn} onPress={goAddCustom}>
-                <Text style={styles.addBtnText}>+ Add Custom Food</Text>
-              </TouchableOpacity>
+              <View style={styles.emptyActions}>
+                <TouchableOpacity
+                  style={[styles.aiBtn, aiLoading && styles.btnOff]}
+                  onPress={askAI}
+                  disabled={aiLoading}
+                >
+                  {aiLoading
+                    ? <ActivityIndicator color="#fff" size="small" />
+                    : <Text style={styles.aiBtnText}>🤖 Ask AI</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.manualBtn} onPress={goManual}>
+                  <Text style={styles.manualBtnText}>✏️ Enter Manually</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           ) : null
         }
         ListFooterComponent={
           filtered.length > 0 ? (
-            <TouchableOpacity style={styles.addBtnFooter} onPress={goAddCustom}>
+            <TouchableOpacity style={styles.addBtnFooter} onPress={goManual}>
               <Text style={styles.addBtnText}>+ Add Custom Food</Text>
             </TouchableOpacity>
           ) : null
@@ -223,13 +266,25 @@ const styles = StyleSheet.create({
   itemCal: { color: colors.text.muted, fontSize: typography.sm },
   emptyWrap: { alignItems: 'center', marginTop: 40, gap: spacing.md },
   empty: { color: colors.text.muted, textAlign: 'center' },
-  addBtn: {
+  emptyActions: { flexDirection: 'row', gap: spacing.sm },
+  aiBtn: {
+    backgroundColor: colors.brand.primary,
+    borderRadius: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    minWidth: 110,
+    alignItems: 'center',
+  },
+  btnOff: { opacity: 0.5 },
+  aiBtnText: { color: '#fff', fontSize: typography.sm, fontWeight: '600' },
+  manualBtn: {
     borderWidth: 1,
     borderColor: colors.brand.primary,
     borderRadius: 8,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
+  manualBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
   addBtnFooter: {
     alignSelf: 'center',
     borderWidth: 1,
