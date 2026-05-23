@@ -98,6 +98,7 @@ async function main() {
     ...f,
     is_ph_local: true,
     source: 'ph_seed' as const,
+    source_id: null as null,
   }));
 
   const { error } = await supabase.from('food_items').insert(rows);

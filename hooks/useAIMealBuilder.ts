@@ -26,6 +26,7 @@ async function createAIFoodItem(meal: AISuggestedMeal): Promise<string> {
       fiber_per_100g: meal.macros.fiber_g,
       source: 'custom',
       is_ph_local: true,
+      source_id: null,
     })
     .select('id')
     .single();
