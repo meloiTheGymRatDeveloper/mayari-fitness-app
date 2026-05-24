@@ -117,6 +117,12 @@ export interface Exercise {
   equipment: string[];
   category: string;
   description: string;
+  form_gif_url: string | null;
+  instructions: string[] | null;
+  workoutx_target: string | null;
+  workoutx_equipment: string | null;
+  workoutx_difficulty: string | null;
+  workoutx_body_part: string | null;
 }
 
 export interface PersonalRecord {

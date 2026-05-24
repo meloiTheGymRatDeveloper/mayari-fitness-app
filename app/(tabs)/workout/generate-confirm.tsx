@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../stores/authStore';
 import { supabase } from '../../../lib/supabase';
 import {
   buildWorkoutPlan,
+  calcSetsPerSession,
   SPLIT_LABELS,
   getPreviousPlans,
   restoreWorkoutPlan,
 } from '../../../lib/workoutGenerator';
+import { fallbackExercises } from '../../../constants/exercises';
 import { colors, typography, spacing } from '../../../constants/theme';
-import type { WorkoutPlan } from '../../../types/database';
+import type { WorkoutPlan, Exercise } from '../../../types/database';
 
 const DAYS_OPTIONS = [2, 3, 4, 5, 6];
 const DURATION_OPTIONS = [30, 45, 60, 75, 90];
@@ -21,12 +24,9 @@ function getSplitType(daysPerWeek: number): string {
   return 'ppl';
 }
 
-function calcSetsPerSession(sessionDurationMin: number): number {
-  return Math.max(2, Math.floor(sessionDurationMin / 5.5) - 2);
-}
-
 export default function GenerateConfirmScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const profile = useAuthStore(s => s.profile);
   const userId = useAuthStore(s => s.session?.user.id);
 
@@ -38,15 +38,26 @@ export default function GenerateConfirmScreen() {
   const [daysPerWeek, setDaysPerWeek] = useState(defaultDays);
   const [sessionMin, setSessionMin] = useState(defaultDuration);
   const [previousPlans, setPreviousPlans] = useState<WorkoutPlan[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>(fallbackExercises);
   const [restoring, setRestoring] = useState(false);
 
   const splitType = getSplitType(daysPerWeek);
   const splitLabel = SPLIT_LABELS[splitType];
-  const setsPerSession = calcSetsPerSession(sessionMin);
+  const experienceLevel = profile?.experience_level ?? 'intermediate';
+  const totalSets = calcSetsPerSession(sessionMin, experienceLevel);
 
   useEffect(() => {
     if (!userId) return;
     getPreviousPlans(supabase, userId).then(setPreviousPlans);
+
+    // Fetch exercises from DB; fall back to hardcoded list if empty
+    supabase
+      .from('exercises')
+      .select('*')
+      .order('name')
+      .then(({ data }) => {
+        if (data && data.length > 0) setExercises(data as Exercise[]);
+      });
   }, [userId]);
 
   function handleGenerate() {
@@ -56,6 +67,7 @@ export default function GenerateConfirmScreen() {
       sessionDurationMin: sessionMin,
       experienceLevel: profile.experience_level,
       equipmentType: profile.equipment_type,
+      exercises,
     });
     router.push({
       pathname: '/(tabs)/workout/plan' as never,
@@ -73,6 +85,7 @@ export default function GenerateConfirmScreen() {
     setRestoring(true);
     try {
       await restoreWorkoutPlan(supabase, userId, planId);
+      await queryClient.invalidateQueries({ queryKey: ['workout_plan'] });
       router.replace('/(tabs)/workout');
     } catch {
       Alert.alert('Error', 'Could not restore plan. Please try again.');
@@ -84,6 +97,8 @@ export default function GenerateConfirmScreen() {
   function formatDate(iso: string): string {
     return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
   }
+
+  const exercisesPerSession = Math.round(totalSets / 3);
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.container}>
@@ -120,7 +135,12 @@ export default function GenerateConfirmScreen() {
       {/* Plan info */}
       <View style={styles.infoCard}>
         <Text style={styles.infoSplit}>{splitLabel}</Text>
-        <Text style={styles.infoSets}>~{setsPerSession} sets per session</Text>
+        <Text style={styles.infoSets}>
+          ~{exercisesPerSession} exercises × 3 sets = {totalSets} sets/session
+        </Text>
+        <Text style={styles.infoLevel}>
+          Level: {experienceLevel.charAt(0).toUpperCase() + experienceLevel.slice(1)}
+        </Text>
       </View>
 
       {/* Generate button */}
@@ -140,7 +160,10 @@ export default function GenerateConfirmScreen() {
                 onPress={() => handleRestore(plan.id)}
                 disabled={restoring}
               >
-                <Text style={styles.restoreBtnText}>Restore</Text>
+                {restoring
+                  ? <ActivityIndicator size="small" color={colors.brand.primary} />
+                  : <Text style={styles.restoreBtnText}>Restore</Text>
+                }
               </TouchableOpacity>
             </View>
           ))}
@@ -176,9 +199,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
+    gap: 4,
   },
-  infoSplit: { color: colors.text.primary, fontSize: typography.base, fontWeight: '600', marginBottom: 4 },
+  infoSplit: { color: colors.text.primary, fontSize: typography.base, fontWeight: '600' },
   infoSets: { color: colors.brand.secondary, fontSize: typography.sm },
+  infoLevel: { color: colors.text.muted, fontSize: typography.xs },
   generateBtn: {
     backgroundColor: colors.brand.primary,
     borderRadius: 12,
@@ -204,6 +229,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    minWidth: 72,
+    alignItems: 'center',
   },
   restoreBtnDisabled: { opacity: 0.5 },
   restoreBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '700' },

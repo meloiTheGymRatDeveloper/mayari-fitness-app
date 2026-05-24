@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  Modal, Alert, StyleSheet
+  Modal, Alert, StyleSheet, TextInput, Keyboard,
+  TouchableWithoutFeedback, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../stores/authStore';
 import { supabase } from '../../../lib/supabase';
 import { saveWorkoutPlan } from '../../../lib/workoutGenerator';
@@ -32,6 +34,7 @@ export default function PlanPreviewScreen() {
     splitLabel: string;
     daysPerWeek: string;
   }>();
+  const queryClient = useQueryClient();
   const profile = useAuthStore(s => s.profile);
   const userId = useAuthStore(s => s.session?.user.id);
 
@@ -40,6 +43,10 @@ export default function PlanPreviewScreen() {
     catch { return { days: [] }; }
   });
   const [swapModal, setSwapModal] = useState<{ dayIdx: number; exerciseIdx: number; append: boolean } | null>(null);
+  const [editModal, setEditModal] = useState<{ dayIdx: number; exerciseIdx: number } | null>(null);
+  const [editSets, setEditSets] = useState('');
+  const [editRepsLow, setEditRepsLow] = useState('');
+  const [editRepsHigh, setEditRepsHigh] = useState('');
   const [saving, setSaving] = useState(false);
 
   const equipmentType = profile?.equipment_type ?? 'full_gym';
@@ -85,20 +92,34 @@ export default function PlanPreviewScreen() {
     );
   }
 
-  function handleAdjustSets(dayIdx: number, exerciseIdx: number, delta: number) {
+  function openEditModal(dayIdx: number, exerciseIdx: number) {
+    const ex = planData.days[dayIdx]?.exercises[exerciseIdx];
+    if (!ex) return;
+    setEditSets(String(ex.sets));
+    setEditRepsLow(String(ex.reps_low));
+    setEditRepsHigh(String(ex.reps_high));
+    setEditModal({ dayIdx, exerciseIdx });
+  }
+
+  function handleSaveEdit() {
+    if (!editModal) return;
+    const sets = Math.max(1, parseInt(editSets) || 3);
+    const repsLow = Math.max(1, parseInt(editRepsLow) || 8);
+    const repsHigh = Math.max(repsLow, parseInt(editRepsHigh) || 12);
+    const { dayIdx, exerciseIdx } = editModal;
     setPlanData(prev => {
       const days = prev.days.map((day, di) => {
         if (di !== dayIdx) return day;
         return {
           ...day,
-          exercises: day.exercises.map((ex, ei) => {
-            if (ei !== exerciseIdx) return ex;
-            return { ...ex, sets: Math.max(1, ex.sets + delta) };
-          }),
+          exercises: day.exercises.map((ex, ei) =>
+            ei === exerciseIdx ? { ...ex, sets, reps_low: repsLow, reps_high: repsHigh } : ex
+          ),
         };
       });
       return { days };
     });
+    setEditModal(null);
   }
 
   function handleSelectAlternative(altId: string) {
@@ -142,6 +163,7 @@ export default function PlanPreviewScreen() {
         daysPerWeek: Number(params.daysPerWeek),
         planData,
       }, Number(params.daysPerWeek));
+      await queryClient.invalidateQueries({ queryKey: ['workout_plan'] });
       router.replace('/(tabs)/workout');
     } catch {
       Alert.alert('Error', 'Could not save plan. Please try again.');
@@ -174,11 +196,8 @@ export default function PlanPreviewScreen() {
                   <Text style={styles.exerciseMeta}>{ex.sets} sets × {ex.reps_low}–{ex.reps_high} reps</Text>
                 </View>
                 <View style={styles.exerciseActions}>
-                  <TouchableOpacity style={styles.actionBtn} onPress={() => handleAdjustSets(dayIdx, exIdx, -1)}>
-                    <Text style={styles.actionBtnText}>−</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.actionBtn} onPress={() => handleAdjustSets(dayIdx, exIdx, 1)}>
-                    <Text style={styles.actionBtnText}>+</Text>
+                  <TouchableOpacity style={styles.actionBtn} onPress={() => openEditModal(dayIdx, exIdx)}>
+                    <Text style={styles.actionBtnText}>✏️</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.actionBtn} onPress={() => handleSwap(dayIdx, exIdx)}>
                     <Text style={styles.actionBtnText}>⇄</Text>
@@ -204,6 +223,64 @@ export default function PlanPreviewScreen() {
           <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save Plan →'}</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Edit Sets / Reps Modal */}
+      <Modal visible={editModal !== null} transparent animationType="slide" onRequestClose={() => { Keyboard.dismiss(); setEditModal(null); }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Edit Exercise</Text>
+
+                  <View style={styles.editRow}>
+                    <Text style={styles.editLabel}>Sets</Text>
+                    <TextInput
+                      style={styles.editInput}
+                      value={editSets}
+                      onChangeText={setEditSets}
+                      keyboardType="number-pad"
+                      maxLength={2}
+                      selectTextOnFocus
+                    />
+                  </View>
+
+                  <View style={styles.editRow}>
+                    <Text style={styles.editLabel}>Reps (low)</Text>
+                    <TextInput
+                      style={styles.editInput}
+                      value={editRepsLow}
+                      onChangeText={setEditRepsLow}
+                      keyboardType="number-pad"
+                      maxLength={3}
+                      selectTextOnFocus
+                    />
+                  </View>
+
+                  <View style={styles.editRow}>
+                    <Text style={styles.editLabel}>Reps (high)</Text>
+                    <TextInput
+                      style={styles.editInput}
+                      value={editRepsHigh}
+                      onChangeText={setEditRepsHigh}
+                      keyboardType="number-pad"
+                      maxLength={3}
+                      selectTextOnFocus
+                    />
+                  </View>
+
+                  <TouchableOpacity style={styles.saveBtn} onPress={handleSaveEdit}>
+                    <Text style={styles.saveBtnText}>Save</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.modalCancel} onPress={() => { Keyboard.dismiss(); setEditModal(null); }}>
+                    <Text style={styles.modalCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* Swap / Add Modal */}
       <Modal visible={swapModal !== null} transparent animationType="slide" onRequestClose={() => setSwapModal(null)}>
@@ -236,6 +313,7 @@ export default function PlanPreviewScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg.primary },
+  flex1: { flex: 1 },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   splitLabel: { color: colors.text.secondary, fontSize: typography.sm, marginBottom: spacing.lg },
   daySection: { marginBottom: spacing.xl },
@@ -288,6 +366,20 @@ const styles = StyleSheet.create({
     maxHeight: '70%',
   },
   modalTitle: { color: colors.text.primary, fontSize: typography.xl, fontWeight: '700', marginBottom: spacing.md },
+  editRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
+  editLabel: { color: colors.text.secondary, fontSize: typography.base, flex: 1 },
+  editInput: {
+    backgroundColor: colors.bg.primary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    color: colors.text.primary,
+    fontSize: typography.base,
+    fontWeight: '600',
+    textAlign: 'center',
+    width: 72,
+    paddingVertical: spacing.sm,
+  },
   modalList: { maxHeight: 300 },
   modalOption: {
     paddingVertical: spacing.md,

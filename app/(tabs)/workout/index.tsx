@@ -157,7 +157,7 @@ export default function WorkoutScreen() {
           title="Wala pang workout plan"
           subtitle="Let Coach Mayari generate one for you"
           ctaLabel="Generate Plan"
-          onCta={() => router.push('/(tabs)/coach' as never)}
+          onCta={() => router.push('/(tabs)/workout/generate-confirm' as never)}
         />
       )}
 

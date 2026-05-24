@@ -14,6 +14,12 @@ export const SPLIT_LABELS: Record<string, string> = {
 
 const BIG_COMPOUNDS = ['squat', 'deadlift', 'bench press', 'overhead press', 'barbell row'];
 
+// Sets per exercise is always 3 (science-based minimum effective dose)
+const SETS_PER_EXERCISE = 3;
+
+// Average time cost per set: ~1 min lift + 4 min rest (middle of 3-5 min range)
+const MINS_PER_SET = 5;
+
 const EQUIPMENT_FILTER: Record<EquipmentType, string[]> = {
   bodyweight: ['none', 'Pull-up bar', 'Gym mat'],
   dumbbells: ['Dumbbell', 'none', 'Bench'],
@@ -30,6 +36,7 @@ export interface BuildInput {
   sessionDurationMin: number;
   experienceLevel: ExperienceLevel;
   equipmentType: EquipmentType;
+  exercises?: Exercise[];
 }
 
 export interface BuildResult {
@@ -43,8 +50,22 @@ export interface BuildResult {
 // Pure helpers (no DB)
 // ---------------------------------------------------------------------------
 
-function calcSetsPerSession(sessionDurationMin: number): number {
-  return Math.max(2, Math.floor(sessionDurationMin / 5.5) - 2);
+// Experience level scales exercise count, not sets per exercise.
+// Beginner: 75% of base (focus on form, fewer movements)
+// Intermediate: 100% of base
+// Advanced: 125% of base (higher volume, more variety)
+function calcExercisesPerSession(sessionDurationMin: number, level: ExperienceLevel): number {
+  const base = Math.floor(sessionDurationMin / (SETS_PER_EXERCISE * MINS_PER_SET));
+  const scaled =
+    level === 'beginner' ? Math.floor(base * 0.75) :
+    level === 'advanced'  ? Math.ceil(base  * 1.25) :
+    base;
+  return Math.max(2, scaled);
+}
+
+// Exported for generate-confirm preview (total sets = exercises × 3)
+export function calcSetsPerSession(sessionDurationMin: number, level: ExperienceLevel): number {
+  return calcExercisesPerSession(sessionDurationMin, level) * SETS_PER_EXERCISE;
 }
 
 function getRestSeconds(name: string): number {
@@ -52,12 +73,12 @@ function getRestSeconds(name: string): number {
   return BIG_COMPOUNDS.some(c => lower.includes(c)) ? 180 : 90;
 }
 
-function toPlanned(ex: Exercise, sets: number): PlannedExercise {
+function toPlanned(ex: Exercise): PlannedExercise {
   return {
     exercise_id: ex.id,
     exercise_name: ex.name,
     muscle_group: ex.muscle_group,
-    sets,
+    sets: SETS_PER_EXERCISE,
     reps_low: 8,
     reps_high: 12,
     rest_seconds: getRestSeconds(ex.name),
@@ -73,41 +94,57 @@ function rotate<T>(arr: T[]): T[] {
   return [...arr.slice(1), arr[0]];
 }
 
-function buildFullBody(push: Exercise[], pull: Exercise[], legs: Exercise[], core: Exercise[], sets: number): PlannedExercise[] {
+// Full body: spread exercises evenly — 2 push, 2 pull, 1 legs, 1 core minimum.
+// exerciseCount is the total exercises for the session.
+function buildFullBody(push: Exercise[], pull: Exercise[], legs: Exercise[], core: Exercise[], exerciseCount: number): PlannedExercise[] {
+  const pushCount = Math.ceil(exerciseCount / 3);
+  const pullCount = Math.ceil(exerciseCount / 3);
+  const legsCount = Math.max(1, Math.floor(exerciseCount / 4));
+  const coreCount = Math.max(0, exerciseCount - pushCount - pullCount - legsCount);
   return [
-    ...take(push, 2).map(e => toPlanned(e, sets)),
-    ...take(pull, 2).map(e => toPlanned(e, sets)),
-    ...take(legs, 1).map(e => toPlanned(e, sets)),
-    ...take(core, 1).map(e => toPlanned(e, sets)),
+    ...take(push, pushCount).map(toPlanned),
+    ...take(pull, pullCount).map(toPlanned),
+    ...take(legs, legsCount).map(toPlanned),
+    ...take(core, coreCount).map(toPlanned),
   ];
 }
 
-function buildUpper(push: Exercise[], pull: Exercise[], sets: number): PlannedExercise[] {
+// Upper: split exercises evenly between push and pull.
+function buildUpper(push: Exercise[], pull: Exercise[], exerciseCount: number): PlannedExercise[] {
+  const half = Math.ceil(exerciseCount / 2);
   return [
-    ...take(push, 3).map(e => toPlanned(e, sets)),
-    ...take(pull, 3).map(e => toPlanned(e, sets)),
+    ...take(push, half).map(toPlanned),
+    ...take(pull, exerciseCount - half).map(toPlanned),
   ];
 }
 
-function buildLower(legs: Exercise[], core: Exercise[], sets: number): PlannedExercise[] {
+// Lower: mostly legs, some core.
+function buildLower(legs: Exercise[], core: Exercise[], exerciseCount: number): PlannedExercise[] {
+  const coreCount = Math.max(1, Math.floor(exerciseCount / 4));
+  const legsCount = exerciseCount - coreCount;
   return [
-    ...take(legs, 4).map(e => toPlanned(e, sets)),
-    ...take(core, 2).map(e => toPlanned(e, sets)),
+    ...take(legs, legsCount).map(toPlanned),
+    ...take(core, coreCount).map(toPlanned),
   ];
 }
 
-function buildPush(push: Exercise[], sets: number): PlannedExercise[] {
-  return take(push, 6).map(e => toPlanned(e, sets));
+// Push: all push exercises up to exerciseCount.
+function buildPush(push: Exercise[], exerciseCount: number): PlannedExercise[] {
+  return take(push, exerciseCount).map(toPlanned);
 }
 
-function buildPull(pull: Exercise[], sets: number): PlannedExercise[] {
-  return take(pull, 6).map(e => toPlanned(e, sets));
+// Pull: all pull exercises up to exerciseCount.
+function buildPull(pull: Exercise[], exerciseCount: number): PlannedExercise[] {
+  return take(pull, exerciseCount).map(toPlanned);
 }
 
-function buildLegs(legs: Exercise[], core: Exercise[], sets: number): PlannedExercise[] {
+// Legs: mostly legs, some core.
+function buildLegs(legs: Exercise[], core: Exercise[], exerciseCount: number): PlannedExercise[] {
+  const coreCount = Math.max(1, Math.floor(exerciseCount / 4));
+  const legsCount = exerciseCount - coreCount;
   return [
-    ...take(legs, 4).map(e => toPlanned(e, sets)),
-    ...take(core, 2).map(e => toPlanned(e, sets)),
+    ...take(legs, legsCount).map(toPlanned),
+    ...take(core, coreCount).map(toPlanned),
   ];
 }
 
@@ -127,11 +164,11 @@ function byGroup(allExercises: Exercise[], group: Exercise['muscle_group'], allo
 // ---------------------------------------------------------------------------
 
 export function buildWorkoutPlan(input: BuildInput): BuildResult {
-  const { daysPerWeek, sessionDurationMin, equipmentType } = input;
-  const sets = calcSetsPerSession(sessionDurationMin);
+  const { daysPerWeek, sessionDurationMin, equipmentType, experienceLevel } = input;
+  const exCount = calcExercisesPerSession(sessionDurationMin, experienceLevel);
   const daysCount = daysPerWeek || 3;
 
-  const allExercises: Exercise[] = fallbackExercises;
+  const allExercises: Exercise[] = input.exercises?.length ? input.exercises : fallbackExercises;
   const allowed = EQUIPMENT_FILTER[equipmentType];
 
   let push = byGroup(allExercises, 'push', allowed);
@@ -146,24 +183,24 @@ export function buildWorkoutPlan(input: BuildInput): BuildResult {
     splitType = 'full_body';
     for (let i = 0; i < daysCount; i++) {
       const label = `Full Body ${String.fromCharCode(65 + i)}`;
-      days.push({ day_label: label, exercises: buildFullBody(push, pull, legs, core, sets) });
+      days.push({ day_label: label, exercises: buildFullBody(push, pull, legs, core, exCount) });
       push = rotate(push); pull = rotate(pull); legs = rotate(legs); core = rotate(core);
     }
   } else if (daysCount === 4) {
     splitType = 'upper_lower';
-    days.push({ day_label: 'Upper A', exercises: buildUpper(push, pull, sets) });
-    days.push({ day_label: 'Lower A', exercises: buildLower(legs, core, sets) });
-    days.push({ day_label: 'Upper B', exercises: buildUpper(rotate(push), rotate(pull), sets) });
-    days.push({ day_label: 'Lower B', exercises: buildLower(rotate(legs), rotate(core), sets) });
+    days.push({ day_label: 'Upper A', exercises: buildUpper(push, pull, exCount) });
+    days.push({ day_label: 'Lower A', exercises: buildLower(legs, core, exCount) });
+    days.push({ day_label: 'Upper B', exercises: buildUpper(rotate(push), rotate(pull), exCount) });
+    days.push({ day_label: 'Lower B', exercises: buildLower(rotate(legs), rotate(core), exCount) });
   } else {
     splitType = 'ppl';
-    days.push({ day_label: 'Push A', exercises: buildPush(push, sets) });
-    days.push({ day_label: 'Pull A', exercises: buildPull(pull, sets) });
-    days.push({ day_label: 'Legs A', exercises: buildLegs(legs, core, sets) });
-    days.push({ day_label: 'Push B', exercises: buildPush(rotate(push), sets) });
-    days.push({ day_label: 'Pull B', exercises: buildPull(rotate(pull), sets) });
+    days.push({ day_label: 'Push A', exercises: buildPush(push, exCount) });
+    days.push({ day_label: 'Pull A', exercises: buildPull(pull, exCount) });
+    days.push({ day_label: 'Legs A', exercises: buildLegs(legs, core, exCount) });
+    days.push({ day_label: 'Push B', exercises: buildPush(rotate(push), exCount) });
+    days.push({ day_label: 'Pull B', exercises: buildPull(rotate(pull), exCount) });
     if (daysCount === 6) {
-      days.push({ day_label: 'Legs B', exercises: buildLegs(rotate(legs), rotate(core), sets) });
+      days.push({ day_label: 'Legs B', exercises: buildLegs(rotate(legs), rotate(core), exCount) });
     }
   }
 
@@ -296,7 +333,7 @@ export async function generateWorkoutPlan(
     dbExercises && dbExercises.length > 0 ? (dbExercises as Exercise[]) : fallbackExercises;
 
   const daysCount = profile.workout_days.length || 3;
-  const sets = calcSetsPerSession(profile.session_duration_min);
+  const exCount = calcExercisesPerSession(profile.session_duration_min, profile.experience_level);
   const allowed = EQUIPMENT_FILTER[profile.equipment_type];
 
   function filterEq(exs: Exercise[]): Exercise[] {
@@ -322,24 +359,24 @@ export async function generateWorkoutPlan(
     splitType = 'full_body';
     for (let i = 0; i < daysCount; i++) {
       const label = `Full Body ${String.fromCharCode(65 + i)}`;
-      days.push({ day_label: label, exercises: buildFullBody(push, pull, legs, core, sets) });
+      days.push({ day_label: label, exercises: buildFullBody(push, pull, legs, core, exCount) });
       push = rotate(push); pull = rotate(pull); legs = rotate(legs); core = rotate(core);
     }
   } else if (daysCount === 4) {
     splitType = 'upper_lower';
-    days.push({ day_label: 'Upper A', exercises: buildUpper(push, pull, sets) });
-    days.push({ day_label: 'Lower A', exercises: buildLower(legs, core, sets) });
-    days.push({ day_label: 'Upper B', exercises: buildUpper(rotate(push), rotate(pull), sets) });
-    days.push({ day_label: 'Lower B', exercises: buildLower(rotate(legs), rotate(core), sets) });
+    days.push({ day_label: 'Upper A', exercises: buildUpper(push, pull, exCount) });
+    days.push({ day_label: 'Lower A', exercises: buildLower(legs, core, exCount) });
+    days.push({ day_label: 'Upper B', exercises: buildUpper(rotate(push), rotate(pull), exCount) });
+    days.push({ day_label: 'Lower B', exercises: buildLower(rotate(legs), rotate(core), exCount) });
   } else {
     splitType = 'ppl';
-    days.push({ day_label: 'Push A', exercises: buildPush(push, sets) });
-    days.push({ day_label: 'Pull A', exercises: buildPull(pull, sets) });
-    days.push({ day_label: 'Legs A', exercises: buildLegs(legs, core, sets) });
-    days.push({ day_label: 'Push B', exercises: buildPush(rotate(push), sets) });
-    days.push({ day_label: 'Pull B', exercises: buildPull(rotate(pull), sets) });
+    days.push({ day_label: 'Push A', exercises: buildPush(push, exCount) });
+    days.push({ day_label: 'Pull A', exercises: buildPull(pull, exCount) });
+    days.push({ day_label: 'Legs A', exercises: buildLegs(legs, core, exCount) });
+    days.push({ day_label: 'Push B', exercises: buildPush(rotate(push), exCount) });
+    days.push({ day_label: 'Pull B', exercises: buildPull(rotate(pull), exCount) });
     if (daysCount === 6) {
-      days.push({ day_label: 'Legs B', exercises: buildLegs(rotate(legs), rotate(core), sets) });
+      days.push({ day_label: 'Legs B', exercises: buildLegs(rotate(legs), rotate(core), exCount) });
     }
   }
 

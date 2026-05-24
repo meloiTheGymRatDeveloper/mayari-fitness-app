@@ -26,9 +26,17 @@ export default function ActiveWorkoutScreen() {
   const { profile } = useAuthStore();
   const [completedSets, setCompletedSets] = useState<Record<string, number>>({});
   const [finishing, setFinishing] = useState(false);
-  const [gifExerciseId, setGifExerciseId] = useState<string | null>(null);
-  const [gifUrl, setGifUrl] = useState<string | null>(null);
-  const [gifLoading, setGifLoading] = useState(false);
+  const [formExerciseId, setFormExerciseId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<{
+    gifUrl: string | null;
+    instructions: string[] | null;
+    bodyPart: string | null;
+    target: string | null;
+    equipment: string | null;
+    difficulty: string | null;
+  } | null>(null);
+  const [formLoading, setFormLoading] = useState(false);
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => tickElapsed(), 1000);
@@ -43,17 +51,27 @@ export default function ActiveWorkoutScreen() {
 
   const totalVolume = sets.reduce((sum, s) => sum + s.weight_kg * s.reps, 0);
 
-  async function showForm(exerciseId: string) {
-    setGifExerciseId(exerciseId);
-    setGifLoading(true);
-    setGifUrl(null);
-    const { data } = await supabase
-      .from('exercises')
-      .select('form_gif_url')
-      .eq('id', exerciseId)
-      .single();
-    setGifUrl(data?.form_gif_url ?? null);
-    setGifLoading(false);
+  async function showForm(exerciseId: string, exerciseName: string) {
+    setFormExerciseId(exerciseId);
+    setFormLoading(true);
+    setFormData(null);
+    setInstructionsOpen(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('exercise-form', {
+        body: { exerciseId, exerciseName },
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : undefined,
+      });
+      if (res.error) throw res.error;
+      setFormData(res.data ?? null);
+    } catch (e) {
+      console.error('exercise-form error:', e);
+      setFormData(null);
+    } finally {
+      setFormLoading(false);
+    }
   }
 
   const handleSetDone = useCallback(
@@ -174,7 +192,7 @@ export default function ActiveWorkoutScreen() {
                   {done}/{exercise.sets} sets
                 </Text>
               </View>
-              <TouchableOpacity onPress={() => showForm(exercise.exercise_id)} style={styles.gifBtn}>
+              <TouchableOpacity onPress={() => showForm(exercise.exercise_id, exercise.exercise_name)} style={styles.gifBtn}>
                 <Text style={styles.gifBtnText}>🎬 Form</Text>
               </TouchableOpacity>
               {remaining > 0
@@ -212,28 +230,79 @@ export default function ActiveWorkoutScreen() {
       <RestTimer />
 
       <Modal
-        visible={gifExerciseId !== null}
+        visible={formExerciseId !== null}
         transparent
         animationType="slide"
-        onRequestClose={() => { setGifExerciseId(null); setGifUrl(null); }}
+        onRequestClose={() => { setFormExerciseId(null); setFormData(null); }}
       >
         <View style={styles.gifModalOverlay}>
-          <View style={styles.gifModalContent}>
+          <ScrollView style={styles.gifModalScroll} contentContainerStyle={styles.gifModalContent} showsVerticalScrollIndicator={false}>
             <Text style={styles.gifModalTitle}>Form Guide</Text>
-            {gifLoading && <ActivityIndicator size="large" color={colors.brand.primary} />}
-            {!gifLoading && gifUrl && (
-              <Image source={{ uri: gifUrl }} style={styles.gifImage} resizeMode="contain" />
+
+            {formLoading && (
+              <ActivityIndicator size="large" color={colors.brand.primary} style={styles.formSpinner} />
             )}
-            {!gifLoading && !gifUrl && (
+
+            {!formLoading && formData?.gifUrl && (
+              <Image source={{ uri: formData.gifUrl }} style={styles.gifImage} resizeMode="contain" />
+            )}
+
+            {!formLoading && !formData?.gifUrl && (
               <Text style={styles.gifPlaceholder}>Form guide coming soon 🌙</Text>
             )}
+
+            {!formLoading && formData && (formData.target || formData.equipment || formData.difficulty) && (
+              <View style={styles.metaRow}>
+                {formData.target && (
+                  <View style={styles.metaChip}>
+                    <Text style={styles.metaChipText}>💪 {formData.target}</Text>
+                  </View>
+                )}
+                {formData.equipment && (
+                  <View style={styles.metaChip}>
+                    <Text style={styles.metaChipText}>🏋️ {formData.equipment}</Text>
+                  </View>
+                )}
+                {formData.difficulty && (
+                  <View style={styles.metaChip}>
+                    <Text style={styles.metaChipText}>⚡ {formData.difficulty}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {!formLoading && formData?.instructions && formData.instructions.length > 0 && (
+              <View style={styles.instructionsContainer}>
+                <TouchableOpacity
+                  style={styles.instructionsToggle}
+                  onPress={() => setInstructionsOpen(o => !o)}
+                >
+                  <Text style={styles.instructionsToggleText}>
+                    {instructionsOpen ? '▼' : '▶'} Basahin ang instructions
+                  </Text>
+                </TouchableOpacity>
+                {instructionsOpen && (
+                  <View style={styles.instructionsList}>
+                    {formData.instructions.map((step, i) => (
+                      <View key={step.slice(0, 40)} style={styles.instructionRow}>
+                        <View style={styles.instructionBullet}>
+                          <Text style={styles.instructionBulletText}>{i + 1}</Text>
+                        </View>
+                        <Text style={styles.instructionStep}>{step}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+
             <TouchableOpacity
-              onPress={() => { setGifExerciseId(null); setGifUrl(null); }}
+              onPress={() => { setFormExerciseId(null); setFormData(null); }}
               style={styles.gifCloseBtn}
             >
               <Text style={styles.gifCloseBtnText}>Close</Text>
             </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
     </View>
@@ -281,13 +350,48 @@ const styles = StyleSheet.create({
   },
   finishBtnOff: { opacity: 0.5 },
   finishBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
-  gifBtn: { paddingHorizontal: 8, paddingVertical: 4, backgroundColor: colors.bg.elevated, borderRadius: 6, marginTop: 4, alignSelf: 'flex-start' },
+  gifBtn: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, backgroundColor: colors.bg.elevated, borderRadius: 6, marginTop: spacing.xs, alignSelf: 'flex-start' },
   gifBtnText: { color: colors.brand.secondary, fontSize: typography.sm },
   gifModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  gifModalContent: { backgroundColor: colors.bg.elevated, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.lg },
+  gifModalScroll: { maxHeight: '90%', backgroundColor: colors.bg.elevated, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  gifModalContent: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   gifModalTitle: { color: colors.text.primary, fontSize: typography.xl, fontWeight: '700', marginBottom: spacing.md },
-  gifImage: { width: '100%', height: 280, borderRadius: 8 },
+  formSpinner: { marginVertical: spacing.xl },
+  gifImage: { width: '100%', height: 280, borderRadius: 8, marginBottom: spacing.md },
   gifPlaceholder: { color: colors.text.muted, fontSize: typography.base, textAlign: 'center', paddingVertical: spacing.xl },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.md },
+  metaChip: {
+    backgroundColor: colors.bg.primary,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  metaChipText: { color: colors.text.secondary, fontSize: typography.xs, textTransform: 'capitalize' },
+  instructionsContainer: { marginBottom: spacing.md },
+  instructionsToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  instructionsToggleText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
+  instructionsList: { marginTop: spacing.sm },
+  instructionRow: { flexDirection: 'row', marginBottom: spacing.sm, gap: spacing.sm },
+  instructionBullet: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.brand.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginTop: 2,
+  },
+  instructionBulletText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  instructionStep: { color: colors.text.secondary, fontSize: typography.sm, flex: 1, lineHeight: 20 },
   gifCloseBtn: { marginTop: spacing.md, alignItems: 'center', padding: spacing.md },
   gifCloseBtnText: { color: colors.brand.primary, fontSize: typography.base, fontWeight: '700' },
 });
