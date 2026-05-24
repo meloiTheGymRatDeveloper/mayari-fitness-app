@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
+  Modal, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -23,6 +24,9 @@ export default function ActiveWorkoutScreen() {
     useWorkoutStore();
   const [completedSets, setCompletedSets] = useState<Record<string, number>>({});
   const [finishing, setFinishing] = useState(false);
+  const [gifExerciseId, setGifExerciseId] = useState<string | null>(null);
+  const [gifUrl, setGifUrl] = useState<string | null>(null);
+  const [gifLoading, setGifLoading] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => tickElapsed(), 1000);
@@ -36,6 +40,19 @@ export default function ActiveWorkoutScreen() {
   }, [sessionId, todayPlan, router]);
 
   const totalVolume = sets.reduce((sum, s) => sum + s.weight_kg * s.reps, 0);
+
+  async function showForm(exerciseId: string) {
+    setGifExerciseId(exerciseId);
+    setGifLoading(true);
+    setGifUrl(null);
+    const { data } = await supabase
+      .from('exercises')
+      .select('form_gif_url')
+      .eq('id', exerciseId)
+      .single();
+    setGifUrl(data?.form_gif_url ?? null);
+    setGifLoading(false);
+  }
 
   const handleSetDone = useCallback(
     async (exercise: PlannedExercise, weight: number, reps: number) => {
@@ -143,6 +160,9 @@ export default function ActiveWorkoutScreen() {
                   {done}/{exercise.sets} sets
                 </Text>
               </View>
+              <TouchableOpacity onPress={() => showForm(exercise.exercise_id)} style={styles.gifBtn}>
+                <Text style={styles.gifBtnText}>🎬 Form</Text>
+              </TouchableOpacity>
               {remaining > 0
                 ? Array.from({ length: Math.min(remaining, 1) }, (_, i) => (
                     <SetLogger
@@ -176,6 +196,32 @@ export default function ActiveWorkoutScreen() {
       </View>
 
       <RestTimer />
+
+      <Modal
+        visible={gifExerciseId !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => { setGifExerciseId(null); setGifUrl(null); }}
+      >
+        <View style={styles.gifModalOverlay}>
+          <View style={styles.gifModalContent}>
+            <Text style={styles.gifModalTitle}>Form Guide</Text>
+            {gifLoading && <ActivityIndicator size="large" color={colors.brand.primary} />}
+            {!gifLoading && gifUrl && (
+              <Image source={{ uri: gifUrl }} style={styles.gifImage} resizeMode="contain" />
+            )}
+            {!gifLoading && !gifUrl && (
+              <Text style={styles.gifPlaceholder}>Form guide coming soon 🌙</Text>
+            )}
+            <TouchableOpacity
+              onPress={() => { setGifExerciseId(null); setGifUrl(null); }}
+              style={styles.gifCloseBtn}
+            >
+              <Text style={styles.gifCloseBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -221,4 +267,13 @@ const styles = StyleSheet.create({
   },
   finishBtnOff: { opacity: 0.5 },
   finishBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  gifBtn: { paddingHorizontal: 8, paddingVertical: 4, backgroundColor: colors.bg.elevated, borderRadius: 6, marginTop: 4, alignSelf: 'flex-start' },
+  gifBtnText: { color: colors.brand.secondary, fontSize: typography.sm },
+  gifModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  gifModalContent: { backgroundColor: colors.bg.elevated, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: spacing.lg },
+  gifModalTitle: { color: colors.text.primary, fontSize: typography.xl, fontWeight: '700', marginBottom: spacing.md },
+  gifImage: { width: '100%', height: 280, borderRadius: 8 },
+  gifPlaceholder: { color: colors.text.muted, fontSize: typography.base, textAlign: 'center', paddingVertical: spacing.xl },
+  gifCloseBtn: { marginTop: spacing.md, alignItems: 'center', padding: spacing.md },
+  gifCloseBtnText: { color: colors.brand.primary, fontSize: typography.base, fontWeight: '700' },
 });
