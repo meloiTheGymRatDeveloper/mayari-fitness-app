@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../stores/authStore';
+import { useUnreadTipCount } from '../../hooks/useCoachTips';
 import { colors } from '../../constants/theme';
 import TabBarPlusButton from '../../components/ui/TabBarPlusButton';
 import LogModal from '../../components/ui/LogModal';
@@ -9,6 +10,7 @@ import LogModal from '../../components/ui/LogModal';
 export default function TabsLayout() {
   const router = useRouter();
   const { session, isLoading } = useAuthStore();
+  const unreadTips = useUnreadTipCount();
 
   useEffect(() => {
     if (isLoading) return;
@@ -62,6 +64,7 @@ export default function TabsLayout() {
             tabBarIcon: ({ color, focused }) => (
               <Ionicons name={focused ? 'moon' : 'moon-outline'} size={24} color={color} />
             ),
+            tabBarBadge: unreadTips > 0 ? unreadTips : undefined,
           }}
         />
         <Tabs.Screen
