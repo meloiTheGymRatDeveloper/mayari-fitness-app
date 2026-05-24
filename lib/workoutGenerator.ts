@@ -247,6 +247,7 @@ export async function getPreviousPlans(
     .eq('user_id', userId)
     .eq('is_active', false)
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .limit(2);
 
   if (error) throw new Error(error.message);
@@ -258,21 +259,22 @@ export async function restoreWorkoutPlan(
   userId: string,
   planId: string,
 ): Promise<void> {
-  // Deactivate current active plan
-  const { error: deactivateError } = await supabase
-    .from('workout_plans')
-    .update({ is_active: false })
-    .eq('user_id', userId)
-    .eq('is_active', true);
-  if (deactivateError) throw new Error(deactivateError.message);
-
-  // Activate the requested plan
+  // Activate the target plan first
   const { error: activateError } = await supabase
     .from('workout_plans')
     .update({ is_active: true })
     .eq('id', planId)
     .eq('user_id', userId);
   if (activateError) throw new Error(activateError.message);
+
+  // Only deactivate other plans after successful activation
+  const { error: deactivateError } = await supabase
+    .from('workout_plans')
+    .update({ is_active: false })
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .neq('id', planId);
+  if (deactivateError) throw new Error(deactivateError.message);
 }
 
 // ---------------------------------------------------------------------------
