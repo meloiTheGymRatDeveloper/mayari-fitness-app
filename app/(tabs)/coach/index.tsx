@@ -1,306 +1,115 @@
 // app/(tabs)/coach/index.tsx
-import { useState, useRef, useEffect } from 'react';
-import {
-  View, Text, FlatList, TextInput, TouchableOpacity,
-  StyleSheet, KeyboardAvoidingView, Platform,
-  ActivityIndicator, Animated,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, type Href } from 'expo-router';
+import { useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { colors, typography, spacing } from '../../../constants/theme';
 import {
-  useCoachMessages, useTodayMessageCount, useSendMessage,
-} from '../../../hooks/useCoach';
-import type { CoachMessage } from '../../../types/database';
+  useCoachTips, useMarkAllTipsRead, useRequestTip,
+} from '../../../hooks/useCoachTips';
+import type { CoachTip } from '../../../types/database';
+import Skeleton from '../../../components/ui/Skeleton';
 
-const GREETING: CoachMessage = {
-  id: '__greeting__',
-  user_id: '',
-  role: 'assistant',
-  content: "Kumusta! I'm Coach Mayari 🌙 I'm your personal fitness and nutrition coach. Ask me anything — workout plans, what to eat, why you're not seeing results. Let's go! 💪",
-  message_type: 'chat',
-  created_at: new Date(0).toISOString(),
+// ── Icon mapping ──────────────────────────────────────────────────────────────
+const TIP_ICONS: Record<string, string> = {
+  nutrition: '🥗',
+  workout: '💪',
+  streak: '🔥',
+  pr: '🏆',
+  general: '🌙',
 };
 
-const QUICK_CHIPS = [
-  { label: 'Build my workout plan', navigate: true },
-  { label: 'Check my diet', navigate: false },
-  { label: "Why am I not losing weight?", navigate: false },
-] as const;
+// ── Relative time helper ──────────────────────────────────────────────────────
+function relativeTime(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(diff / 3600000);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(diff / 86400000);
+  return `${days}d ago`;
+}
 
-function MessageBubble({ msg }: { msg: CoachMessage }) {
-  const isUser = msg.role === 'user';
+// ── TipCard ───────────────────────────────────────────────────────────────────
+function TipCard({ tip }: { tip: CoachTip }) {
   return (
-    <View style={[styles.bubbleRow, isUser ? styles.rowUser : styles.rowCoach]}>
-      <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleCoach]}>
-        <Text style={[styles.bubbleText, isUser ? styles.textUser : styles.textCoach]}>
-          {msg.content}
-        </Text>
+    <View style={styles.tipCard}>
+      <Text style={styles.tipIcon}>{TIP_ICONS[tip.tip_type] ?? '🌙'}</Text>
+      <View style={styles.tipBody}>
+        <Text style={styles.tipContent}>{tip.content}</Text>
+        <Text style={styles.tipTime}>{relativeTime(tip.created_at)}</Text>
       </View>
     </View>
   );
 }
 
-function TypingIndicator() {
-  const dot1 = useRef(new Animated.Value(0)).current;
-  const dot2 = useRef(new Animated.Value(0)).current;
-  const dot3 = useRef(new Animated.Value(0)).current;
+// ── CoachScreen ───────────────────────────────────────────────────────────────
+export default function CoachScreen() {
+  const { data: tips = [], isLoading } = useCoachTips();
+  const markRead = useMarkAllTipsRead();
+  const requestTip = useRequestTip();
 
   useEffect(() => {
-    const animDot = (dot: Animated.Value, delay: number) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(dot, { toValue: 1, duration: 300, useNativeDriver: true }),
-          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true }),
-          Animated.delay(600),
-        ])
-      );
-    const a1 = animDot(dot1, 0);
-    const a2 = animDot(dot2, 200);
-    const a3 = animDot(dot3, 400);
-    a1.start(); a2.start(); a3.start();
-    return () => { a1.stop(); a2.stop(); a3.stop(); };
+    markRead.mutate();
+    requestTip.mutate();
   }, []);
 
-  const dotStyle = (anim: Animated.Value) => ({
-    opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
-    transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, -4] }) }],
-  });
-
   return (
-    <View style={[styles.bubbleRow, styles.rowCoach]}>
-      <View style={[styles.bubble, styles.bubbleCoach, { flexDirection: 'row', gap: 4 }]}>
-        <Animated.Text style={[styles.textCoach, dotStyle(dot1)]}>●</Animated.Text>
-        <Animated.Text style={[styles.textCoach, dotStyle(dot2)]}>●</Animated.Text>
-        <Animated.Text style={[styles.textCoach, dotStyle(dot3)]}>●</Animated.Text>
-      </View>
+    <View style={styles.root}>
+      <Text style={styles.header}>Mayari Tips</Text>
+
+      {isLoading ? (
+        <View style={styles.skeletons}>
+          <Skeleton width="100%" height={80} style={{ marginBottom: 8 }} />
+          <Skeleton width="100%" height={80} style={{ marginBottom: 8 }} />
+          <Skeleton width="100%" height={80} />
+        </View>
+      ) : tips.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>
+            Wala pang tips. Mag-log ng workout o pagkain para makakuha ng tips mula kay Mayari! 🌙
+          </Text>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.list}>
+          {tips.map(tip => <TipCard key={tip.id} tip={tip} />)}
+        </ScrollView>
+      )}
     </View>
   );
 }
 
-export default function CoachScreen() {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const [input, setInput] = useState('');
-  const flatRef = useRef<FlatList<CoachMessage>>(null);
-  const { data: messages = [], isLoading } = useCoachMessages();
-  const { data: todayCount = 0 } = useTodayMessageCount();
-  const sendMessage = useSendMessage('chat');
-
-  const hasMessages = messages.length > 0;
-  const atLimit = todayCount >= 50;
-  const showWarning = todayCount >= 45 && todayCount < 50;
-
-  const listData: CoachMessage[] = hasMessages ? messages : [GREETING];
-
-  const handleSend = async () => {
-    const text = input.trim();
-    if (!text || sendMessage.isPending || atLimit) return;
-    setInput('');
-    await sendMessage.mutateAsync(text);
-  };
-
-  const handleChip = (chip: (typeof QUICK_CHIPS)[number]) => {
-    if (chip.navigate) {
-      router.push('/(tabs)/coach/generate' as Href);
-    } else {
-      sendMessage.mutateAsync(chip.label).catch(() => {
-        // mutation errors are surfaced via sendMessage.isError if needed
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 50);
-    }
-  }, [messages.length, sendMessage.isPending]);
-
-  return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}
-    >
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={styles.headerTitle}>🌙 Coach Mayari</Text>
-        <Text style={styles.headerSub}>Science-based · Always here</Text>
-      </View>
-
-      {showWarning && (
-        <View style={styles.warningBanner}>
-          <Text style={styles.warningText}>
-            You've sent {todayCount} messages today. Limit is 50.
-          </Text>
-        </View>
-      )}
-
-      {isLoading ? (
-        <ActivityIndicator style={{ flex: 1 }} color={colors.brand.primary} />
-      ) : (
-        <FlatList
-          ref={flatRef}
-          data={sendMessage.isPending ? [...listData, { ...GREETING, id: '__typing__' }] : listData}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) =>
-            item.id === '__typing__' ? <TypingIndicator /> : <MessageBubble msg={item} />
-          }
-          contentContainerStyle={styles.listContent}
-          ListFooterComponent={
-            !hasMessages ? (
-              <View style={styles.chipsRow}>
-                {QUICK_CHIPS.map(chip => (
-                  <TouchableOpacity
-                    key={chip.label}
-                    style={styles.chip}
-                    onPress={() => handleChip(chip)}
-                    disabled={sendMessage.isPending}
-                  >
-                    <Text style={styles.chipText}>{chip.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : null
-          }
-        />
-      )}
-
-      {/* Navigation chips */}
-      <View style={styles.navChipsRow}>
-        <TouchableOpacity
-          style={styles.navChip}
-          onPress={() => router.push('/(tabs)/nutrition/mealbuilder' as Href)}
-        >
-          <Text style={styles.navChipText}>🍳 Build me a meal</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navChip}
-          onPress={() => router.push('/(tabs)/nutrition/mealplan' as Href)}
-        >
-          <Text style={styles.navChipText}>📅 Plan my week</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.inputBar}>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder={atLimit ? 'Daily limit reached (50/50)' : 'Ask Coach Mayari...'}
-          placeholderTextColor={colors.text.muted}
-          multiline
-          editable={!atLimit}
-          returnKeyType="send"
-          blurOnSubmit
-          onSubmitEditing={handleSend}
-        />
-        <TouchableOpacity
-          style={[styles.sendBtn, (sendMessage.isPending || atLimit || !input.trim()) && styles.sendBtnOff]}
-          onPress={handleSend}
-          disabled={sendMessage.isPending || atLimit || !input.trim()}
-        >
-          <Text style={styles.sendBtnText}>↑</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
-  );
-}
-
+// ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg.primary },
+  root: { flex: 1, backgroundColor: colors.bg.primary, padding: spacing.lg },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerTitle: { color: colors.brand.secondary, fontSize: typography.xl, fontWeight: '700' },
-  headerSub: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
-  warningBanner: {
-    backgroundColor: '#78350F',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  warningText: { color: '#FEF3C7', fontSize: typography.xs },
-  listContent: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  bubbleRow: { marginVertical: 4 },
-  rowUser: { alignItems: 'flex-end' },
-  rowCoach: { alignItems: 'flex-start' },
-  bubble: {
-    maxWidth: '80%',
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  bubbleUser: { backgroundColor: '#4F46E5' },
-  bubbleCoach: { backgroundColor: colors.bg.elevated },
-  bubbleText: { fontSize: typography.sm, lineHeight: 20 },
-  textUser: { color: '#fff' },
-  textCoach: { color: colors.text.primary },
-  chipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginTop: spacing.md,
-    paddingHorizontal: spacing.sm,
-  },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 20,
-    backgroundColor: colors.bg.elevated,
-    borderWidth: 1,
-    borderColor: colors.brand.primary,
-  },
-  chipText: { color: colors.brand.primary, fontSize: typography.xs, fontWeight: '600' },
-  inputBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    gap: spacing.sm,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: colors.bg.secondary,
-    borderRadius: 20,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
     color: colors.text.primary,
-    fontSize: typography.sm,
-    maxHeight: 100,
-    borderWidth: 1,
-    borderColor: colors.border,
+    fontSize: typography['2xl'],
+    fontWeight: '700',
+    marginBottom: spacing.lg,
   },
-  sendBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#4F46E5',
-    justifyContent: 'center',
-    alignItems: 'center',
+  skeletons: { gap: 8 },
+  list: { gap: 8, paddingBottom: spacing['2xl'] },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: spacing.xl },
+  emptyText: {
+    color: colors.text.secondary,
+    fontSize: typography.base,
+    textAlign: 'center',
+    lineHeight: 24,
   },
-  sendBtnOff: { opacity: 0.35 },
-  sendBtnText: { color: '#fff', fontSize: typography.xl, fontWeight: '700' },
-  navChipsRow: {
+  tipCard: {
     flexDirection: 'row',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    backgroundColor: colors.bg.secondary,
+    borderRadius: 12,
+    padding: spacing.md,
   },
-  navChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 20,
-    backgroundColor: colors.bg.elevated,
-    borderWidth: 1,
-    borderColor: colors.brand.secondary,
+  tipIcon: { fontSize: 28 },
+  tipBody: { flex: 1 },
+  tipContent: {
+    color: colors.text.primary,
+    fontSize: typography.base,
+    lineHeight: 22,
+    marginBottom: 4,
   },
-  navChipText: { color: colors.brand.secondary, fontSize: typography.xs, fontWeight: '600' },
+  tipTime: { color: colors.text.muted, fontSize: typography.sm },
 });
