@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../../stores/authStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useDailyNutrition } from '../../hooks/useDailyNutrition';
+import { useTodayCaloriesBurned } from '../../hooks/useWorkout';
 import { useDailyTip } from '../../hooks/useCoach';
 import { useLatestTip } from '../../hooks/useCoachTips';
 import { useSmartCopy, useYesterdaySlotHasData } from '../../hooks/useSmartCopy';
@@ -53,6 +54,7 @@ export default function HomeScreen() {
   const profile = useAuthStore((s) => s.profile);
   const [date, setDate] = useState(todayStr);
   const daily = useDailyNutrition(date);
+  const { data: caloriesBurned = 0 } = useTodayCaloriesBurned(date);
   const name = profile?.display_name ?? 'Ka-tropa';
 
   const { data: dailyTip, isLoading: tipLoading } = useDailyTip();
@@ -105,7 +107,7 @@ export default function HomeScreen() {
         <CaloriesCard
           consumed={daily.totals.calories}
           goal={daily.calorieGoal}
-          caloriesBurned={daily.caloriesBurned}
+          caloriesBurned={caloriesBurned}
           protein={{ consumed: daily.totals.protein, goal: daily.proteinGoal }}
           carbs={{ consumed: daily.totals.carbs, goal: daily.carbsGoal }}
           fat={{ consumed: daily.totals.fat, goal: daily.fatGoal }}

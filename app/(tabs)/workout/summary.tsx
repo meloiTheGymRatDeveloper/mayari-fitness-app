@@ -194,7 +194,9 @@ export default function SummaryScreen() {
       <TouchableOpacity
         style={styles.doneBtn}
         onPress={() => {
+          const today = new Date().toISOString().split('T')[0];
           queryClient.invalidateQueries({ queryKey: ['workout_sessions'] });
+          queryClient.invalidateQueries({ queryKey: ['calories_burned', userId, today] });
           router.replace('/(tabs)/workout');
         }}
       >
