@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { colors, typography, spacing } from '../../../constants/theme';
 import { useActivePlan, useRecentSessions, useWorkoutSessionCount } from '../../../hooks/useWorkout';
+import { useLatestTipByType } from '../../../hooks/useCoachTips';
 import { useWorkoutStore } from '../../../stores/workoutStore';
 import { useAuthStore } from '../../../stores/authStore';
 import { supabase } from '../../../lib/supabase';
@@ -63,6 +64,7 @@ export default function WorkoutScreen() {
   const profile = useAuthStore(s => s.profile);
   const [starting, setStarting] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const workoutTip = useLatestTipByType('workout');
 
   const todayPlan: DayPlan | null = activePlan
     ? (activePlan.plan_data.days[sessionCount % activePlan.plan_data.days.length] ?? null)
@@ -185,6 +187,12 @@ export default function WorkoutScreen() {
           ))}
         </View>
       )}
+
+      {workoutTip && (
+        <View style={styles.tipCard}>
+          <Text style={styles.tipText}>{workoutTip.content}</Text>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -216,4 +224,13 @@ const styles = StyleSheet.create({
   errorText: { color: colors.text.secondary, fontSize: typography.base, marginBottom: spacing.md },
   retryBtn: { backgroundColor: colors.brand.primary, borderRadius: 12, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },
   retryBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  tipCard: {
+    backgroundColor: '#6366F120',
+    borderWidth: 1,
+    borderColor: colors.brand.primary,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginTop: spacing.md,
+  },
+  tipText: { color: colors.brand.secondary, fontSize: typography.sm },
 });

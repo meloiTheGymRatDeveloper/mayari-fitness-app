@@ -8,6 +8,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useDailyNutrition } from '../../hooks/useDailyNutrition';
 import { useDailyTip } from '../../hooks/useCoach';
+import { useLatestTip } from '../../hooks/useCoachTips';
 import { useSmartCopy, useYesterdaySlotHasData } from '../../hooks/useSmartCopy';
 import { useStreaks } from '../../hooks/useStreaks';
 import DayStrip from '../../components/home/DayStrip';
@@ -55,6 +56,7 @@ export default function HomeScreen() {
   const name = profile?.display_name ?? 'Ka-tropa';
 
   const { data: dailyTip, isLoading: tipLoading } = useDailyTip();
+  const latestTip = useLatestTip();
   const { data: streaks } = useStreaks();
   const [activeMilestone, setActiveMilestone] = useState<number | null>(null);
 
@@ -92,6 +94,13 @@ export default function HomeScreen() {
         <DayStrip selectedDate={date} onSelectDate={setDate} />
 
         <View style={{ height: spacing.sm }} />
+
+        {latestTip && (
+          <View style={styles.tipCard}>
+            <Text style={styles.tipCardLabel}>🌙 Mayari says</Text>
+            <Text style={styles.tipCardContent}>{latestTip.content}</Text>
+          </View>
+        )}
 
         <CaloriesCard
           consumed={daily.totals.calories}
@@ -155,6 +164,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.secondary, borderRadius: 10,
     padding: spacing.sm, borderWidth: 1, borderColor: colors.border,
   },
+  tipCard: {
+    marginHorizontal: spacing.lg,
+    backgroundColor: colors.bg.secondary,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.brand.primary,
+  },
+  tipCardLabel: { color: colors.brand.secondary, fontSize: typography.sm, fontWeight: '600', marginBottom: 4 },
+  tipCardContent: { color: colors.text.primary, fontSize: typography.base, lineHeight: 22 },
   sectionLabel: {
     color: colors.text.muted, fontSize: 10, fontWeight: '700',
     letterSpacing: 1, textTransform: 'uppercase',

@@ -8,6 +8,7 @@ import MealSection from '../../../components/nutrition/MealSection';
 import WaterBar from '../../../components/nutrition/WaterBar';
 import { colors, typography, spacing } from '../../../constants/theme';
 import { useLatestGroceryList } from '../../../hooks/useMealPlan';
+import { useLatestTipByType } from '../../../hooks/useCoachTips';
 import Skeleton from '../../../components/ui/Skeleton';
 import { useActiveFast } from '../../../hooks/useFasting';
 import { useDeleteFoodLog } from '../../../hooks/useNutrition';
@@ -76,6 +77,7 @@ export default function NutritionScreen() {
 
   const { data: groceryList } = useLatestGroceryList();
   const groceryBadgeCount = (groceryList?.items ?? []).filter(i => !i.checked).length;
+  const nutritionTip = useLatestTipByType('nutrition');
 
   const mealStyle = profile?.meal_time_style ?? 'filipino';
   const isLoading = logsLoading || waterLoading;
@@ -156,6 +158,12 @@ export default function NutritionScreen() {
 
           <MacroSummaryCard logs={foodLogs} profile={profile} />
 
+          {date === todayStr() && nutritionTip && (
+            <View style={styles.tipBanner}>
+              <Text style={styles.tipBannerText}>{nutritionTip.content}</Text>
+            </View>
+          )}
+
           {MEAL_SLOTS.map(slot => {
             const outside = activeFast ? isSlotOutsideWindow(slot) : false;
             return (
@@ -215,6 +223,15 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   chipText: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600' },
+  tipBanner: {
+    backgroundColor: '#6366F120',
+    borderWidth: 1,
+    borderColor: colors.brand.primary,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  tipBannerText: { color: colors.brand.secondary, fontSize: typography.sm },
   fastingBanner: {
     backgroundColor: '#6366F120',
     borderWidth: 1,
