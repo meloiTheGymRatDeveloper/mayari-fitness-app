@@ -191,7 +191,8 @@ export async function saveWorkoutPlan(
     .select('id, created_at')
     .eq('user_id', userId)
     .eq('is_active', false)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false });
 
   if (fetchError) throw new Error(fetchError.message);
 
