@@ -12,6 +12,7 @@ export type UnitsPref = 'metric' | 'imperial';
 export type ReferralStatus = 'pending' | 'active' | 'expired';
 export type Gender = 'male' | 'female' | 'prefer_not_to_say';
 export type ActivityLevel = 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extremely_active';
+export type TipType = 'nutrition' | 'workout' | 'streak' | 'pr' | 'general';
 
 export interface PlannedExercise {
   exercise_id: string;
@@ -91,6 +92,7 @@ export interface WorkoutSession {
   total_volume_kg: number;
   notes: string | null;
   xp_earned: number;
+  calories_burned: number | null;
   created_at: string;
 }
 
@@ -208,6 +210,15 @@ export interface CoachMessage {
   role: MessageRole;
   content: string;
   message_type: MessageType;
+  created_at: string;
+}
+
+export interface CoachTip {
+  id: string;
+  user_id: string;
+  content: string;
+  tip_type: TipType;
+  read_at: string | null;
   created_at: string;
 }
 
