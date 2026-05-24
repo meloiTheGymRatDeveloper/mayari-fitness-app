@@ -7,9 +7,11 @@ interface AuthState {
   session: Session | null;
   profile: UserProfile | null;
   isLoading: boolean;
+  lastTipRequestAt: number | null;
   setSession: (session: Session | null) => void;
   setProfile: (profile: UserProfile | null) => void;
   setLoading: (loading: boolean) => void;
+  setLastTipRequestAt: (ts: number) => void;
   fetchProfile: (userId: string) => Promise<void>;
   updateNetCarbsDisplay: (value: boolean) => Promise<void>;
   updatePushToken: (token: string) => Promise<void>;
@@ -21,9 +23,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   profile: null,
   isLoading: true,
+  lastTipRequestAt: null,
   setSession: (session) => set({ session }),
   setProfile: (profile) => set({ profile }),
   setLoading: (isLoading) => set({ isLoading }),
+  setLastTipRequestAt: (ts) => set({ lastTipRequestAt: ts }),
   fetchProfile: async (userId: string) => {
     const { data } = await supabase
       .from('users')
