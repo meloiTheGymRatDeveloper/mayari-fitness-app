@@ -59,14 +59,15 @@ export function useMarkAllTipsRead() {
 export function useRequestTip() {
   const queryClient = useQueryClient();
   const userId = useAuthStore(s => s.session?.user.id);
-  const lastTipRequestAt = useAuthStore(s => s.lastTipRequestAt);
   const setLastTipRequestAt = useAuthStore(s => s.setLastTipRequestAt);
 
   return useMutation({
     mutationFn: async () => {
       if (!userId) return;
       const now = Date.now();
-      if (lastTipRequestAt && now - lastTipRequestAt < SIX_HOURS_MS) {
+      // Read current value from store directly (avoids stale closure)
+      const currentLastRequest = useAuthStore.getState().lastTipRequestAt;
+      if (currentLastRequest && now - currentLastRequest < SIX_HOURS_MS) {
         return; // throttled
       }
       setLastTipRequestAt(now);
