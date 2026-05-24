@@ -144,3 +144,23 @@ export function useSessionDetail(id: string) {
     enabled: !!id,
   });
 }
+
+export function useTodayCaloriesBurned(date: string) {
+  const userId = useAuthStore(s => s.session?.user.id);
+  return useQuery({
+    queryKey: ['calories_burned', userId, date],
+    enabled: !!userId,
+    queryFn: async () => {
+      const startOfDay = `${date}T00:00:00.000Z`;
+      const endOfDay = `${date}T23:59:59.999Z`;
+      const { data } = await supabase
+        .from('workout_sessions')
+        .select('calories_burned')
+        .eq('user_id', userId!)
+        .gte('started_at', startOfDay)
+        .lte('started_at', endOfDay)
+        .not('calories_burned', 'is', null);
+      return (data ?? []).reduce((sum, s) => sum + (s.calories_burned ?? 0), 0);
+    },
+  });
+}

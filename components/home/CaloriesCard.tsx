@@ -49,6 +49,7 @@ export default function CaloriesCard({ consumed, goal, caloriesBurned, protein, 
         <View style={styles.burnedRow}>
           <View style={styles.burnedDot} />
           <Text style={styles.burnedText}>−{caloriesBurned} kcal burned from workout</Text>
+          <Text style={styles.netText}>Net: {Math.round(consumed - caloriesBurned)} kcal (after workout)</Text>
         </View>
       )}
       <View style={styles.macroRow}>
@@ -100,6 +101,7 @@ const styles = StyleSheet.create({
   burnedRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.xs,
     marginBottom: spacing.sm,
   },
@@ -112,6 +114,11 @@ const styles = StyleSheet.create({
   burnedText: {
     color: colors.text.secondary,
     fontSize: typography.xs,
+  },
+  netText: {
+    color: colors.warning,
+    fontSize: typography.xs,
+    fontWeight: '600',
   },
   macroRow: {
     flexDirection: 'row',

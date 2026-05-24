@@ -12,6 +12,7 @@ import { useLatestTipByType } from '../../../hooks/useCoachTips';
 import Skeleton from '../../../components/ui/Skeleton';
 import { useActiveFast } from '../../../hooks/useFasting';
 import { useDeleteFoodLog } from '../../../hooks/useNutrition';
+import { useTodayCaloriesBurned } from '../../../hooks/useWorkout';
 import type { MealSlot } from '../../../types/database';
 
 const MEAL_SLOTS: MealSlot[] = ['almusal', 'tanghalian', 'merienda', 'hapunan'];
@@ -78,6 +79,7 @@ export default function NutritionScreen() {
   const { data: groceryList } = useLatestGroceryList();
   const groceryBadgeCount = (groceryList?.items ?? []).filter(i => !i.checked).length;
   const nutritionTip = useLatestTipByType('nutrition');
+  const { data: caloriesBurned = 0 } = useTodayCaloriesBurned(todayStr());
 
   const mealStyle = profile?.meal_time_style ?? 'filipino';
   const isLoading = logsLoading || waterLoading;
@@ -164,6 +166,12 @@ export default function NutritionScreen() {
             </View>
           )}
 
+          {caloriesBurned > 0 && date === todayStr() && (
+            <View style={styles.burnBanner}>
+              <Text style={styles.burnBannerText}>🔥 Workout burn: -{caloriesBurned} kcal today</Text>
+            </View>
+          )}
+
           {MEAL_SLOTS.map(slot => {
             const outside = activeFast ? isSlotOutsideWindow(slot) : false;
             return (
@@ -241,6 +249,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   fastingBannerText: { color: colors.brand.secondary, fontSize: typography.sm },
+  burnBanner: {
+    backgroundColor: '#F59E0B20',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  burnBannerText: { color: '#F59E0B', fontSize: typography.sm, fontWeight: '600' },
   dimmed: { opacity: 0.4 },
   chipInner: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   chipBadge: {
