@@ -63,14 +63,19 @@ export default function VoiceConfirmScreen() {
 
         // If updating quantity_g, recalculate all macros from per-100g base
         if (field === 'quantity_g') {
-          const g = Number(value) || 0;
+          const g = Math.max(0, Number(value) || 0);
+          const cal_per100 = f._cal_per100 ?? (f.calories / (f.quantity_g || 100)) * 100;
+          const prot_per100 = f._prot_per100 ?? (f.protein_g / (f.quantity_g || 100)) * 100;
+          const carbs_per100 = f._carbs_per100 ?? (f.carbs_g / (f.quantity_g || 100)) * 100;
+          const fat_per100 = f._fat_per100 ?? (f.fat_g / (f.quantity_g || 100)) * 100;
+
           return {
             ...f,
             quantity_g: g,
-            calories: Math.round((f._cal_per100 ?? 0) / 100 * g),
-            protein_g: Math.round((f._prot_per100 ?? 0) / 100 * g * 10) / 10,
-            carbs_g: Math.round((f._carbs_per100 ?? 0) / 100 * g * 10) / 10,
-            fat_g: Math.round((f._fat_per100 ?? 0) / 100 * g * 10) / 10,
+            calories: Math.round(cal_per100 / 100 * g),
+            protein_g: Math.round(prot_per100 / 100 * g * 10) / 10,
+            carbs_g: Math.round(carbs_per100 / 100 * g * 10) / 10,
+            fat_g: Math.round(fat_per100 / 100 * g * 10) / 10,
           };
         }
 
