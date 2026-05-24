@@ -49,7 +49,7 @@ export default function CaloriesCard({ consumed, goal, caloriesBurned, protein, 
         <View style={styles.burnedRow}>
           <View style={styles.burnedDot} />
           <Text style={styles.burnedText}>−{caloriesBurned} kcal burned from workout</Text>
-          <Text style={styles.netText}>Net: {Math.round(consumed - caloriesBurned)} kcal (after workout)</Text>
+          <Text style={styles.netText}>Net: {Math.max(0, Math.round(consumed - caloriesBurned))} kcal (after workout)</Text>
         </View>
       )}
       <View style={styles.macroRow}>
