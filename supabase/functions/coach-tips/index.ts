@@ -9,6 +9,11 @@ const corsHeaders = {
 
 const anthropic = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY")! });
 
+interface FoodLogWithItem {
+  quantity_g: number;
+  food_items: { calories_per_100g: number | null; protein_per_100g: number | null } | null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -50,31 +55,20 @@ Deno.serve(async (req) => {
 
     // 4. Get today's food logs sum
     const today = new Date().toISOString().split("T")[0];
-    const { data: foodLogs } = await serviceClient
+    const { data: logsWithItems } = await serviceClient
       .from("food_logs")
-      .select("food_item_id")
+      .select("quantity_g, food_items(calories_per_100g, protein_per_100g)")
       .eq("user_id", userId)
       .gte("logged_at", `${today}T00:00:00.000Z`)
       .lte("logged_at", `${today}T23:59:59.999Z`);
 
-    // Get food items for those logs to compute totals
     let totalCalories = 0;
     let totalProtein = 0;
-    if (foodLogs && foodLogs.length > 0) {
-      // Fetch food_logs joined with food_items to compute calorie/protein totals
-      const { data: logsWithItems } = await serviceClient
-        .from("food_logs")
-        .select("quantity_g, food_items(calories_per_100g, protein_per_100g)")
-        .eq("user_id", userId)
-        .gte("logged_at", `${today}T00:00:00.000Z`)
-        .lte("logged_at", `${today}T23:59:59.999Z`);
-
-      for (const log of logsWithItems ?? []) {
-        const item = (log as any).food_items;
-        if (item && log.quantity_g) {
-          totalCalories += ((item.calories_per_100g ?? 0) / 100) * log.quantity_g;
-          totalProtein += ((item.protein_per_100g ?? 0) / 100) * log.quantity_g;
-        }
+    for (const log of (logsWithItems ?? []) as FoodLogWithItem[]) {
+      const item = log.food_items;
+      if (item && log.quantity_g) {
+        totalCalories += ((item.calories_per_100g ?? 0) / 100) * log.quantity_g;
+        totalProtein += ((item.protein_per_100g ?? 0) / 100) * log.quantity_g;
       }
     }
 
@@ -168,15 +162,21 @@ Deno.serve(async (req) => {
       messages: [{ role: "user", content: prompts[tipType] }],
     });
 
-    const content = claudeResponse.content[0].type === "text"
-      ? claudeResponse.content[0].text.trim()
-      : "";
-
-    if (!content) {
+    if (!claudeResponse.content || claudeResponse.content.length === 0) {
       return new Response(JSON.stringify({ error: "Empty response from AI" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const firstBlock = claudeResponse.content[0];
+    if (firstBlock.type !== "text") {
+      console.error("coach-tips: unexpected content type:", firstBlock.type);
+      return new Response(JSON.stringify({ error: "Invalid AI response type" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const content = firstBlock.text.trim();
 
     // 12. Store tip
     const { data: newTip, error: insertError } = await serviceClient
