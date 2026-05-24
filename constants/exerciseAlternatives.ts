@@ -2,7 +2,7 @@ export const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
   // Push — chest/shoulders/triceps
   'bench-press': ['incline-bench', 'dip'],
   'incline-bench': ['bench-press', 'dip'],
-  'overhead-press': [],
+  'overhead-press': ['dip', 'incline-bench'],
   'dip': ['bench-press', 'incline-bench'],
 
   // Pull — back/biceps
@@ -10,11 +10,11 @@ export const EXERCISE_ALTERNATIVES: Record<string, string[]> = {
   'cable-row': ['barbell-row', 'lat-pulldown'],
   'lat-pulldown': ['pull-up', 'barbell-row', 'cable-row'],
   'pull-up': ['lat-pulldown', 'cable-row'],
-  'deadlift': ['romanian-deadlift'],
+  'deadlift': ['romanian-deadlift', 'barbell-row', 'cable-row'],
 
   // Legs
-  'squat': ['leg-press'],
-  'leg-press': ['squat'],
+  'squat': ['leg-press', 'lunge'],
+  'leg-press': ['squat', 'lunge'],
   'lunge': ['squat', 'leg-press'],
   'romanian-deadlift': ['leg-curl', 'deadlift'],
   'leg-curl': ['romanian-deadlift'],
