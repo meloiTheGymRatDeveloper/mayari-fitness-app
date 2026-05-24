@@ -67,12 +67,16 @@ function BodyFatReferenceModal({
   }, [visible, defaultGender, fadeAnim]);
 
   useEffect(() => {
-    Animated.loop(
+    const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(shimmerAnim, { toValue: 1, duration: 900, useNativeDriver: false }),
         Animated.timing(shimmerAnim, { toValue: 0, duration: 900, useNativeDriver: false }),
       ])
-    ).start();
+    );
+    animation.start();
+    return () => {
+      animation.stop();
+    };
   }, [shimmerAnim]);
 
   const shimmerBg = shimmerAnim.interpolate({
