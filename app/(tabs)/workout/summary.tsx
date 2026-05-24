@@ -28,7 +28,8 @@ function formatDuration(start: string, end: string): string {
 }
 
 export default function SummaryScreen() {
-  const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
+  const { sessionId, caloriesBurned } = useLocalSearchParams<{ sessionId: string; caloriesBurned: string }>();
+  const burnKcal = Number(caloriesBurned) || 0;
   const router = useRouter();
   const queryClient = useQueryClient();
   const userId = useAuthStore(s => s.session?.user.id);
@@ -180,6 +181,16 @@ export default function SummaryScreen() {
         ))}
       </View>
 
+      {burnKcal > 0 && (
+        <View style={styles.burnCard}>
+          <Text style={styles.burnIcon}>🔥</Text>
+          <View>
+            <Text style={styles.burnLabel}>Estimated Burn</Text>
+            <Text style={styles.burnValue}>~{burnKcal} kcal</Text>
+          </View>
+        </View>
+      )}
+
       <TouchableOpacity
         style={styles.doneBtn}
         onPress={() => {
@@ -218,6 +229,20 @@ const styles = StyleSheet.create({
   section: { marginBottom: spacing.lg },
   sectionTitle: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: spacing.sm },
   exerciseItem: { color: colors.text.primary, fontSize: typography.base, paddingVertical: 3 },
+  burnCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.bg.secondary,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+  },
+  burnIcon: { fontSize: 32 },
+  burnLabel: { color: colors.text.secondary, fontSize: typography.sm },
+  burnValue: { color: '#F59E0B', fontSize: typography['2xl'], fontWeight: '700' },
   doneBtn: { backgroundColor: colors.brand.primary, borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center' },
   doneBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
 });
