@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Pressable, TextInput, Modal, Image, BackHandler,
+  Pressable, TextInput, Modal, Image, BackHandler, Animated,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -53,12 +53,41 @@ function BodyFatReferenceModal({
   const [tab, setTab] = useState<'male' | 'female'>(
     defaultGender === 'female' ? 'female' : 'male',
   );
+  const [loaded, setLoaded] = useState(false);
+
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (visible) setTab(defaultGender === 'female' ? 'female' : 'male');
-  }, [visible, defaultGender]);
+    if (visible) {
+      setTab(defaultGender === 'female' ? 'female' : 'male');
+      setLoaded(false);
+      fadeAnim.setValue(0);
+    }
+  }, [visible, defaultGender, fadeAnim]);
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmerAnim, { toValue: 1, duration: 900, useNativeDriver: false }),
+        Animated.timing(shimmerAnim, { toValue: 0, duration: 900, useNativeDriver: false }),
+      ])
+    ).start();
+  }, [shimmerAnim]);
+
+  const shimmerBg = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#1A1A3E', '#2A2A5E'],
+  });
+
+  function handleImageLoad() {
+    setLoaded(true);
+    Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+  }
 
   const image = BF_IMAGES[tab];
+  const IMAGE_WIDTH = '100%';
+  const IMAGE_HEIGHT = 400;
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -86,7 +115,25 @@ function BodyFatReferenceModal({
           </View>
 
           <View style={styles.modalImageScroll}>
-            <Image source={image} style={styles.modalImage} resizeMode="contain" />
+            <View style={{ position: 'relative', width: IMAGE_WIDTH, height: IMAGE_HEIGHT }}>
+              {!loaded && (
+                <Animated.View
+                  style={{
+                    width: '100%',
+                    height: IMAGE_HEIGHT,
+                    backgroundColor: shimmerBg,
+                    borderRadius: 8,
+                    position: 'absolute',
+                  }}
+                />
+              )}
+              <Animated.Image
+                source={image}
+                style={{ width: '100%', height: IMAGE_HEIGHT, opacity: fadeAnim }}
+                onLoad={handleImageLoad}
+                resizeMode="contain"
+              />
+            </View>
           </View>
 
           <Button label="Close" onPress={onClose} variant="outline" style={styles.modalCloseBtn} />
