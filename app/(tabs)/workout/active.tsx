@@ -6,6 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useWorkoutStore } from '../../../stores/workoutStore';
+import { useAuthStore } from '../../../stores/authStore';
 import { supabase } from '../../../lib/supabase';
 import SetLogger from '../../../components/workout/SetLogger';
 import RestTimer from '../../../components/workout/RestTimer';
@@ -22,6 +23,7 @@ export default function ActiveWorkoutScreen() {
   const router = useRouter();
   const { sessionId, todayPlan, sets, addSet, setRest, tickElapsed, endSession, elapsedSeconds } =
     useWorkoutStore();
+  const { profile } = useAuthStore();
   const [completedSets, setCompletedSets] = useState<Record<string, number>>({});
   const [finishing, setFinishing] = useState(false);
   const [gifExerciseId, setGifExerciseId] = useState<string | null>(null);
@@ -112,6 +114,14 @@ export default function ActiveWorkoutScreen() {
     if (!sessionId) return;
     setFinishing(true);
     try {
+      // MET-based calorie burn calculation
+      const MET_STRENGTH = 3.5;
+      const MET_BODYWEIGHT = 4.0;
+      const met = profile?.equipment_type === 'bodyweight' ? MET_BODYWEIGHT : MET_STRENGTH;
+      const weightKg = profile?.body_weight_kg ?? 70;
+      const durationHours = elapsedSeconds / 3600;
+      const caloriesBurned = Math.round(met * weightKg * durationHours);
+
       const totalVol = sets.reduce((sum, s) => sum + s.weight_kg * s.reps, 0);
       const xp = sets.length * 10;
       const { error } = await supabase
@@ -120,18 +130,22 @@ export default function ActiveWorkoutScreen() {
           ended_at: new Date().toISOString(),
           total_volume_kg: Math.round(totalVol * 10) / 10,
           xp_earned: xp,
+          calories_burned: caloriesBurned,
         })
         .eq('id', sessionId);
       if (error) throw error;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       const sid = sessionId;
       endSession();
-      router.replace({ pathname: '/(tabs)/workout/summary', params: { sessionId: sid } });
+      router.replace({
+        pathname: '/(tabs)/workout/summary',
+        params: { sessionId: sid, caloriesBurned: String(caloriesBurned) },
+      });
     } catch (e: unknown) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Could not finish workout');
       setFinishing(false);
     }
-  }, [sessionId, sets, endSession, router]);
+  }, [sessionId, sets, elapsedSeconds, profile, endSession, router]);
 
   if (!todayPlan || !sessionId) return null;
 
