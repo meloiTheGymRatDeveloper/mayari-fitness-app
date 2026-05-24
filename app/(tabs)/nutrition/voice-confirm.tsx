@@ -15,6 +15,11 @@ interface ParsedFood {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  // Internal per-100g base values (recalculation reference)
+  _cal_per100?: number;
+  _prot_per100?: number;
+  _carbs_per100?: number;
+  _fat_per100?: number;
 }
 
 const FIELDS: Array<{ key: keyof ParsedFood; label: string }> = [
@@ -32,15 +37,46 @@ export default function VoiceConfirmScreen() {
   const userId = useAuthStore((s) => s.session?.user.id);
   const { meal_slot, date, parsed } = useLocalSearchParams<{ meal_slot: MealSlot; date: string; parsed: string }>();
   const [foods, setFoods] = useState<ParsedFood[]>(() => {
-    try { return JSON.parse(parsed ?? '[]') as ParsedFood[]; } catch { return []; }
+    try {
+      const parsed_foods = JSON.parse(parsed ?? '[]') as ParsedFood[];
+      // Derive per-100g base values from initial quantities
+      return parsed_foods.map((item) => {
+        const qty = item.quantity_g || 100;
+        return {
+          ...item,
+          _cal_per100: (item.calories / qty) * 100,
+          _prot_per100: (item.protein_g / qty) * 100,
+          _carbs_per100: (item.carbs_g / qty) * 100,
+          _fat_per100: (item.fat_g / qty) * 100,
+        };
+      });
+    } catch {
+      return [];
+    }
   });
   const [saving, setSaving] = useState(false);
 
   function updateField(index: number, field: keyof ParsedFood, value: string) {
     setFoods((prev) =>
-      prev.map((f, i) =>
-        i === index ? { ...f, [field]: field === 'name' ? value : Number(value) || 0 } : f
-      )
+      prev.map((f, i) => {
+        if (i !== index) return f;
+
+        // If updating quantity_g, recalculate all macros from per-100g base
+        if (field === 'quantity_g') {
+          const g = Number(value) || 0;
+          return {
+            ...f,
+            quantity_g: g,
+            calories: Math.round((f._cal_per100 ?? 0) / 100 * g),
+            protein_g: Math.round((f._prot_per100 ?? 0) / 100 * g * 10) / 10,
+            carbs_g: Math.round((f._carbs_per100 ?? 0) / 100 * g * 10) / 10,
+            fat_g: Math.round((f._fat_per100 ?? 0) / 100 * g * 10) / 10,
+          };
+        }
+
+        // For other fields, just update normally
+        return { ...f, [field]: field === 'name' ? value : Number(value) || 0 };
+      })
     );
   }
 
