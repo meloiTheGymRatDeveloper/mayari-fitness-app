@@ -950,14 +950,6 @@ export default function OnboardingStep() {
           {currentStep > 1 && (
             <Button label="Back" variant="outline" onPress={handleBack} style={styles.backBtn} />
           )}
-          {currentStep === 4 && (
-            <Button
-              label="Skip"
-              variant="outline"
-              onPress={() => { setBodyFat(''); setCurrentStep(5); }}
-              style={styles.skipBtn}
-            />
-          )}
           <Button
             label={currentStep === 7 ? 'See My Results 🎉' : 'Next'}
             onPress={handleNext}
@@ -1133,7 +1125,6 @@ const styles = StyleSheet.create({
   nav: { flexDirection: 'row', gap: spacing.sm, marginTop: 'auto' },
   backBtn: { flex: 1 },
   nextBtn: { flex: 2 },
-  skipBtn: { flex: 1 },
   fullWidth: { flex: 1 },
   row: { flexDirection: 'row', gap: spacing.sm },
   flex1: { flex: 1 },
