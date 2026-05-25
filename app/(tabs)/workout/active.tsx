@@ -245,11 +245,14 @@ export default function ActiveWorkoutScreen() {
             )}
 
             {!formLoading && formData?.gifUrl && (
-              <Image source={formData.gifUrl} style={styles.gifImage} contentFit="contain" />
+              <>
+                <Image source={formData.gifUrl} style={styles.gifImage} contentFit="contain" />
+                <Text style={styles.debugUrl} selectable>{formData.gifUrl}</Text>
+              </>
             )}
 
             {!formLoading && !formData?.gifUrl && (
-              <Text style={styles.gifPlaceholder}>Form guide coming soon 🌙</Text>
+              <Text style={styles.gifPlaceholder}>No GIF (gifUrl is null)</Text>
             )}
 
             {!formLoading && formData && (formData.target || formData.equipment || formData.difficulty) && (
@@ -393,6 +396,7 @@ const styles = StyleSheet.create({
   },
   instructionBulletText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   instructionStep: { color: colors.text.secondary, fontSize: typography.sm, flex: 1, lineHeight: 20 },
+  debugUrl: { color: colors.brand.accent, fontSize: 10, marginBottom: spacing.sm, textAlign: 'center' },
   gifCloseBtn: { marginTop: spacing.md, alignItems: 'center', padding: spacing.md },
   gifCloseBtnText: { color: colors.brand.primary, fontSize: typography.base, fontWeight: '700' },
 });
