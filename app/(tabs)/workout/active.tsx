@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
-  Modal, Image,
+  Modal,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useWorkoutStore } from '../../../stores/workoutStore';
@@ -244,7 +245,7 @@ export default function ActiveWorkoutScreen() {
             )}
 
             {!formLoading && formData?.gifUrl && (
-              <Image source={{ uri: formData.gifUrl }} style={styles.gifImage} resizeMode="contain" />
+              <Image source={formData.gifUrl} style={styles.gifImage} contentFit="contain" />
             )}
 
             {!formLoading && !formData?.gifUrl && (
