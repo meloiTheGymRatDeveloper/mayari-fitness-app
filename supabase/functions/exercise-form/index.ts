@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Cache check: return from DB if all primary fields are present
+    // Cache check: return from DB if already stored
     const { data: cached } = await serviceClient
       .from("exercises")
       .select("form_gif_url, instructions, workoutx_target, workoutx_equipment, workoutx_difficulty, workoutx_body_part")
@@ -88,7 +88,6 @@ Deno.serve(async (req) => {
     // Cache miss — call WorkoutX API
     const workoutxKey = Deno.env.get("WORKOUTX_API_KEY");
     if (!workoutxKey) {
-      // API key not yet configured — return graceful empty so UI shows "coming soon"
       return new Response(
         JSON.stringify({ gifUrl: null, instructions: null, target: null, equipment: null, difficulty: null, bodyPart: null, cached: false }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -109,27 +108,72 @@ Deno.serve(async (req) => {
       );
     }
 
-    const results: WorkoutXExercise[] = await apiRes.json();
-    if (!Array.isArray(results) || results.length === 0) {
+    const rawBody = await apiRes.text();
+    let parsed: unknown;
+    try { parsed = JSON.parse(rawBody); } catch { parsed = null; }
+
+    // Handle plain array or wrapped { data/exercises/results } shapes
+    let resultsArr: WorkoutXExercise[] = [];
+    if (Array.isArray(parsed)) {
+      resultsArr = parsed as WorkoutXExercise[];
+    } else if (parsed && typeof parsed === "object") {
+      const obj = parsed as Record<string, unknown>;
+      const inner = obj.data ?? obj.exercises ?? obj.results ?? obj.exercise ?? null;
+      if (Array.isArray(inner)) resultsArr = inner as WorkoutXExercise[];
+      else if (inner && typeof inner === "object") resultsArr = [inner as WorkoutXExercise];
+    }
+
+    if (resultsArr.length === 0) {
       return new Response(
         JSON.stringify({ gifUrl: null, instructions: null, target: null, equipment: null, difficulty: null, bodyPart: null, cached: false }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const match = results[0];
-    const gifUrl = match.gifUrl ?? null;
+    const match = resultsArr[0];
+    const rawGifUrl: string | null = match.gifUrl ?? null;
     const instructions = Array.isArray(match.instructions) ? match.instructions : null;
     const target = match.target ?? null;
     const equipment = match.equipment ?? null;
     const difficulty = match.difficulty ?? null;
     const bodyPart = match.bodyPart ?? null;
 
-    // Store in DB so future requests hit cache
+    // Download GIF from WorkoutX (requires API key) and re-host in Supabase Storage
+    // so the mobile app can load it without auth headers.
+    let publicGifUrl: string | null = null;
+    if (rawGifUrl) {
+      try {
+        const gifRes = await fetch(rawGifUrl, {
+          headers: { "X-WorkoutX-Key": workoutxKey },
+          signal: AbortSignal.timeout(15000),
+        });
+        if (gifRes.ok) {
+          const gifBytes = await gifRes.arrayBuffer();
+          const fileName = `${exerciseId}.gif`;
+          const { error: uploadError } = await serviceClient.storage
+            .from("exercise-gifs")
+            .upload(fileName, gifBytes, { contentType: "image/gif", upsert: true });
+          if (!uploadError) {
+            const { data: urlData } = serviceClient.storage
+              .from("exercise-gifs")
+              .getPublicUrl(fileName);
+            publicGifUrl = urlData.publicUrl;
+          } else {
+            console.error("GIF upload error:", uploadError.message);
+          }
+        } else {
+          console.error("GIF fetch error:", gifRes.status);
+        }
+      } catch (e) {
+        console.error("GIF download/upload failed:", e);
+      }
+    }
+
+    // Persist metadata + public GIF URL so next request is served from cache
     const { error: updateError } = await serviceClient
       .from("exercises")
       .update({
-        form_gif_url: gifUrl,
+        form_gif_url: publicGifUrl,
         instructions,
         workoutx_target: target,
         workoutx_equipment: equipment,
@@ -142,7 +186,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ gifUrl, instructions, target, equipment, difficulty, bodyPart, cached: false }),
+      JSON.stringify({ gifUrl: publicGifUrl, instructions, target, equipment, difficulty, bodyPart, cached: false }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
