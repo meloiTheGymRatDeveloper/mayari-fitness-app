@@ -52,6 +52,8 @@ export default function ManualEntryScreen() {
     calories: '', protein: '', carbs: '', fat: '', fiber: '',
   });
   const logFood = useLogFood();
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiEstimated, setAiEstimated] = useState(false);
 
   const afterLogDest = origin === 'home' ? '/(tabs)/' : '/(tabs)/nutrition';
 
@@ -62,11 +64,13 @@ export default function ManualEntryScreen() {
       setServingG('100');
       setSlot(meal_slot ?? 'almusal');
       setMacros({ calories: '', protein: '', carbs: '', fat: '', fiber: '' });
+      setAiEstimated(false);
     }, [meal_slot]),
   );
 
   function setMacro(key: string, value: string) {
     setMacros(prev => ({ ...prev, [key]: value }));
+    setAiEstimated(false);
   }
 
   function validate(): string | null {
@@ -79,6 +83,50 @@ export default function ManualEntryScreen() {
       if (isNaN(v) || v < 0) return `Enter a valid value for ${field.label}.`;
     }
     return null;
+  }
+
+  async function fetchAIMacros() {
+    if (!name.trim() || aiLoading) return;
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-food-lookup', {
+        body: { food_name: name.trim() },
+      });
+      if (error || !data) throw new Error(error?.message ?? 'No data returned.');
+
+      const serving = parseFloat(servingG) || 100;
+      const factor = serving / 100;
+      const filled: Record<string, string> = {
+        calories: String(Math.round(data.calories_per_100g * factor * 10) / 10),
+        protein:  String(Math.round(data.protein_per_100g  * factor * 10) / 10),
+        carbs:    String(Math.round(data.carbs_per_100g    * factor * 10) / 10),
+        fat:      String(Math.round(data.fat_per_100g      * factor * 10) / 10),
+        fiber:    data.fiber_per_100g != null
+          ? String(Math.round(data.fiber_per_100g * factor * 10) / 10)
+          : '',
+      };
+
+      const hasValues = Object.values(macros).some(v => v !== '');
+      if (hasValues) {
+        Alert.alert('', 'Replace your current values with AI estimates?', [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Replace',
+            onPress: () => {
+              setMacros(filled);
+              setAiEstimated(true);
+            },
+          },
+        ]);
+      } else {
+        setMacros(filled);
+        setAiEstimated(true);
+      }
+    } catch (e) {
+      Alert.alert('Could not estimate macros', e instanceof Error ? e.message : 'Try again.');
+    } finally {
+      setAiLoading(false);
+    }
   }
 
   async function handleSave() {
@@ -183,7 +231,7 @@ export default function ManualEntryScreen() {
           <TextInput
             style={[styles.input, styles.servingInput]}
             value={servingG}
-            onChangeText={setServingG}
+            onChangeText={v => { setServingG(v); setAiEstimated(false); }}
             keyboardType="numeric"
             selectTextOnFocus
           />
@@ -192,6 +240,21 @@ export default function ManualEntryScreen() {
           </View>
         </View>
         <Text style={styles.servingHint}>Enter macros below for this exact serving size.</Text>
+
+        <TouchableOpacity
+          style={[styles.aiBtn, (!name.trim() || aiLoading) && styles.aiBtnOff]}
+          onPress={fetchAIMacros}
+          disabled={!name.trim() || aiLoading}
+        >
+          {aiLoading ? (
+            <>
+              <ActivityIndicator size="small" color={colors.brand.primary} />
+              <Text style={styles.aiBtnText}> Estimating…</Text>
+            </>
+          ) : (
+            <Text style={styles.aiBtnText}>Generate Macros with AI ✨</Text>
+          )}
+        </TouchableOpacity>
 
         {/* Macro fields */}
         <View style={styles.macroGrid}>
@@ -215,6 +278,10 @@ export default function ManualEntryScreen() {
             </View>
           ))}
         </View>
+
+        {aiEstimated && (
+          <Text style={styles.aiNote}>AI estimated · tap to edit</Text>
+        )}
 
         <TouchableOpacity
           style={[styles.saveBtn, logFood.isPending && styles.saveBtnOff]}
@@ -304,4 +371,26 @@ const styles = StyleSheet.create({
   },
   saveBtnOff: { opacity: 0.5 },
   saveBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  aiBtn: {
+    borderWidth: 1,
+    borderColor: colors.brand.primary,
+    borderRadius: 12,
+    paddingVertical: spacing.sm,
+    alignItems: 'center' as const,
+    flexDirection: 'row' as const,
+    justifyContent: 'center' as const,
+    marginBottom: spacing.lg,
+  },
+  aiBtnOff: { opacity: 0.4 },
+  aiBtnText: {
+    color: colors.brand.primary,
+    fontSize: typography.sm,
+    fontWeight: '600' as const,
+  },
+  aiNote: {
+    color: colors.text.muted,
+    fontSize: typography.xs,
+    textAlign: 'center' as const,
+    marginBottom: spacing.md,
+  },
 });
