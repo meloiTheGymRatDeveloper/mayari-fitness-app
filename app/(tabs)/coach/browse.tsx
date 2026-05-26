@@ -16,8 +16,9 @@ export default function BrowsePlansScreen() {
   const profile = useAuthStore(s => s.profile);
 
   const frequency = Math.min(Math.max(profile?.workout_days?.length ?? 3, 2), 6);
+  const rawDuration = profile?.session_duration_min ?? 60;
   const [selectedDuration, setSelectedDuration] = useState(
-    profile?.session_duration_min ?? 60,
+    DURATIONS.includes(rawDuration) ? rawDuration : 60,
   );
 
   if (!profile) {
@@ -98,7 +99,7 @@ export default function BrowsePlansScreen() {
         {frequency}x / Week · {selectedDuration} Minutes
       </Text>
 
-      {/* Day cards */}
+      {/* Day cards — tapping any card selects the full plan (all days), not just the individual day */}
       {plan.days.map((day, i) => {
         const exNames = day.exercises.map(e => e.exercise_name).join(' · ');
         const truncated = exNames.length > 60 ? exNames.slice(0, 57) + '...' : exNames;

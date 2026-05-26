@@ -12,6 +12,7 @@ export default function CoachLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="browse" options={{ headerShown: false }} />
       <Stack.Screen name="generate" options={{ title: 'Generate Plan' }} />
       <Stack.Screen name="plan" options={{ title: 'Plan Preview' }} />
     </Stack>
