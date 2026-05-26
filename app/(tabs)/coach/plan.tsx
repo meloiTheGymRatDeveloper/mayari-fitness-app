@@ -38,7 +38,7 @@ function DayCard({ day }: { day: DayPlan }) {
 
 export default function PlanScreen() {
   const router = useRouter();
-  const { plan: planRaw } = useLocalSearchParams<{ plan: string }>();
+  const { plan: planRaw, source } = useLocalSearchParams<{ plan: string; source?: string }>();
   const userId = useAuthStore(s => s.session?.user.id);
   const profile = useAuthStore(s => s.profile);
   const [saving, setSaving] = useState(false);
@@ -56,11 +56,11 @@ export default function PlanScreen() {
 
       const { error } = await supabase.from('workout_plans').insert({
         user_id: userId,
-        split_type: 'custom',
+        split_type: source === 'algorithm' ? 'algorithm' : 'custom',
         days_per_week: profile.workout_days?.length ?? planData.days.length,
         plan_data: planData,
         is_active: true,
-        generated_by: 'claude',
+        generated_by: source === 'algorithm' ? 'algorithm' : 'claude',
       });
       if (error) throw error;
 
