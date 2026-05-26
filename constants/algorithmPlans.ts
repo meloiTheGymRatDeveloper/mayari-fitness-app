@@ -1191,5 +1191,7 @@ const VALID_DURATIONS = [30, 45, 60, 75, 90];
 export function getAlgorithmPlan(frequency: number, durationMin: number): PlanData {
   const freq = Math.min(Math.max(Math.round(frequency), 2), 6);
   const dur = VALID_DURATIONS.includes(durationMin) ? durationMin : 60;
-  return ALGORITHM_PLANS[`${freq}x${dur}`];
+  const plan = ALGORITHM_PLANS[`${freq}x${dur}`];
+  if (!plan) throw new Error(`No algorithm plan for ${freq}x${dur}`);
+  return plan;
 }
