@@ -66,26 +66,32 @@ export default function PlanScreen() {
     }
     setSaving(true);
     try {
-      await supabase
+      const { error: updateError } = await supabase
         .from('workout_plans')
         .update({ is_active: false })
         .eq('user_id', userId);
+      if (updateError) throw updateError;
 
-      const { error } = await supabase.from('workout_plans').insert({
-        user_id: userId,
-        split_type: source === 'algorithm' ? 'algorithm' : 'custom',
-        days_per_week: planData.days.length,
-        plan_data: planData,
-        is_active: true,
-        generated_by: source === 'algorithm' ? 'algorithm' : 'claude',
-      });
-      if (error) throw error;
+      const { error: insertError } = await supabase
+        .from('workout_plans')
+        .insert({
+          user_id: userId,
+          split_type: source === 'algorithm' ? 'algorithm' : 'custom',
+          days_per_week: planData.days.length,
+          plan_data: planData,
+          is_active: true,
+          generated_by: source === 'algorithm' ? 'algorithm' : 'claude',
+        })
+        .select()
+        .single();
+      if (insertError) throw insertError;
 
       await queryClient.invalidateQueries({ queryKey: ['workout_plans'] });
+      await queryClient.invalidateQueries({ queryKey: ['workout_plan'] });
       clear();
-      router.navigate('/(tabs)/workout' as never);
+      router.replace('/(tabs)/workout' as never);
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Could not save plan. Please try again.');
+      Alert.alert('Save Failed', e instanceof Error ? e.message : 'Could not save plan. Please try again.');
     } finally {
       setSaving(false);
     }
