@@ -4,9 +4,9 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../stores/authStore';
+import { usePlanEditorStore } from '../../../stores/planEditorStore';
 import { getAlgorithmPlan } from '../../../constants/algorithmPlans';
 import { colors, typography, spacing } from '../../../constants/theme';
-import type { PlanData } from '../../../types/database';
 
 const FREQUENCIES = [2, 3, 4, 5, 6];
 const DURATIONS = [30, 45, 60, 75, 90];
@@ -31,20 +31,18 @@ export default function BrowsePlansScreen() {
     DURATIONS.includes(rawDuration) ? rawDuration : 60,
   );
 
+  const setPlan = usePlanEditorStore(s => s.setPlan);
   const meta = PLAN_META[selectedFrequency];
   const plan = getAlgorithmPlan(selectedFrequency, selectedDuration);
 
-  function handleSelectPlan(planData: PlanData) {
-    router.push({
-      pathname: '/(tabs)/coach/plan',
-      params: {
-        plan: JSON.stringify(planData),
-        source: 'algorithm',
-        planName: `${meta.name} · ${selectedFrequency}x / week`,
-        frequency: String(selectedFrequency),
-        duration: String(selectedDuration),
-      },
+  function handleSelectPlan() {
+    setPlan(plan, {
+      source: 'algorithm',
+      planName: `${meta.name} · ${selectedFrequency}x / week`,
+      frequency: selectedFrequency,
+      duration: selectedDuration,
     });
+    router.push('/(tabs)/coach/plan' as never);
   }
 
   return (
@@ -96,7 +94,7 @@ export default function BrowsePlansScreen() {
       <Text style={styles.sectionLabel}>Suggested Plan</Text>
       <TouchableOpacity
         style={styles.planCard}
-        onPress={() => handleSelectPlan(plan)}
+        onPress={handleSelectPlan}
         activeOpacity={0.75}
       >
         <View style={[styles.planAccent, { backgroundColor: meta.color }]} />

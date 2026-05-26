@@ -4,25 +4,15 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Alert, ActivityIndicator,
 } from 'react-native';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
+import { usePlanEditorStore } from '../../../stores/planEditorStore';
 import { colors, typography, spacing } from '../../../constants/theme';
-import type { PlanData, DayPlan } from '../../../types/database';
+import type { DayPlan } from '../../../types/database';
 
 const DAY_COLORS = ['#F59E0B', '#22C55E', '#6366F1', '#A78BFA', '#F472B6', '#34D399'];
-
-function parsePlan(raw: string): PlanData | null {
-  try {
-    return JSON.parse(raw) as PlanData;
-  } catch {
-    const match = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (match) {
-      try { return JSON.parse(match[1]) as PlanData; } catch { /* fall through */ }
-    }
-    return null;
-  }
-}
 
 function DayCard({
   day,
@@ -60,20 +50,20 @@ function DayCard({
 
 export default function PlanScreen() {
   const router = useRouter();
-  const { plan: planRaw, source, planName, duration } = useLocalSearchParams<{
-    plan: string;
-    source?: string;
-    planName?: string;
-    duration?: string;
-  }>();
+  const queryClient = useQueryClient();
   const userId = useAuthStore(s => s.session?.user.id);
+  const { plan: planData, planName, duration, source, clear } = usePlanEditorStore();
   const [saving, setSaving] = useState(false);
 
-  const planData = planRaw ? parsePlan(planRaw) : null;
-  const title = planName ?? 'Plan Preview';
-
   const handleSave = async () => {
-    if (!planData || !userId) return;
+    if (!planData) {
+      Alert.alert('Error', 'No plan loaded. Go back and select a plan.');
+      return;
+    }
+    if (!userId) {
+      Alert.alert('Error', 'You must be logged in to save a plan.');
+      return;
+    }
     setSaving(true);
     try {
       await supabase
@@ -91,25 +81,27 @@ export default function PlanScreen() {
       });
       if (error) throw error;
 
-      router.replace('/(tabs)/workout' as never);
+      await queryClient.invalidateQueries({ queryKey: ['workout_plans'] });
+      clear();
+      router.navigate('/(tabs)/workout' as never);
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Could not save plan');
+      Alert.alert('Error', e instanceof Error ? e.message : 'Could not save plan. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
-  function handleDayPress(day: DayPlan) {
+  function handleDayPress(dayIdx: number) {
     router.push({
       pathname: '/(tabs)/coach/plan-day',
-      params: { day: JSON.stringify(day), duration: duration ?? '60' },
+      params: { dayIdx: String(dayIdx) },
     });
   }
 
   if (!planData) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Could not load the plan.</Text>
+        <Text style={styles.errorText}>No plan loaded.</Text>
         <TouchableOpacity style={styles.btn} onPress={() => router.back()}>
           <Text style={styles.btnText}>Go Back</Text>
         </TouchableOpacity>
@@ -119,18 +111,19 @@ export default function PlanScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title }} />
+      <Stack.Screen options={{ title: planName || 'Plan Preview' }} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
         <Text style={styles.sub}>
-          {planData.days.length} days · ~{duration ?? '60'} min per session
+          {planData.days.length} days · ~{duration} min per session
         </Text>
+        <Text style={styles.editHint}>Tap a day to view and edit exercises</Text>
 
         {planData.days.map((day, i) => (
           <DayCard
-            key={day.day_label}
+            key={i}
             day={day}
             index={i}
-            onPress={() => handleDayPress(day)}
+            onPress={() => handleDayPress(i)}
           />
         ))}
 
@@ -158,11 +151,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.xl,
   },
-  sub: {
-    color: colors.text.muted,
-    fontSize: typography.sm,
-    marginBottom: spacing.lg,
-  },
+  sub: { color: colors.text.muted, fontSize: typography.sm, marginBottom: 4 },
+  editHint: { color: colors.text.muted, fontSize: typography.xs, marginBottom: spacing.lg, fontStyle: 'italic' },
   dayCard: {
     backgroundColor: colors.bg.secondary,
     borderWidth: 1,
