@@ -26,6 +26,8 @@ function getSplitShortLabel(splitType: string): string {
     full_body: 'Full Body',
     upper_lower: 'Upper/Lower',
     ppl: 'Push/Pull/Legs',
+    algorithm: 'Pre-built Plan',
+    custom: 'Custom Plan',
   };
   return map[splitType] ?? splitType;
 }
