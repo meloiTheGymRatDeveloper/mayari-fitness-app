@@ -14,9 +14,29 @@ export function useActivePlan() {
         .select('*')
         .eq('user_id', userId)
         .eq('is_active', true)
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
       if (error) throw error;
-      return data as WorkoutPlan | null;
+      return (data?.[0] ?? null) as WorkoutPlan | null;
+    },
+    enabled: !!userId,
+  });
+}
+
+export function useAllPlans() {
+  const userId = useAuthStore(s => s.session?.user.id);
+  return useQuery({
+    queryKey: ['workout_plans', 'all', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data, error } = await supabase
+        .from('workout_plans')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as WorkoutPlan[];
     },
     enabled: !!userId,
   });

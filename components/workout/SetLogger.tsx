@@ -5,13 +5,14 @@ import { colors, typography, spacing } from '../../constants/theme';
 interface Props {
   setNumber: number;
   defaultWeight?: number;
+  defaultReps?: number;
   disabled?: boolean;
   onDone: (weight: number, reps: number) => void;
 }
 
-export default function SetLogger({ setNumber, defaultWeight = 0, disabled = false, onDone }: Props) {
+export default function SetLogger({ setNumber, defaultWeight = 0, defaultReps, disabled = false, onDone }: Props) {
   const [weight, setWeight] = useState(String(defaultWeight || ''));
-  const [reps, setReps] = useState('');
+  const [reps, setReps] = useState(defaultReps ? String(defaultReps) : '');
 
   function handleDone() {
     const w = parseFloat(weight) || 0;

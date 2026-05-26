@@ -222,36 +222,6 @@ export async function saveWorkoutPlan(
   result: BuildResult,
   daysPerWeek: number,
 ): Promise<WorkoutPlan> {
-  // 1. Fetch inactive plans ordered by created_at DESC
-  const { data: inactivePlans, error: fetchError } = await supabase
-    .from('workout_plans')
-    .select('id, created_at')
-    .eq('user_id', userId)
-    .eq('is_active', false)
-    .order('created_at', { ascending: false })
-    .order('id', { ascending: false });
-
-  if (fetchError) throw new Error(fetchError.message);
-
-  // 2. If count >= 2, delete all but the most recent one (keep 1 before adding new)
-  if (inactivePlans && inactivePlans.length >= 2) {
-    const idsToDelete = inactivePlans.slice(1).map((p: { id: string }) => p.id);
-    const { error: deleteError } = await supabase
-      .from('workout_plans')
-      .delete()
-      .in('id', idsToDelete);
-    if (deleteError) throw new Error(deleteError.message);
-  }
-
-  // 3. Deactivate current active plan
-  const { error: deactivateError } = await supabase
-    .from('workout_plans')
-    .update({ is_active: false })
-    .eq('user_id', userId)
-    .eq('is_active', true);
-  if (deactivateError) throw new Error(deactivateError.message);
-
-  // 4. Insert new plan as active
   const { data, error } = await supabase
     .from('workout_plans')
     .insert({
@@ -266,9 +236,34 @@ export async function saveWorkoutPlan(
     .single();
 
   if (error || !data) throw new Error(error?.message ?? 'Failed to save plan');
-
-  // 5. Return new plan
   return data as WorkoutPlan;
+}
+
+export async function deleteWorkoutPlan(
+  supabase: SupabaseClient,
+  userId: string,
+  planId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('workout_plans')
+    .delete()
+    .eq('id', planId)
+    .eq('user_id', userId);
+  if (error) throw new Error(error.message);
+}
+
+export async function updatePlanDayExercises(
+  supabase: SupabaseClient,
+  userId: string,
+  planId: string,
+  planData: PlanData,
+): Promise<void> {
+  const { error } = await supabase
+    .from('workout_plans')
+    .update({ plan_data: planData })
+    .eq('id', planId)
+    .eq('user_id', userId);
+  if (error) throw new Error(error.message);
 }
 
 // ---------------------------------------------------------------------------

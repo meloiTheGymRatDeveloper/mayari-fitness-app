@@ -25,8 +25,11 @@ export default function ActiveWorkoutScreen() {
   const { sessionId, todayPlan, sets, addSet, setRest, tickElapsed, endSession, elapsedSeconds } =
     useWorkoutStore();
   const { profile } = useAuthStore();
+  const userId = useAuthStore(s => s.session?.user.id);
   const [completedSets, setCompletedSets] = useState<Record<string, number>>({});
   const [finishing, setFinishing] = useState(false);
+  // null = loading, {} = loaded (possibly no prev data)
+  const [prevSetMap, setPrevSetMap] = useState<Record<string, { weight_kg: number; reps: number }> | null>(null);
   const [formExerciseId, setFormExerciseId] = useState<string | null>(null);
   const [formData, setFormData] = useState<{
     gifUrl: string | null;
@@ -49,6 +52,42 @@ export default function ActiveWorkoutScreen() {
       router.replace('/(tabs)/workout');
     }
   }, [sessionId, todayPlan, router]);
+
+  useEffect(() => {
+    if (!sessionId || !todayPlan || !userId) return;
+    const exerciseIds = todayPlan.exercises.map(e => e.exercise_id);
+
+    async function loadPrevSets() {
+      const { data: recentSessions } = await supabase
+        .from('workout_sessions')
+        .select('id')
+        .eq('user_id', userId!)
+        .not('ended_at', 'is', null)
+        .neq('id', sessionId!)
+        .order('ended_at', { ascending: false })
+        .limit(10);
+
+      const recentIds = (recentSessions ?? []).map((s: { id: string }) => s.id);
+      if (recentIds.length === 0) { setPrevSetMap({}); return; }
+
+      const { data: prevSets } = await supabase
+        .from('workout_sets')
+        .select('exercise_id, weight_kg, reps, completed_at')
+        .in('session_id', recentIds)
+        .in('exercise_id', exerciseIds)
+        .order('completed_at', { ascending: false });
+
+      const map: Record<string, { weight_kg: number; reps: number }> = {};
+      for (const s of (prevSets ?? []) as { exercise_id: string; weight_kg: number; reps: number }[]) {
+        if (!map[s.exercise_id]) {
+          map[s.exercise_id] = { weight_kg: s.weight_kg, reps: s.reps };
+        }
+      }
+      setPrevSetMap(map);
+    }
+
+    loadPrevSets();
+  }, [sessionId, todayPlan, userId]);
 
   const totalVolume = sets.reduce((sum, s) => sum + s.weight_kg * s.reps, 0);
 
@@ -161,7 +200,10 @@ export default function ActiveWorkoutScreen() {
         params: { sessionId: sid, caloriesBurned: String(caloriesBurned) },
       });
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Could not finish workout');
+      const msg = e instanceof Error
+        ? e.message
+        : (e as { message?: string })?.message ?? 'Could not finish workout';
+      Alert.alert('Error', msg);
       setFinishing(false);
     }
   }, [sessionId, sets, elapsedSeconds, profile, endSession, router]);
@@ -197,17 +239,21 @@ export default function ActiveWorkoutScreen() {
                 <Text style={styles.gifBtnText}>🎬 Form</Text>
               </TouchableOpacity>
               {remaining > 0
-                ? Array.from({ length: Math.min(remaining, 1) }, (_, i) => (
-                    <SetLogger
-                      key={done + i}
-                      setNumber={done + i + 1}
-                      defaultWeight={
-                        sets.filter(s => s.exercise_id === exercise.exercise_id).slice(-1)[0]
-                          ?.weight_kg ?? 0
-                      }
-                      onDone={(w, r) => handleSetDone(exercise, w, r)}
-                    />
-                  ))
+                ? Array.from({ length: Math.min(remaining, 1) }, (_, i) => {
+                    const currentWeight = sets
+                      .filter(s => s.exercise_id === exercise.exercise_id)
+                      .slice(-1)[0]?.weight_kg;
+                    const prev = prevSetMap?.[exercise.exercise_id];
+                    return (
+                      <SetLogger
+                        key={`${exercise.exercise_id}-${done + i}-${prevSetMap !== null}`}
+                        setNumber={done + i + 1}
+                        defaultWeight={currentWeight ?? prev?.weight_kg ?? 0}
+                        defaultReps={currentWeight == null ? prev?.reps : undefined}
+                        onDone={(w, r) => handleSetDone(exercise, w, r)}
+                      />
+                    );
+                  })
                 : <Text style={styles.allDone}>All sets complete ✓</Text>
               }
             </View>

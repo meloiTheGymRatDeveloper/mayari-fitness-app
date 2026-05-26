@@ -12,6 +12,8 @@ export default function WorkoutLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="generate-confirm" options={{ title: 'Generate Plan', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="plan" options={{ title: 'Plan Preview', headerBackTitle: 'Back' }} />
       <Stack.Screen
         name="active"
         options={{ title: 'Active Workout', gestureEnabled: false, headerLeft: () => null }}
@@ -25,6 +27,8 @@ export default function WorkoutLayout() {
       <Stack.Screen name="records" options={{ title: 'Personal Records' }} />
       <Stack.Screen name="exercise/index" options={{ title: 'Exercise Library' }} />
       <Stack.Screen name="exercise/[id]" options={{ title: 'Exercise' }} />
+      <Stack.Screen name="[planId]/index" options={{ title: 'Plan' }} />
+      <Stack.Screen name="[planId]/[dayIdx]" options={{ title: 'Session' }} />
     </Stack>
   );
 }

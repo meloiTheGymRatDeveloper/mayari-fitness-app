@@ -48,6 +48,7 @@ export default function PlanPreviewScreen() {
   const [editRepsLow, setEditRepsLow] = useState('');
   const [editRepsHigh, setEditRepsHigh] = useState('');
   const [saving, setSaving] = useState(false);
+  const [customExName, setCustomExName] = useState('');
 
   const equipmentType = profile?.equipment_type ?? 'full_gym';
 
@@ -122,17 +123,18 @@ export default function PlanPreviewScreen() {
     setEditModal(null);
   }
 
-  function handleSelectAlternative(altId: string) {
+  function handleSelectAlternative(altId: string, displayName?: string) {
     if (!swapModal) return;
     const { dayIdx, exerciseIdx, append } = swapModal;
     setSwapModal(null);
+    setCustomExName('');
 
     setPlanData(prev => {
       const days = prev.days.map((day, di) => {
         if (di !== dayIdx) return day;
         const newExercise: PlannedExercise = {
           exercise_id: altId,
-          exercise_name: altId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+          exercise_name: displayName ?? altId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
           muscle_group: day.exercises[0]?.muscle_group ?? 'push',
           sets: 3,
           reps_low: 8,
@@ -151,6 +153,13 @@ export default function PlanPreviewScreen() {
       });
       return { days };
     });
+  }
+
+  function handleAddCustomExercise() {
+    const name = customExName.trim();
+    if (!name) return;
+    const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'custom';
+    handleSelectAlternative(id, name);
   }
 
   async function handleSave() {
@@ -283,29 +292,61 @@ export default function PlanPreviewScreen() {
       </Modal>
 
       {/* Swap / Add Modal */}
-      <Modal visible={swapModal !== null} transparent animationType="slide" onRequestClose={() => setSwapModal(null)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {swapModal?.append ? 'Add Exercise' : 'Swap Exercise'}
-            </Text>
-            <ScrollView style={styles.modalList}>
-              {modalOptions.map(id => (
-                <TouchableOpacity key={id} style={styles.modalOption} onPress={() => handleSelectAlternative(id)}>
-                  <Text style={styles.modalOptionText}>
-                    {id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+      <Modal visible={swapModal !== null} transparent animationType="slide" onRequestClose={() => { setSwapModal(null); setCustomExName(''); }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>
+                    {swapModal?.append ? 'Add Exercise' : 'Swap Exercise'}
                   </Text>
-                </TouchableOpacity>
-              ))}
-              {modalOptions.length === 0 && (
-                <Text style={styles.modalEmpty}>No alternatives available for this equipment.</Text>
-              )}
-            </ScrollView>
-            <TouchableOpacity style={styles.modalCancel} onPress={() => setSwapModal(null)}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+
+                  {swapModal?.append && (
+                    <>
+                      <View style={styles.customInputRow}>
+                        <TextInput
+                          style={styles.customInput}
+                          placeholder="Type custom exercise name..."
+                          placeholderTextColor={colors.text.muted}
+                          value={customExName}
+                          onChangeText={setCustomExName}
+                          returnKeyType="done"
+                          onSubmitEditing={handleAddCustomExercise}
+                        />
+                        <TouchableOpacity
+                          style={[styles.customAddBtn, !customExName.trim() && styles.customAddBtnOff]}
+                          onPress={handleAddCustomExercise}
+                          disabled={!customExName.trim()}
+                        >
+                          <Text style={styles.customAddBtnText}>Add</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={styles.orDivider}>— or pick from list —</Text>
+                    </>
+                  )}
+
+                  <ScrollView style={styles.modalList}>
+                    {modalOptions.map(id => (
+                      <TouchableOpacity key={id} style={styles.modalOption} onPress={() => handleSelectAlternative(id)}>
+                        <Text style={styles.modalOptionText}>
+                          {id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                    {modalOptions.length === 0 && (
+                      <Text style={styles.modalEmpty}>No alternatives available for this equipment.</Text>
+                    )}
+                  </ScrollView>
+
+                  <TouchableOpacity style={styles.modalCancel} onPress={() => { setSwapModal(null); setCustomExName(''); }}>
+                    <Text style={styles.modalCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -380,7 +421,28 @@ const styles = StyleSheet.create({
     width: 72,
     paddingVertical: spacing.sm,
   },
-  modalList: { maxHeight: 300 },
+  customInputRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
+  customInput: {
+    flex: 1,
+    backgroundColor: colors.bg.primary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    color: colors.text.primary,
+    fontSize: typography.base,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  customAddBtn: {
+    backgroundColor: colors.brand.primary,
+    borderRadius: 10,
+    paddingHorizontal: spacing.md,
+    justifyContent: 'center',
+  },
+  customAddBtnOff: { opacity: 0.4 },
+  customAddBtnText: { color: '#fff', fontSize: typography.sm, fontWeight: '700' },
+  orDivider: { color: colors.text.muted, fontSize: typography.xs, textAlign: 'center', marginBottom: spacing.sm },
+  modalList: { maxHeight: 260 },
   modalOption: {
     paddingVertical: spacing.md,
     borderBottomWidth: 1,

@@ -1,20 +1,34 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { colors, typography, spacing } from '../../../constants/theme';
-import { useActivePlan, useRecentSessions, useWorkoutSessionCount } from '../../../hooks/useWorkout';
+import { useAllPlans, useRecentSessions } from '../../../hooks/useWorkout';
 import { useLatestTipByType } from '../../../hooks/useCoachTips';
-import { useWorkoutStore } from '../../../stores/workoutStore';
 import { useAuthStore } from '../../../stores/authStore';
 import { supabase } from '../../../lib/supabase';
-import { generateWorkoutPlan } from '../../../lib/workoutGenerator';
+import { deleteWorkoutPlan } from '../../../lib/workoutGenerator';
 import Skeleton from '../../../components/ui/Skeleton';
 import EmptyState from '../../../components/ui/EmptyState';
-import type { DayPlan, WorkoutSession } from '../../../types/database';
+import type { WorkoutPlan, WorkoutSession } from '../../../types/database';
+
+const PLAN_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function getSplitShortLabel(splitType: string): string {
+  const map: Record<string, string> = {
+    full_body: 'Full Body',
+    upper_lower: 'Upper/Lower',
+    ppl: 'Push/Pull/Legs',
+  };
+  return map[splitType] ?? splitType;
+}
 
 function formatDuration(startedAt: string, endedAt: string): string {
   const mins = Math.round(
@@ -52,78 +66,97 @@ function SessionCard({ session, onPress }: { session: WorkoutSession; onPress?: 
   return <View style={styles.sessionCard}>{content}</View>;
 }
 
+function PlanCard({
+  plan,
+  letter,
+  onPress,
+  onDelete,
+  deleting,
+}: {
+  plan: WorkoutPlan;
+  letter: string;
+  onPress: () => void;
+  onDelete: () => void;
+  deleting: boolean;
+}) {
+  return (
+    <TouchableOpacity style={styles.planCard} onPress={onPress} activeOpacity={0.75}>
+      <View style={styles.planLetterBadge}>
+        <Text style={styles.planLetter}>{letter}</Text>
+      </View>
+      <View style={styles.planInfo}>
+        <Text style={styles.planName}>Workout {letter}</Text>
+        <Text style={styles.planMeta}>
+          {getSplitShortLabel(plan.split_type)} · {plan.plan_data.days.length} days
+        </Text>
+        <Text style={styles.planDate}>Generated {formatDate(plan.created_at)}</Text>
+      </View>
+      <TouchableOpacity
+        style={styles.deleteBtn}
+        onPress={onDelete}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        {deleting
+          ? <ActivityIndicator size="small" color={colors.error} />
+          : <Text style={styles.deleteBtnText}>🗑</Text>
+        }
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+}
+
 export default function WorkoutScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const { data: activePlan, isLoading: planLoading, isError: planError, refetch: refetchPlan } = useActivePlan();
+  const { data: plans = [], isLoading: plansLoading, isError: plansError, refetch } = useAllPlans();
   const { data: recentSessions = [] } = useRecentSessions(3);
-  const { data: sessionCount = 0 } = useWorkoutSessionCount();
-  const { startSession } = useWorkoutStore();
   const userId = useAuthStore(s => s.session?.user.id);
-  const profile = useAuthStore(s => s.profile);
-  const [starting, setStarting] = useState(false);
-  const [generating, setGenerating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const workoutTip = useLatestTipByType('workout');
 
-  const todayPlan: DayPlan | null = activePlan
-    ? (activePlan.plan_data.days[sessionCount % activePlan.plan_data.days.length] ?? null)
-    : null;
+  const handleDelete = useCallback((plan: WorkoutPlan, letter: string) => {
+    Alert.alert(
+      `Delete Workout ${letter}?`,
+      `This will permanently remove the ${getSplitShortLabel(plan.split_type)} plan.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            if (!userId) return;
+            setDeletingId(plan.id);
+            try {
+              await deleteWorkoutPlan(supabase, userId, plan.id);
+              await queryClient.invalidateQueries({ queryKey: ['workout_plans'] });
+              await queryClient.invalidateQueries({ queryKey: ['workout_plan'] });
+            } catch {
+              Alert.alert('Error', 'Could not delete plan.');
+            } finally {
+              setDeletingId(null);
+            }
+          },
+        },
+      ]
+    );
+  }, [userId, queryClient]);
 
-  const handleStart = useCallback(async () => {
-    if (!userId || !todayPlan || !activePlan) return;
-    setStarting(true);
-    try {
-      const { data, error } = await supabase
-        .from('workout_sessions')
-        .insert({
-          user_id: userId,
-          plan_id: activePlan.id,
-          started_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-      if (error || !data) throw new Error(error?.message ?? 'Session create failed');
-      startSession(data.id, activePlan.id, todayPlan);
-      router.push('/(tabs)/workout/active');
-    } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Could not start workout');
-    } finally {
-      setStarting(false);
-    }
-  }, [userId, todayPlan, activePlan, startSession, router]);
-
-  const handleGenerate = useCallback(async () => {
-    if (!userId || !profile) return;
-    setGenerating(true);
-    try {
-      await generateWorkoutPlan(supabase, userId, profile);
-      await queryClient.invalidateQueries({ queryKey: ['workout_plan'] });
-    } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Could not generate plan');
-    } finally {
-      setGenerating(false);
-    }
-  }, [userId, profile, queryClient]);
-
-  if (planLoading) {
+  if (plansLoading) {
     return (
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
         <Skeleton width={280} height={28} style={{ marginBottom: spacing.lg }} />
-        <Skeleton width={340} height={200} style={{ marginBottom: spacing.lg }} />
-        <View style={styles.linksRow}>
-          <Skeleton width={120} height={16} />
-          <Skeleton width={120} height={16} />
-        </View>
+        <Skeleton width='100%' height={90} style={{ marginBottom: spacing.sm }} />
+        <Skeleton width='100%' height={90} style={{ marginBottom: spacing.sm }} />
       </ScrollView>
     );
   }
 
-  if (planError) {
+  if (plansError) {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorText}>Something went wrong</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => refetchPlan()}>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()}>
           <Text style={styles.retryBtnText}>Try Again</Text>
         </TouchableOpacity>
       </View>
@@ -132,26 +165,17 @@ export default function WorkoutScreen() {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
-      <Text style={styles.heading}>Workout</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.heading}>Workout</Text>
+        <TouchableOpacity
+          style={styles.generateBtn}
+          onPress={() => router.push('/(tabs)/workout/generate-confirm' as never)}
+        >
+          <Text style={styles.generateBtnText}>+ Generate Plan</Text>
+        </TouchableOpacity>
+      </View>
 
-      {todayPlan ? (
-        <View style={styles.planCard}>
-          <Text style={styles.dayLabel}>{todayPlan.day_label}</Text>
-          {todayPlan.exercises.map(ex => (
-            <View key={ex.exercise_id} style={styles.exRow}>
-              <Text style={styles.exName}>{ex.exercise_name}</Text>
-              <Text style={styles.exMeta}>{ex.sets} × {ex.reps_low}–{ex.reps_high}</Text>
-            </View>
-          ))}
-          <TouchableOpacity
-            style={[styles.btn, starting && styles.btnOff]}
-            onPress={handleStart}
-            disabled={starting}
-          >
-            <Text style={styles.btnText}>{starting ? 'Starting...' : 'Start Workout'}</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
+      {plans.length === 0 ? (
         <EmptyState
           emoji="🏋️"
           title="Wala pang workout plan"
@@ -159,6 +183,22 @@ export default function WorkoutScreen() {
           ctaLabel="Generate Plan"
           onCta={() => router.push('/(tabs)/workout/generate-confirm' as never)}
         />
+      ) : (
+        <View style={styles.planList}>
+          {plans.map((plan, idx) => {
+            const letter = PLAN_LETTERS[idx] ?? String(idx + 1);
+            return (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                letter={letter}
+                onPress={() => router.push(`/(tabs)/workout/${plan.id}` as never)}
+                onDelete={() => handleDelete(plan, letter)}
+                deleting={deletingId === plan.id}
+              />
+            );
+          })}
+        </View>
       )}
 
       <View style={styles.linksRow}>
@@ -201,15 +241,38 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center' },
-  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700', marginBottom: spacing.lg },
-  planCard: { backgroundColor: colors.bg.secondary, borderRadius: 16, padding: spacing.lg, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
-  dayLabel: { color: colors.brand.secondary, fontSize: typography.xl, fontWeight: '700', marginBottom: spacing.md },
-  exRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.border },
-  exName: { color: colors.text.primary, fontSize: typography.base },
-  exMeta: { color: colors.text.muted, fontSize: typography.sm },
-  btn: { backgroundColor: colors.brand.primary, borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.lg },
-  btnOff: { opacity: 0.5 },
-  btnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg },
+  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700' },
+  generateBtn: { backgroundColor: colors.brand.primary, borderRadius: 10, paddingHorizontal: spacing.md, paddingVertical: 8 },
+  generateBtnText: { color: '#fff', fontSize: typography.sm, fontWeight: '700' },
+  planList: { marginBottom: spacing.lg, gap: spacing.sm },
+  planCard: {
+    backgroundColor: colors.bg.secondary,
+    borderRadius: 14,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  planLetterBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.brand.primary + '25',
+    borderWidth: 1.5,
+    borderColor: colors.brand.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  planLetter: { color: colors.brand.primary, fontSize: typography.xl, fontWeight: '800' },
+  planInfo: { flex: 1 },
+  planName: { color: colors.text.primary, fontSize: typography.base, fontWeight: '700' },
+  planMeta: { color: colors.brand.secondary, fontSize: typography.sm, marginTop: 2 },
+  planDate: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
+  deleteBtn: { padding: 4 },
+  deleteBtnText: { fontSize: 18 },
   linksRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.lg },
   link: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
