@@ -66,12 +66,6 @@ export default function PlanScreen() {
     }
     setSaving(true);
     try {
-      const { error: updateError } = await supabase
-        .from('workout_plans')
-        .update({ is_active: false })
-        .eq('user_id', userId);
-      if (updateError) throw updateError;
-
       const { error: insertError } = await supabase
         .from('workout_plans')
         .insert({
@@ -81,9 +75,7 @@ export default function PlanScreen() {
           plan_data: planData,
           is_active: true,
           generated_by: source === 'algorithm' ? 'algorithm' : 'claude',
-        })
-        .select()
-        .single();
+        });
       if (insertError) throw insertError;
 
       await queryClient.invalidateQueries({ queryKey: ['workout_plans'] });

@@ -169,12 +169,14 @@ export default function WorkoutScreen() {
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
       <View style={styles.headerRow}>
         <Text style={styles.heading}>Workout</Text>
-        <TouchableOpacity
-          style={styles.browseBtn}
-          onPress={() => router.push('/(tabs)/coach/browse' as never)}
-        >
-          <Text style={styles.browseBtnText}>+ Browse Plans</Text>
-        </TouchableOpacity>
+        {plans.length > 0 && (
+          <TouchableOpacity
+            style={styles.browseBtn}
+            onPress={() => router.push('/(tabs)/coach/browse' as never)}
+          >
+            <Text style={styles.browseBtnText}>+ Browse Plans</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {plans.length === 0 ? (
