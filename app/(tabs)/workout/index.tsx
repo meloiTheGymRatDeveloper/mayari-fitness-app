@@ -169,6 +169,12 @@ export default function WorkoutScreen() {
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
       <View style={styles.headerRow}>
         <Text style={styles.heading}>Workout</Text>
+        <TouchableOpacity
+          style={styles.browseBtn}
+          onPress={() => router.push('/(tabs)/coach/browse' as never)}
+        >
+          <Text style={styles.browseBtnText}>+ Browse Plans</Text>
+        </TouchableOpacity>
       </View>
 
       {plans.length === 0 ? (
@@ -238,6 +244,8 @@ const styles = StyleSheet.create({
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg },
+  browseBtn: { backgroundColor: colors.brand.primary, borderRadius: 10, paddingHorizontal: spacing.md, paddingVertical: 8 },
+  browseBtnText: { color: colors.white, fontSize: typography.sm, fontWeight: '700' },
   heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700' },
   planList: { marginBottom: spacing.lg, gap: spacing.sm },
   planCard: {
