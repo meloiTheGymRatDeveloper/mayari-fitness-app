@@ -171,17 +171,6 @@ export default function WorkoutScreen() {
         <Text style={styles.heading}>Workout</Text>
       </View>
 
-      <TouchableOpacity
-        style={styles.browseBtn}
-        onPress={() => router.push('/(tabs)/coach/browse' as never)}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={styles.browseBtnTitle}>Browse Pre-built Plans</Text>
-          <Text style={styles.browseBtnSub}>Science-based plans filtered to your schedule</Text>
-        </View>
-        <Text style={styles.browseBtnIcon}>💪</Text>
-      </TouchableOpacity>
-
       {plans.length === 0 ? (
         <EmptyState
           emoji="🏋️"
@@ -301,16 +290,4 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   tipText: { color: colors.brand.secondary, fontSize: typography.sm },
-  browseBtn: {
-    backgroundColor: colors.brand.primary,
-    borderRadius: 12,
-    padding: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-  },
-  browseBtnTitle: { color: colors.white, fontSize: typography.base, fontWeight: '700', marginBottom: 2 },
-  browseBtnSub: { color: colors.white + '99', fontSize: typography.xs },
-  browseBtnIcon: { fontSize: typography.xl, marginLeft: spacing.sm },
 });
