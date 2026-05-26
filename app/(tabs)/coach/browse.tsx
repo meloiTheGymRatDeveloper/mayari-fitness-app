@@ -44,7 +44,7 @@ export default function BrowsePlansScreen() {
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.navigate('/(tabs)/workout' as never)}>
           <Text style={styles.back}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.heading}>Suggested Plans</Text>
