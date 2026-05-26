@@ -4,11 +4,13 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Alert, ActivityIndicator,
 } from 'react-native';
-import { useRouter, useLocalSearchParams, type Href } from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { PlanData, DayPlan } from '../../../types/database';
+
+const DAY_COLORS = ['#F59E0B', '#22C55E', '#6366F1', '#A78BFA', '#F472B6', '#34D399'];
 
 function parsePlan(raw: string): PlanData | null {
   try {
@@ -22,31 +24,56 @@ function parsePlan(raw: string): PlanData | null {
   }
 }
 
-function DayCard({ day }: { day: DayPlan }) {
+function DayCard({
+  day,
+  index,
+  onPress,
+}: {
+  day: DayPlan;
+  index: number;
+  onPress: () => void;
+}) {
+  const color = DAY_COLORS[index % DAY_COLORS.length];
+  const muscleGroups = [...new Set(day.exercises.map(e => e.muscle_group))];
   return (
-    <View style={styles.dayCard}>
-      <Text style={styles.dayLabel}>{day.day_label}</Text>
-      {(day.exercises ?? []).map((ex, i) => (
-        <View key={i} style={styles.exRow}>
-          <Text style={styles.exName}>{ex.exercise_name}</Text>
-          <Text style={styles.exMeta}>{ex.sets} × {ex.reps_low}–{ex.reps_high}</Text>
+    <TouchableOpacity style={styles.dayCard} onPress={onPress} activeOpacity={0.75}>
+      <View style={styles.dayCardInner}>
+        <View style={[styles.dayIndex, { borderColor: color }]}>
+          <Text style={[styles.dayIndexText, { color }]}>{index + 1}</Text>
         </View>
-      ))}
-    </View>
+        <View style={styles.dayInfo}>
+          <Text style={styles.dayLabel}>{day.day_label}</Text>
+          <View style={styles.dayMeta}>
+            <Text style={styles.dayMetaText}>{day.exercises.length} exercises</Text>
+            {muscleGroups.map(g => (
+              <View key={g} style={styles.muscleTag}>
+                <Text style={styles.muscleTagText}>{g}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+        <Text style={styles.chevron}>›</Text>
+      </View>
+    </TouchableOpacity>
   );
 }
 
 export default function PlanScreen() {
   const router = useRouter();
-  const { plan: planRaw, source } = useLocalSearchParams<{ plan: string; source?: string }>();
+  const { plan: planRaw, source, planName, duration } = useLocalSearchParams<{
+    plan: string;
+    source?: string;
+    planName?: string;
+    duration?: string;
+  }>();
   const userId = useAuthStore(s => s.session?.user.id);
-  const profile = useAuthStore(s => s.profile);
   const [saving, setSaving] = useState(false);
 
   const planData = planRaw ? parsePlan(planRaw) : null;
+  const title = planName ?? 'Plan Preview';
 
   const handleSave = async () => {
-    if (!planData || !userId || !profile) return;
+    if (!planData || !userId) return;
     setSaving(true);
     try {
       await supabase
@@ -57,14 +84,14 @@ export default function PlanScreen() {
       const { error } = await supabase.from('workout_plans').insert({
         user_id: userId,
         split_type: source === 'algorithm' ? 'algorithm' : 'custom',
-        days_per_week: profile.workout_days?.length ?? planData.days.length,
+        days_per_week: planData.days.length,
         plan_data: planData,
         is_active: true,
         generated_by: source === 'algorithm' ? 'algorithm' : 'claude',
       });
       if (error) throw error;
 
-      router.replace('/(tabs)/workout');
+      router.replace('/(tabs)/workout' as never);
     } catch (e: unknown) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Could not save plan');
     } finally {
@@ -72,53 +99,52 @@ export default function PlanScreen() {
     }
   };
 
+  function handleDayPress(day: DayPlan) {
+    router.push({
+      pathname: '/(tabs)/coach/plan-day',
+      params: { day: JSON.stringify(day), duration: duration ?? '60' },
+    });
+  }
+
   if (!planData) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>
-          Could not read the plan. Try regenerating.
-        </Text>
-        <TouchableOpacity
-          style={styles.btn}
-          onPress={() => router.replace('/(tabs)/coach/generate' as Href)}
-        >
-          <Text style={styles.btnText}>Regenerate</Text>
+        <Text style={styles.errorText}>Could not load the plan.</Text>
+        <TouchableOpacity style={styles.btn} onPress={() => router.back()}>
+          <Text style={styles.btnText}>Go Back</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.back}>
-        <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity>
+    <>
+      <Stack.Screen options={{ title }} />
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+        <Text style={styles.sub}>
+          {planData.days.length} days · ~{duration ?? '60'} min per session
+        </Text>
 
-      <Text style={styles.heading}>Your Personalized Plan</Text>
-      <Text style={styles.sub}>
-        {source === 'algorithm' ? 'Pre-built by Coach Mayari 💪' : 'Generated by Coach Mayari 🌙'}
-      </Text>
+        {planData.days.map((day, i) => (
+          <DayCard
+            key={day.day_label}
+            day={day}
+            index={i}
+            onPress={() => handleDayPress(day)}
+          />
+        ))}
 
-      {planData.days.map((day) => <DayCard key={day.day_label} day={day} />)}
-
-      <TouchableOpacity
-        style={[styles.btn, saving && styles.btnOff]}
-        onPress={handleSave}
-        disabled={saving}
-      >
-        {saving
-          ? <ActivityIndicator color="#fff" />
-          : <Text style={styles.btnText}>Save This Plan</Text>}
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.regenBtn}
-        onPress={() => router.replace('/(tabs)/coach/generate' as Href)}
-        disabled={saving}
-      >
-        <Text style={styles.regenBtnText}>Regenerate</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity
+          style={[styles.btn, saving && styles.btnOff]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          {saving
+            ? <ActivityIndicator color={colors.white} />
+            : <Text style={styles.btnText}>Save This Plan</Text>}
+        </TouchableOpacity>
+      </ScrollView>
+    </>
   );
 }
 
@@ -132,56 +158,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.xl,
   },
-  back: { marginBottom: spacing.md },
-  backText: { color: colors.brand.primary, fontSize: typography.base },
-  heading: {
-    color: colors.text.primary,
-    fontSize: typography['2xl'],
-    fontWeight: '700',
-    marginBottom: 4,
+  sub: {
+    color: colors.text.muted,
+    fontSize: typography.sm,
+    marginBottom: spacing.lg,
   },
-  sub: { color: colors.text.muted, fontSize: typography.sm, marginBottom: spacing.lg },
   dayCard: {
     backgroundColor: colors.bg.secondary,
-    borderRadius: 16,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  dayLabel: {
-    color: colors.brand.secondary,
-    fontSize: typography.lg,
-    fontWeight: '700',
+    borderRadius: 12,
+    padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  exRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  dayCardInner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  dayIndex: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  exName: { color: colors.text.primary, fontSize: typography.sm },
-  exMeta: { color: colors.text.muted, fontSize: typography.sm },
+  dayIndexText: { fontSize: typography.sm, fontWeight: '800' },
+  dayInfo: { flex: 1 },
+  dayLabel: { color: colors.text.primary, fontSize: typography.base, fontWeight: '700', marginBottom: 4 },
+  dayMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
+  dayMetaText: { color: colors.text.muted, fontSize: typography.xs },
+  muscleTag: {
+    backgroundColor: colors.bg.elevated,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  muscleTagText: { color: colors.brand.secondary, fontSize: 10, fontWeight: '600' },
+  chevron: { color: colors.text.muted, fontSize: 20 },
   btn: {
     backgroundColor: colors.brand.primary,
     borderRadius: 12,
     paddingVertical: spacing.md,
     alignItems: 'center',
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
+    marginTop: spacing.lg,
   },
   btnOff: { opacity: 0.5 },
-  btnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
-  regenBtn: {
-    borderRadius: 12,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  regenBtnText: { color: colors.text.secondary, fontSize: typography.base, fontWeight: '600' },
+  btnText: { color: colors.white, fontSize: typography.base, fontWeight: '700' },
   errorText: {
     color: colors.error,
     fontSize: typography.base,

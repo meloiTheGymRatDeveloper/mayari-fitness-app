@@ -1,71 +1,88 @@
 // app/(tabs)/coach/browse.tsx
 import { useState } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../stores/authStore';
 import { getAlgorithmPlan } from '../../../constants/algorithmPlans';
 import { colors, typography, spacing } from '../../../constants/theme';
+import type { PlanData } from '../../../types/database';
 
-const FREQUENCIES = [2, 3, 4, 5, 6];
 const DURATIONS = [30, 45, 60, 75, 90];
-const DAY_COLORS = ['#F59E0B', '#22C55E', '#6366F1', '#A78BFA', '#F472B6', '#34D399'];
+
+const PLAN_TYPES = [
+  {
+    frequency: 2,
+    name: 'Full Body',
+    tag: '2x / week',
+    description: 'Train your whole body twice a week — great for beginners',
+    color: '#22C55E',
+  },
+  {
+    frequency: 3,
+    name: 'Full Body',
+    tag: '3x / week',
+    description: 'Optimal full body training for strength & size',
+    color: '#6366F1',
+  },
+  {
+    frequency: 4,
+    name: 'Upper / Lower',
+    tag: '4x / week',
+    description: 'Alternate upper and lower body days for balanced gains',
+    color: '#F59E0B',
+  },
+  {
+    frequency: 5,
+    name: 'Push / Pull / Legs',
+    tag: '5x / week',
+    description: 'Classic PPL split with high muscle frequency',
+    color: '#A78BFA',
+  },
+  {
+    frequency: 6,
+    name: 'Push / Pull / Legs',
+    tag: '6x / week',
+    description: 'Advanced 6-day PPL for experienced lifters',
+    color: '#F472B6',
+  },
+];
 
 export default function BrowsePlansScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const profile = useAuthStore(s => s.profile);
+  const profileFrequency = Math.min(Math.max(profile?.workout_days?.length ?? 3, 2), 6);
 
-  const defaultFrequency = Math.min(Math.max(profile?.workout_days?.length ?? 3, 2), 6);
   const rawDuration = profile?.session_duration_min ?? 60;
-  const [selectedFrequency, setSelectedFrequency] = useState(defaultFrequency);
   const [selectedDuration, setSelectedDuration] = useState(
     DURATIONS.includes(rawDuration) ? rawDuration : 60,
   );
 
-  if (!profile) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.brand.primary} />
-      </View>
-    );
-  }
-
-  const plan = getAlgorithmPlan(selectedFrequency, selectedDuration);
-
-  function handleSelectPlan() {
+  function handleSelectPlan(plan: PlanData, planName: string, frequency: number) {
     router.push({
       pathname: '/(tabs)/coach/plan',
-      params: { plan: JSON.stringify(plan), source: 'algorithm' },
+      params: {
+        plan: JSON.stringify(plan),
+        source: 'algorithm',
+        planName,
+        frequency: String(frequency),
+        duration: String(selectedDuration),
+      },
     });
   }
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}
+    >
       {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.navigate('/(tabs)/workout' as never)}>
           <Text style={styles.back}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.heading}>Suggested Plans</Text>
-      </View>
-
-      {/* Frequency chips */}
-      <Text style={styles.sectionLabel}>Days per Week</Text>
-      <View style={styles.chipsRow}>
-        {FREQUENCIES.map(f => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.chip, selectedFrequency === f && styles.chipActive]}
-            onPress={() => setSelectedFrequency(f)}
-          >
-            <Text style={[styles.chipText, selectedFrequency === f && styles.chipTextActive]}>
-              {f}x / week
-            </Text>
-          </TouchableOpacity>
-        ))}
       </View>
 
       {/* Duration chips */}
@@ -84,35 +101,39 @@ export default function BrowsePlansScreen() {
         ))}
       </View>
 
-      {/* Plan section label */}
-      <Text style={styles.planLabel}>
-        {selectedFrequency}x / Week · {selectedDuration} Minutes
-      </Text>
-
-      {/* Day cards — tapping any card selects the full plan (all days), not just the individual day */}
-      {plan.days.map((day, i) => {
-        const exNames = day.exercises.map(e => e.exercise_name).join(' · ');
-        const truncated = exNames.length > 60 ? exNames.slice(0, 57) + '...' : exNames;
+      {/* Plan type cards */}
+      <Text style={styles.sectionLabel}>Choose a Split</Text>
+      {PLAN_TYPES.map(pt => {
+        const plan = getAlgorithmPlan(pt.frequency, selectedDuration);
+        const isRecommended = pt.frequency === profileFrequency;
         return (
-          <TouchableOpacity key={day.day_label} style={styles.dayCard} onPress={handleSelectPlan}>
-            <View style={styles.dayCardInner}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.dayBadge, { color: DAY_COLORS[i % DAY_COLORS.length] }]}>
-                  Day {i + 1}
-                </Text>
-                <Text style={styles.dayTitle}>{day.day_label}</Text>
-                <Text style={styles.dayExercises}>{truncated}</Text>
-                <View style={styles.metaRow}>
-                  <View style={styles.metaBadge}>
-                    <Text style={styles.metaText}>{day.exercises.length} exercises</Text>
-                  </View>
-                  <View style={styles.metaBadge}>
-                    <Text style={styles.metaText}>~{selectedDuration} min</Text>
-                  </View>
+          <TouchableOpacity
+            key={pt.frequency}
+            style={styles.planCard}
+            onPress={() => handleSelectPlan(plan, `${pt.name} · ${pt.tag}`, pt.frequency)}
+            activeOpacity={0.75}
+          >
+            <View style={[styles.planAccent, { backgroundColor: pt.color }]} />
+            <View style={styles.planBody}>
+              <View style={styles.planTopRow}>
+                <Text style={styles.planName}>{pt.name}</Text>
+                <View style={styles.planTagRow}>
+                  {isRecommended && (
+                    <View style={styles.recommendedBadge}>
+                      <Text style={styles.recommendedText}>For You</Text>
+                    </View>
+                  )}
+                  <Text style={[styles.planTag, { color: pt.color }]}>{pt.tag}</Text>
                 </View>
               </View>
-              <Text style={styles.chevron}>›</Text>
+              <Text style={styles.planDesc}>{pt.description}</Text>
+              <View style={styles.planMeta}>
+                <Text style={styles.planMetaText}>{plan.days.length} days</Text>
+                <Text style={styles.planMetaDot}>·</Text>
+                <Text style={styles.planMetaText}>~{selectedDuration} min / session</Text>
+              </View>
             </View>
+            <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
         );
       })}
@@ -123,12 +144,6 @@ export default function BrowsePlansScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
-  centered: {
-    flex: 1,
-    backgroundColor: colors.bg.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -165,48 +180,37 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.brand.primary, borderColor: colors.brand.primary },
   chipText: { color: colors.text.secondary, fontSize: typography.sm },
   chipTextActive: { color: colors.white, fontWeight: '700' },
-  planLabel: {
-    color: colors.text.secondary,
-    fontSize: typography.xs,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.sm,
-  },
-  dayCard: {
+  planCard: {
     backgroundColor: colors.bg.secondary,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,
-    padding: spacing.md,
     marginBottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
-  dayCardInner: { flexDirection: 'row', alignItems: 'flex-start' },
-  dayBadge: {
-    fontSize: typography.xs,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 3,
-  },
-  dayTitle: {
-    color: colors.text.primary,
-    fontSize: typography.base,
-    fontWeight: '700',
+  planAccent: { width: 4, alignSelf: 'stretch' },
+  planBody: { flex: 1, padding: spacing.md },
+  planTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
   },
-  dayExercises: {
-    color: colors.text.secondary,
-    fontSize: typography.xs,
-    marginBottom: spacing.sm,
+  planName: { color: colors.text.primary, fontSize: typography.base, fontWeight: '700' },
+  planTagRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  planTag: { fontSize: typography.xs, fontWeight: '600' },
+  recommendedBadge: {
+    backgroundColor: colors.brand.primary + '33',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
-  metaRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  metaBadge: {
-    backgroundColor: colors.bg.elevated,
-    borderRadius: 6,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-  },
-  metaText: { color: colors.brand.secondary, fontSize: typography.xs },
-  chevron: { color: colors.text.muted, fontSize: 18, marginLeft: spacing.sm },
+  recommendedText: { color: colors.brand.primary, fontSize: 10, fontWeight: '700' },
+  planDesc: { color: colors.text.secondary, fontSize: typography.xs, marginBottom: spacing.sm },
+  planMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  planMetaText: { color: colors.text.muted, fontSize: typography.xs },
+  planMetaDot: { color: colors.text.muted, fontSize: typography.xs },
+  chevron: { color: colors.text.muted, fontSize: 20, paddingRight: spacing.md },
 });
