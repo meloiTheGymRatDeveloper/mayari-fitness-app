@@ -186,9 +186,9 @@ export default function WorkoutScreen() {
         <EmptyState
           emoji="🏋️"
           title="Wala pang workout plan"
-          subtitle="Let Coach Mayari generate one for you"
-          ctaLabel="Generate Plan"
-          onCta={() => router.push('/(tabs)/workout/generate-confirm' as never)}
+          subtitle="Browse pre-built plans to get started"
+          ctaLabel="Browse Plans"
+          onCta={() => router.push('/(tabs)/coach/browse' as never)}
         />
       ) : (
         <View style={styles.planList}>
@@ -250,8 +250,6 @@ const styles = StyleSheet.create({
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg },
   heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700' },
-  generateBtn: { backgroundColor: colors.brand.primary, borderRadius: 10, paddingHorizontal: spacing.md, paddingVertical: 8 },
-  generateBtnText: { color: '#fff', fontSize: typography.sm, fontWeight: '700' },
   planList: { marginBottom: spacing.lg, gap: spacing.sm },
   planCard: {
     backgroundColor: colors.bg.secondary,

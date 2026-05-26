@@ -12,8 +12,6 @@ export default function WorkoutLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="generate-confirm" options={{ title: 'Generate Plan', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="plan" options={{ title: 'Plan Preview', headerBackTitle: 'Back' }} />
       <Stack.Screen
         name="active"
         options={{ title: 'Active Workout', gestureEnabled: false, headerLeft: () => null }}

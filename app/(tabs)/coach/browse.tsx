@@ -52,26 +52,6 @@ export default function BrowsePlansScreen() {
         <Text style={styles.heading}>Suggested Plans</Text>
       </View>
 
-      {/* AI card */}
-      <TouchableOpacity
-        style={styles.aiCard}
-        onPress={() => router.push('/(tabs)/coach/generate')}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={styles.aiLabel}>AI-Powered</Text>
-          <Text style={styles.aiTitle}>Generate a Custom Plan with AI</Text>
-          <Text style={styles.aiSub}>Coach Mayari builds a plan just for you</Text>
-        </View>
-        <Text style={styles.aiIcon}>✦</Text>
-      </TouchableOpacity>
-
-      {/* Divider */}
-      <View style={styles.dividerRow}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>or pick from the list below</Text>
-        <View style={styles.dividerLine} />
-      </View>
-
       {/* Frequency chips */}
       <Text style={styles.sectionLabel}>Days per Week</Text>
       <View style={styles.chipsRow}>
@@ -160,35 +140,6 @@ const styles = StyleSheet.create({
   },
   back: { color: colors.brand.primary, fontSize: typography.sm },
   heading: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
-  aiCard: {
-    borderWidth: 1,
-    borderColor: colors.brand.primary,
-    borderRadius: 10,
-    padding: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  aiLabel: {
-    color: colors.brand.secondary,
-    fontSize: typography.xs,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  aiTitle: { color: colors.text.primary, fontSize: typography.base, fontWeight: '600', marginBottom: 2 },
-  aiSub: { color: colors.text.muted, fontSize: typography.xs },
-  aiIcon: { color: colors.brand.primary, fontSize: typography.xl, marginLeft: spacing.sm },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerText: { color: colors.text.muted, fontSize: typography.xs },
   sectionLabel: {
     color: colors.text.secondary,
     fontSize: typography.xs,
