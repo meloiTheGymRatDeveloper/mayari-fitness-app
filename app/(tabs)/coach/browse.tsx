@@ -8,45 +8,16 @@ import { getAlgorithmPlan } from '../../../constants/algorithmPlans';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { PlanData } from '../../../types/database';
 
+const FREQUENCIES = [2, 3, 4, 5, 6];
 const DURATIONS = [30, 45, 60, 75, 90];
 
-const PLAN_TYPES = [
-  {
-    frequency: 2,
-    name: 'Full Body',
-    tag: '2x / week',
-    description: 'Train your whole body twice a week — great for beginners',
-    color: '#22C55E',
-  },
-  {
-    frequency: 3,
-    name: 'Full Body',
-    tag: '3x / week',
-    description: 'Optimal full body training for strength & size',
-    color: '#6366F1',
-  },
-  {
-    frequency: 4,
-    name: 'Upper / Lower',
-    tag: '4x / week',
-    description: 'Alternate upper and lower body days for balanced gains',
-    color: '#F59E0B',
-  },
-  {
-    frequency: 5,
-    name: 'Push / Pull / Legs',
-    tag: '5x / week',
-    description: 'Classic PPL split with high muscle frequency',
-    color: '#A78BFA',
-  },
-  {
-    frequency: 6,
-    name: 'Push / Pull / Legs',
-    tag: '6x / week',
-    description: 'Advanced 6-day PPL for experienced lifters',
-    color: '#F472B6',
-  },
-];
+const PLAN_META: Record<number, { name: string; description: string; color: string }> = {
+  2: { name: 'Full Body', description: 'Train your whole body twice a week — great for beginners', color: '#22C55E' },
+  3: { name: 'Full Body', description: 'Optimal full body training for strength & size', color: '#6366F1' },
+  4: { name: 'Upper / Lower', description: 'Alternate upper and lower body days for balanced gains', color: '#F59E0B' },
+  5: { name: 'Push / Pull / Legs', description: 'Classic PPL split with high muscle frequency', color: '#A78BFA' },
+  6: { name: 'Push / Pull / Legs', description: 'Advanced 6-day PPL for experienced lifters', color: '#F472B6' },
+};
 
 export default function BrowsePlansScreen() {
   const router = useRouter();
@@ -55,18 +26,22 @@ export default function BrowsePlansScreen() {
   const profileFrequency = Math.min(Math.max(profile?.workout_days?.length ?? 3, 2), 6);
 
   const rawDuration = profile?.session_duration_min ?? 60;
+  const [selectedFrequency, setSelectedFrequency] = useState(profileFrequency);
   const [selectedDuration, setSelectedDuration] = useState(
     DURATIONS.includes(rawDuration) ? rawDuration : 60,
   );
 
-  function handleSelectPlan(plan: PlanData, planName: string, frequency: number) {
+  const meta = PLAN_META[selectedFrequency];
+  const plan = getAlgorithmPlan(selectedFrequency, selectedDuration);
+
+  function handleSelectPlan(planData: PlanData) {
     router.push({
       pathname: '/(tabs)/coach/plan',
       params: {
-        plan: JSON.stringify(plan),
+        plan: JSON.stringify(planData),
         source: 'algorithm',
-        planName,
-        frequency: String(frequency),
+        planName: `${meta.name} · ${selectedFrequency}x / week`,
+        frequency: String(selectedFrequency),
         duration: String(selectedDuration),
       },
     });
@@ -85,7 +60,23 @@ export default function BrowsePlansScreen() {
         <Text style={styles.heading}>Suggested Plans</Text>
       </View>
 
-      {/* Duration chips */}
+      {/* Days per week chips */}
+      <Text style={styles.sectionLabel}>Days per Week</Text>
+      <View style={styles.chipsRow}>
+        {FREQUENCIES.map(f => (
+          <TouchableOpacity
+            key={f}
+            style={[styles.chip, selectedFrequency === f && styles.chipActive]}
+            onPress={() => setSelectedFrequency(f)}
+          >
+            <Text style={[styles.chipText, selectedFrequency === f && styles.chipTextActive]}>
+              {f}x
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Session duration chips */}
       <Text style={styles.sectionLabel}>Session Duration</Text>
       <View style={styles.chipsRow}>
         {DURATIONS.map(d => (
@@ -101,42 +92,34 @@ export default function BrowsePlansScreen() {
         ))}
       </View>
 
-      {/* Plan type cards */}
-      <Text style={styles.sectionLabel}>Choose a Split</Text>
-      {PLAN_TYPES.map(pt => {
-        const plan = getAlgorithmPlan(pt.frequency, selectedDuration);
-        const isRecommended = pt.frequency === profileFrequency;
-        return (
-          <TouchableOpacity
-            key={pt.frequency}
-            style={styles.planCard}
-            onPress={() => handleSelectPlan(plan, `${pt.name} · ${pt.tag}`, pt.frequency)}
-            activeOpacity={0.75}
-          >
-            <View style={[styles.planAccent, { backgroundColor: pt.color }]} />
-            <View style={styles.planBody}>
-              <View style={styles.planTopRow}>
-                <Text style={styles.planName}>{pt.name}</Text>
-                <View style={styles.planTagRow}>
-                  {isRecommended && (
-                    <View style={styles.recommendedBadge}>
-                      <Text style={styles.recommendedText}>For You</Text>
-                    </View>
-                  )}
-                  <Text style={[styles.planTag, { color: pt.color }]}>{pt.tag}</Text>
-                </View>
+      {/* Matching plan card */}
+      <Text style={styles.sectionLabel}>Suggested Plan</Text>
+      <TouchableOpacity
+        style={styles.planCard}
+        onPress={() => handleSelectPlan(plan)}
+        activeOpacity={0.75}
+      >
+        <View style={[styles.planAccent, { backgroundColor: meta.color }]} />
+        <View style={styles.planBody}>
+          <View style={styles.planTopRow}>
+            <Text style={styles.planName}>{meta.name}</Text>
+            {selectedFrequency === profileFrequency && (
+              <View style={styles.recommendedBadge}>
+                <Text style={styles.recommendedText}>For You</Text>
               </View>
-              <Text style={styles.planDesc}>{pt.description}</Text>
-              <View style={styles.planMeta}>
-                <Text style={styles.planMetaText}>{plan.days.length} days</Text>
-                <Text style={styles.planMetaDot}>·</Text>
-                <Text style={styles.planMetaText}>~{selectedDuration} min / session</Text>
-              </View>
-            </View>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-        );
-      })}
+            )}
+          </View>
+          <Text style={styles.planDesc}>{meta.description}</Text>
+          <View style={styles.planMeta}>
+            <Text style={styles.planMetaText}>{selectedFrequency}x / week</Text>
+            <Text style={styles.planMetaDot}>·</Text>
+            <Text style={styles.planMetaText}>{plan.days.length} days</Text>
+            <Text style={styles.planMetaDot}>·</Text>
+            <Text style={styles.planMetaText}>~{selectedDuration} min / session</Text>
+          </View>
+        </View>
+        <Text style={styles.chevron}>›</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -175,7 +158,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 20,
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
   chipActive: { backgroundColor: colors.brand.primary, borderColor: colors.brand.primary },
   chipText: { color: colors.text.secondary, fontSize: typography.sm },
@@ -185,7 +168,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,
-    marginBottom: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
     overflow: 'hidden',
@@ -194,13 +176,11 @@ const styles = StyleSheet.create({
   planBody: { flex: 1, padding: spacing.md },
   planTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.sm,
     marginBottom: 4,
   },
-  planName: { color: colors.text.primary, fontSize: typography.base, fontWeight: '700' },
-  planTagRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  planTag: { fontSize: typography.xs, fontWeight: '600' },
+  planName: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
   recommendedBadge: {
     backgroundColor: colors.brand.primary + '33',
     borderRadius: 4,
@@ -208,8 +188,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   recommendedText: { color: colors.brand.primary, fontSize: 10, fontWeight: '700' },
-  planDesc: { color: colors.text.secondary, fontSize: typography.xs, marginBottom: spacing.sm },
-  planMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  planDesc: { color: colors.text.secondary, fontSize: typography.sm, marginBottom: spacing.sm },
+  planMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
   planMetaText: { color: colors.text.muted, fontSize: typography.xs },
   planMetaDot: { color: colors.text.muted, fontSize: typography.xs },
   chevron: { color: colors.text.muted, fontSize: 20, paddingRight: spacing.md },
