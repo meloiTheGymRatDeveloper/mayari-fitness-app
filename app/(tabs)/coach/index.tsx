@@ -1,6 +1,7 @@
 // app/(tabs)/coach/index.tsx
 import { useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { colors, typography, spacing } from '../../../constants/theme';
 import {
   useCoachTips, useMarkAllTipsRead, useRequestTip,
@@ -43,6 +44,7 @@ function TipCard({ tip }: { tip: CoachTip }) {
 
 // ── CoachScreen ───────────────────────────────────────────────────────────────
 export default function CoachScreen() {
+  const router = useRouter();
   const { data: tips = [], isLoading } = useCoachTips();
   const markRead = useMarkAllTipsRead();
   const requestTip = useRequestTip();
@@ -55,6 +57,17 @@ export default function CoachScreen() {
   return (
     <View style={styles.root}>
       <Text style={styles.header}>Mayari Tips</Text>
+
+      <TouchableOpacity
+        style={styles.planBtn}
+        onPress={() => router.push('/(tabs)/coach/browse' as never)}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={styles.planBtnTitle}>Get a Workout Plan</Text>
+          <Text style={styles.planBtnSub}>Browse science-based plans or generate with AI</Text>
+        </View>
+        <Text style={styles.planBtnIcon}>💪</Text>
+      </TouchableOpacity>
 
       {isLoading ? (
         <View style={styles.skeletons}>
@@ -112,4 +125,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   tipTime: { color: colors.text.muted, fontSize: typography.sm },
+  planBtn: {
+    backgroundColor: colors.brand.primary,
+    borderRadius: 12,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  planBtnTitle: { color: '#fff', fontSize: typography.base, fontWeight: '700', marginBottom: 2 },
+  planBtnSub: { color: '#ffffff99', fontSize: typography.xs },
+  planBtnIcon: { fontSize: typography.xl, marginLeft: spacing.sm },
 });
