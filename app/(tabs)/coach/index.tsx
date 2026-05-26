@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: spacing.md,
   },
-  planBtnTitle: { color: '#fff', fontSize: typography.base, fontWeight: '700', marginBottom: 2 },
-  planBtnSub: { color: '#ffffff99', fontSize: typography.xs },
+  planBtnTitle: { color: colors.white, fontSize: typography.base, fontWeight: '700', marginBottom: 2 },
+  planBtnSub: { color: colors.white + '99', fontSize: typography.xs },
   planBtnIcon: { fontSize: typography.xl, marginLeft: spacing.sm },
 });
