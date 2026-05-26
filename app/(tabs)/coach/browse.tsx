@@ -4,6 +4,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../stores/authStore';
 import { getAlgorithmPlan } from '../../../constants/algorithmPlans';
 import { colors, typography, spacing } from '../../../constants/theme';
@@ -13,6 +14,7 @@ const DAY_COLORS = ['#F59E0B', '#22C55E', '#6366F1', '#A78BFA', '#F472B6', '#34D
 
 export default function BrowsePlansScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const profile = useAuthStore(s => s.profile);
 
   const frequency = Math.min(Math.max(profile?.workout_days?.length ?? 3, 2), 6);
@@ -39,7 +41,7 @@ export default function BrowsePlansScreen() {
   }
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
       {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
