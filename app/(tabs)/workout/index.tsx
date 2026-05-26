@@ -169,12 +169,6 @@ export default function WorkoutScreen() {
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
       <View style={styles.headerRow}>
         <Text style={styles.heading}>Workout</Text>
-        <TouchableOpacity
-          style={styles.generateBtn}
-          onPress={() => router.push('/(tabs)/workout/generate-confirm' as never)}
-        >
-          <Text style={styles.generateBtnText}>+ Generate Plan</Text>
-        </TouchableOpacity>
       </View>
 
       <TouchableOpacity

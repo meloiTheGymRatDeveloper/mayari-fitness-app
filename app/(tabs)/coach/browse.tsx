@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../stores/authStore';
 import { getAlgorithmPlan } from '../../../constants/algorithmPlans';
 import { colors, typography, spacing } from '../../../constants/theme';
 
+const FREQUENCIES = [2, 3, 4, 5, 6];
 const DURATIONS = [30, 45, 60, 75, 90];
 const DAY_COLORS = ['#F59E0B', '#22C55E', '#6366F1', '#A78BFA', '#F472B6', '#34D399'];
 
@@ -17,8 +18,9 @@ export default function BrowsePlansScreen() {
   const insets = useSafeAreaInsets();
   const profile = useAuthStore(s => s.profile);
 
-  const frequency = Math.min(Math.max(profile?.workout_days?.length ?? 3, 2), 6);
+  const defaultFrequency = Math.min(Math.max(profile?.workout_days?.length ?? 3, 2), 6);
   const rawDuration = profile?.session_duration_min ?? 60;
+  const [selectedFrequency, setSelectedFrequency] = useState(defaultFrequency);
   const [selectedDuration, setSelectedDuration] = useState(
     DURATIONS.includes(rawDuration) ? rawDuration : 60,
   );
@@ -31,7 +33,7 @@ export default function BrowsePlansScreen() {
     );
   }
 
-  const plan = getAlgorithmPlan(frequency, selectedDuration);
+  const plan = getAlgorithmPlan(selectedFrequency, selectedDuration);
 
   function handleSelectPlan() {
     router.push({
@@ -70,14 +72,20 @@ export default function BrowsePlansScreen() {
         <View style={styles.dividerLine} />
       </View>
 
-      {/* Frequency info */}
-      <View style={styles.freqRow}>
-        <Text style={styles.freqEmoji}>📅</Text>
-        <Text style={styles.freqText}>
-          Based on your{' '}
-          <Text style={styles.freqBold}>{frequency}x / week</Text>
-          {' '}schedule
-        </Text>
+      {/* Frequency chips */}
+      <Text style={styles.sectionLabel}>Days per Week</Text>
+      <View style={styles.chipsRow}>
+        {FREQUENCIES.map(f => (
+          <TouchableOpacity
+            key={f}
+            style={[styles.chip, selectedFrequency === f && styles.chipActive]}
+            onPress={() => setSelectedFrequency(f)}
+          >
+            <Text style={[styles.chipText, selectedFrequency === f && styles.chipTextActive]}>
+              {f}x / week
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Duration chips */}
@@ -98,7 +106,7 @@ export default function BrowsePlansScreen() {
 
       {/* Plan section label */}
       <Text style={styles.planLabel}>
-        {frequency}x / Week · {selectedDuration} Minutes
+        {selectedFrequency}x / Week · {selectedDuration} Minutes
       </Text>
 
       {/* Day cards — tapping any card selects the full plan (all days), not just the individual day */}
@@ -181,18 +189,6 @@ const styles = StyleSheet.create({
   },
   dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
   dividerText: { color: colors.text.muted, fontSize: typography.xs },
-  freqRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.bg.secondary,
-    borderRadius: 8,
-    padding: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  freqEmoji: { fontSize: typography.sm },
-  freqText: { color: colors.text.secondary, fontSize: typography.sm },
-  freqBold: { color: colors.text.primary, fontWeight: '600' },
   sectionLabel: {
     color: colors.text.secondary,
     fontSize: typography.xs,
