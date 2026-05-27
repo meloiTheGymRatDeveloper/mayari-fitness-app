@@ -112,11 +112,12 @@ export function useSendBuddyRequest() {
     mutationFn: async (receiverId: string) => {
       if (!userId) throw new Error('Not authenticated');
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('users')
         .select('subscription_status')
         .eq('id', userId)
         .single();
+      if (profileError) throw profileError;
 
       const isPro =
         profile?.subscription_status === 'active' ||
@@ -124,10 +125,11 @@ export function useSendBuddyRequest() {
         profile?.subscription_status === 'beta';
 
       if (!isPro) {
-        const { count } = await supabase
+        const { count, error: countError } = await supabase
           .from('buddy_connections')
           .select('*', { count: 'exact', head: true })
           .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`);
+        if (countError) throw countError;
 
         if ((count ?? 0) >= FREE_BUDDY_LIMIT) {
           throw new Error('FREE_BUDDY_LIMIT');
