@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
+import { FREE_BUDDY_LIMIT } from './useFeatureAccess';
 import type { NearbyUser, BuddyRequest, BuddyConnection, PrimaryGoal } from '../types/database';
 
 export interface RequestWithUser extends BuddyRequest {
@@ -110,6 +111,29 @@ export function useSendBuddyRequest() {
   return useMutation({
     mutationFn: async (receiverId: string) => {
       if (!userId) throw new Error('Not authenticated');
+
+      const { data: profile } = await supabase
+        .from('users')
+        .select('subscription_status')
+        .eq('id', userId)
+        .single();
+
+      const isPro =
+        profile?.subscription_status === 'active' ||
+        profile?.subscription_status === 'achiever' ||
+        profile?.subscription_status === 'beta';
+
+      if (!isPro) {
+        const { count } = await supabase
+          .from('buddy_connections')
+          .select('*', { count: 'exact', head: true })
+          .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`);
+
+        if ((count ?? 0) >= FREE_BUDDY_LIMIT) {
+          throw new Error('FREE_BUDDY_LIMIT');
+        }
+      }
+
       const { error } = await supabase.from('buddy_requests').insert({
         sender_id: userId,
         receiver_id: receiverId,
