@@ -4,10 +4,12 @@ import {
   TouchableOpacity, ActivityIndicator, Alert, Linking,
 } from 'react-native';
 import * as Location from 'expo-location';
+import { useRouter } from 'expo-router';
 import { supabase } from '../../../../lib/supabase';
 import { colors, typography, spacing } from '../../../../constants/theme';
 import Button from '../../../../components/ui/Button';
-import { useFindNearbyUsers, useSendBuddyRequest } from '../../../../hooks/useBuddies';
+import { useFindNearbyUsers, useSendBuddyRequest, useBuddyConnections } from '../../../../hooks/useBuddies';
+import { useFeatureAccess, FREE_BUDDY_LIMIT } from '../../../../hooks/useFeatureAccess';
 import type { PrimaryGoal } from '../../../../types/database';
 
 const GOAL_LABELS: Record<PrimaryGoal, string> = {
@@ -43,6 +45,10 @@ export default function BuddyFinderScreen() {
   const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
   const { data: users = [], isFetching } = useFindNearbyUsers(myCoords, radius, goalFilter);
   const sendRequest = useSendBuddyRequest();
+  const router = useRouter();
+  const { isPro } = useFeatureAccess();
+  const { data: connections = [] } = useBuddyConnections();
+  const atBuddyLimit = !isPro && connections.length >= FREE_BUDDY_LIMIT;
 
   useEffect(() => {
     requestPermissionAndLoad();
@@ -172,21 +178,36 @@ export default function BuddyFinderScreen() {
                     {item.workout_days?.length ?? 0} days/week  ·  {formatDistance(item.distance_m, item.location_precision)}
                   </Text>
                 </View>
-                <TouchableOpacity
-                  style={[styles.requestBtn, sent && styles.requestBtnSent]}
-                  onPress={() => {
-                    if (sent) return;
-                    sendRequest.mutate(item.id, {
-                      onSuccess: () => setSentRequests(prev => new Set([...prev, item.id])),
-                      onError: (e) => Alert.alert('Error', e instanceof Error ? e.message : 'Could not send request.'),
-                    });
-                  }}
-                  disabled={sent || sendRequest.isPending}
-                >
-                  <Text style={[styles.requestBtnText, sent && styles.requestBtnTextSent]}>
-                    {sent ? 'Sent ✓' : 'Connect'}
-                  </Text>
-                </TouchableOpacity>
+                {atBuddyLimit ? (
+                  <TouchableOpacity
+                    style={[styles.requestBtn, styles.requestBtnDisabled]}
+                    onPress={() => router.push('/(tabs)/profile/subscription')}
+                  >
+                    <Text style={styles.requestBtnText}>🔒 Upgrade</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.requestBtn, sent && styles.requestBtnSent]}
+                    onPress={() => {
+                      if (sent) return;
+                      sendRequest.mutate(item.id, {
+                        onSuccess: () => setSentRequests(prev => new Set([...prev, item.id])),
+                        onError: (err) => {
+                          if (err instanceof Error && err.message === 'FREE_BUDDY_LIMIT') {
+                            router.push('/(tabs)/profile/subscription');
+                          } else {
+                            Alert.alert('Error', err instanceof Error ? err.message : 'Could not send request.');
+                          }
+                        },
+                      });
+                    }}
+                    disabled={sent || sendRequest.isPending}
+                  >
+                    <Text style={[styles.requestBtnText, sent && styles.requestBtnTextSent]}>
+                      {sent ? 'Sent ✓' : 'Connect'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             );
           }}
@@ -233,6 +254,7 @@ const styles = StyleSheet.create({
     borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8,
   },
   requestBtnSent: { backgroundColor: colors.bg.elevated, borderWidth: 1, borderColor: colors.border },
+  requestBtnDisabled: { backgroundColor: colors.bg.elevated, borderColor: colors.border, borderWidth: 1 },
   requestBtnText: { color: '#fff', fontSize: typography.sm, fontWeight: '700' },
   requestBtnTextSent: { color: colors.text.muted },
 });
