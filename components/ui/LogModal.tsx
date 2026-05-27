@@ -2,6 +2,7 @@ import { Modal, View, Text, TouchableOpacity, TouchableWithoutFeedback, StyleShe
 import { useRouter } from 'expo-router';
 import { useUIStore } from '../../stores/uiStore';
 import { colors, typography, spacing } from '../../constants/theme';
+import { useFeatureAccess } from '../../hooks/useFeatureAccess';
 
 const SLOT_LABELS = {
   almusal: '🌅 Almusal',
@@ -22,6 +23,7 @@ const OPTIONS = [
 export default function LogModal() {
   const router = useRouter();
   const { logModalOpen, logModalMealSlot, logModalDate, closeLogModal } = useUIStore();
+  const { isPro } = useFeatureAccess();
 
   function handleOption(key: string) {
     closeLogModal();
@@ -54,19 +56,23 @@ export default function LogModal() {
           </View>
         </View>
         <View style={styles.grid}>
-          {OPTIONS.map((opt) => (
-            <TouchableOpacity
-              key={opt.key}
-              style={[styles.option, opt.highlight && styles.optionHighlight]}
-              onPress={() => handleOption(opt.key)}
-            >
-              <View style={[styles.optionIcon, opt.highlight && styles.optionIconHighlight]}>
-                <Text style={styles.emoji}>{opt.emoji}</Text>
-              </View>
-              <Text style={styles.optionLabel}>{opt.label}</Text>
-              <Text style={styles.optionSub}>{opt.sub}</Text>
-            </TouchableOpacity>
-          ))}
+          {OPTIONS.map((opt) => {
+            const isLocked = !isPro && (opt.key === 'voice' || opt.key === 'scan');
+            return (
+              <TouchableOpacity
+                key={opt.key}
+                style={[styles.option, opt.highlight && styles.optionHighlight]}
+                onPress={() => handleOption(opt.key)}
+              >
+                <View style={[styles.optionIcon, opt.highlight && styles.optionIconHighlight]}>
+                  <Text style={styles.emoji}>{opt.emoji}</Text>
+                </View>
+                <Text style={styles.optionLabel}>{opt.label}</Text>
+                <Text style={styles.optionSub}>{opt.sub}</Text>
+                {isLocked && <Text style={styles.lockBadge}>🔒 Pro</Text>}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
     </Modal>
@@ -111,4 +117,9 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 20 },
   optionLabel: { color: colors.text.primary, fontSize: typography.xs, fontWeight: '600' },
   optionSub: { color: colors.text.muted, fontSize: 10, textAlign: 'center' },
+  lockBadge: {
+    fontSize: 10,
+    color: colors.brand.primary,
+    marginTop: 2,
+  },
 });
