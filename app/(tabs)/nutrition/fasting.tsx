@@ -15,6 +15,8 @@ import { supabase } from '../../../lib/supabase';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { FastingLog } from '../../../types/database';
 import { useMayariTriggers } from '../../../hooks/useMayariTriggers';
+import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
+import ProGate from '../../../components/ui/ProGate';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -56,6 +58,7 @@ const ALL_PRESETS: Preset[] = ['16:8', '18:6', '20:4', 'OMAD'];
 // ---------------------------------------------------------------------------
 
 export default function FastingScreen() {
+  const { canUse } = useFeatureAccess();
   const [loading, setLoading] = useState(true);
   const [activeFast, setActiveFast] = useState<FastingLog | null>(null);
   const [history, setHistory] = useState<FastingLog[]>([]);
@@ -191,6 +194,15 @@ export default function FastingScreen() {
       if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
     };
   }, [activeFast?.eating_window_start, fire]);
+
+  if (!canUse('intermittentFasting')) {
+    return (
+      <ProGate
+        title="Intermittent Fasting"
+        description="Track your fasting window, get a 30-minute heads-up before your eating window opens, and let Mayari coach you through it."
+      />
+    );
+  }
 
   // ------------------------------------------------------------------
   // Actions
