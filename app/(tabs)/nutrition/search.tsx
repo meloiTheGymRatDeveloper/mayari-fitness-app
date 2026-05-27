@@ -9,6 +9,7 @@ import { searchFoods } from '../../../lib/foodSearch';
 import { supabase } from '../../../lib/supabase';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { FoodItem, MealSlot, WeekDay } from '../../../types/database';
+import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
 
 type FoodFilter = 'all' | 'ph' | 'ingredients' | 'branded';
 
@@ -75,6 +76,7 @@ export default function FoodSearchScreen() {
   const [aiEstimate, setAiEstimate] = useState<AIEstimate | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [filter, setFilter] = useState<FoodFilter>('all');
+  const { isPro } = useFeatureAccess();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Tracks the query string that fired the current AI call.
   // When a response arrives we compare against this to drop stale results.
@@ -96,7 +98,7 @@ export default function FoodSearchScreen() {
         // Auto-trigger AI when:
         //   (a) DB+USDA+OFF found nothing, OR
         //   (b) results exist but look like a weak match for the specific query
-        if (items.length === 0 || isWeakMatch(items, trimmed)) {
+        if (isPro && (items.length === 0 || isWeakMatch(items, trimmed))) {
           fireAI(trimmed);
         }
       } finally {
@@ -278,12 +280,21 @@ export default function FoodSearchScreen() {
               )}
               {/* Manual escape hatch — always visible when no AI result yet */}
               {!aiEstimate && !aiLoading && (
-                <TouchableOpacity
-                  style={styles.askAIRow}
-                  onPress={() => fireAI(query.trim())}
-                >
-                  <Text style={styles.askAIText}>🤖 Not what you're looking for? Ask AI</Text>
-                </TouchableOpacity>
+                isPro ? (
+                  <TouchableOpacity
+                    style={styles.askAIRow}
+                    onPress={() => fireAI(query.trim())}
+                  >
+                    <Text style={styles.askAIText}>🤖 Not what you're looking for? Ask AI</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.askAIRow}
+                    onPress={() => router.push('/(tabs)/profile/subscription')}
+                  >
+                    <Text style={styles.askAIText}>🔒 AI food lookup is a Pro feature — Upgrade</Text>
+                  </TouchableOpacity>
+                )
               )}
               <TouchableOpacity style={styles.manualBtnFooter} onPress={goManual}>
                 <Text style={styles.footerBtnText}>✏️ Enter Manually</Text>
