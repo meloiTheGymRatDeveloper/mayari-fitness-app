@@ -14,6 +14,8 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 import { supabase } from '../../../lib/supabase';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
+import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
+import ProGate from '../../../components/ui/ProGate';
 
 // expo-speech-recognition requires a native build — not available in Expo Go.
 // requireOptionalNativeModule safely returns null when the native module is absent
@@ -68,6 +70,7 @@ interface ParsedFood {
 }
 
 export default function VoiceScreen() {
+  const { canUse } = useFeatureAccess();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { meal_slot, date } = useLocalSearchParams<{ meal_slot: MealSlot; date: string }>();
@@ -137,6 +140,15 @@ export default function VoiceScreen() {
       errorSub.remove();
     };
   }, [stopAndParse]);
+
+  if (!canUse('voiceLog')) {
+    return (
+      <ProGate
+        title="Voice Food Logging"
+        description='Say "I had sinangag, two eggs, and a cup of rice" — Mayari understands Tagalog, English, and Taglish.'
+      />
+    );
+  }
 
   async function startRecording() {
     const mod = getSpeechMod();
