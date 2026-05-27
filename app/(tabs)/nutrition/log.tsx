@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRecentFoods } from '../../../hooks/useNutrition';
+import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
 
@@ -22,6 +23,7 @@ export default function LogFoodScreen() {
   const router = useRouter();
   const { meal_slot, date } = useLocalSearchParams<{ meal_slot: MealSlot; date: string }>();
   const { data: recent = [], isLoading } = useRecentFoods();
+  const { isPro } = useFeatureAccess();
 
   function goFood(foodId: string) {
     router.push({ pathname: '/(tabs)/nutrition/food/[id]', params: { id: foodId, meal_slot, date } });
@@ -37,16 +39,23 @@ export default function LogFoodScreen() {
       <Text style={styles.sub}>{meal_slot ? SLOT_LABELS[meal_slot] : ''}</Text>
 
       <View style={styles.actionsGrid}>
-        {ACTIONS.map(action => (
-          <TouchableOpacity
-            key={action.route}
-            style={styles.actionBtn}
-            onPress={() => router.push({ pathname: action.route as never, params: { meal_slot, date } })}
-          >
-            <Text style={styles.actionIcon}>{action.icon}</Text>
-            <Text style={styles.actionLabel}>{action.label}</Text>
-          </TouchableOpacity>
-        ))}
+        {ACTIONS.map(action => {
+          const isLocked = !isPro && (
+            action.route === '/(tabs)/nutrition/voice' ||
+            action.route === '/(tabs)/nutrition/photo'
+          );
+          return (
+            <TouchableOpacity
+              key={action.route}
+              style={styles.actionBtn}
+              onPress={() => router.push({ pathname: action.route as never, params: { meal_slot, date } })}
+            >
+              <Text style={styles.actionIcon}>{action.icon}</Text>
+              <Text style={styles.actionLabel}>{action.label}</Text>
+              {isLocked && <Text style={styles.lockBadge}>🔒 Pro</Text>}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <Text style={styles.sectionTitle}>Recent Foods</Text>
@@ -81,6 +90,11 @@ const styles = StyleSheet.create({
   actionBtn: { width: '47%', backgroundColor: colors.bg.secondary, borderRadius: 16, padding: spacing.lg, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   actionIcon: { fontSize: 32, marginBottom: spacing.xs },
   actionLabel: { color: colors.text.primary, fontSize: typography.sm, fontWeight: '600', textAlign: 'center' },
+  lockBadge: {
+    fontSize: 10,
+    color: colors.brand.primary,
+    marginTop: 2,
+  },
   sectionTitle: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: spacing.sm },
   empty: { color: colors.text.muted, fontSize: typography.sm, textAlign: 'center', marginTop: spacing.lg },
   recentItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
