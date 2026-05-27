@@ -16,7 +16,8 @@ import { useNutritionAnalytics } from '../../../hooks/useNutritionAnalytics';
 import { useWorkoutAnalytics } from '../../../hooks/useWorkoutAnalytics';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const CHART_W = SCREEN_W - 48;
+// 24px container padding × 2 sides + 24px section padding × 2 sides = 96px total
+const CHART_W = SCREEN_W - 96;
 
 // ─── animated score ring ─────────────────────────────────────────────────────
 
@@ -443,6 +444,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
+    overflow: 'hidden',
   },
   sectionTitle: {
     color: colors.text.secondary,

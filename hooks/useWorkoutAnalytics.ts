@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import { colors } from '../constants/theme';
-import { subDays, toDateStr, shortDate, getMonday } from '../lib/analyticsHelpers';
+import { subDays, toDateStr, compactDate, getMonday } from '../lib/analyticsHelpers';
 
 function buildWeeklySessions(
   sessions: { started_at: string; total_volume_kg: number }[],
@@ -21,7 +21,7 @@ function buildWeeklySessions(
     const key = toDateStr(getMonday(subDays(now, i * 7)));
     volumeMap[key] = 0;
     countMap[key] = 0;
-    labels.push(shortDate(key));
+    labels.push(compactDate(key));
   }
 
   sessions.forEach(s => {

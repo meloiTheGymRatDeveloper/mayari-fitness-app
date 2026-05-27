@@ -10,9 +10,7 @@ export default function NutritionLayout() {
       <Stack.Screen name="barcode" />
       <Stack.Screen name="goals" />
       <Stack.Screen name="fasting" />
-      <Stack.Screen name="mealplan" />
-      <Stack.Screen name="grocery" />
-      <Stack.Screen name="mealbuilder" />
+      {/* mealplan, grocery, mealbuilder deferred to Phase 2 */}
     </Stack>
   );
 }

@@ -47,8 +47,10 @@ export default function CaloriesCard({ consumed, goal, caloriesBurned, protein, 
       </View>
       {caloriesBurned > 0 && (
         <View style={styles.burnedRow}>
-          <View style={styles.burnedDot} />
-          <Text style={styles.burnedText}>−{caloriesBurned} kcal burned from workout</Text>
+          <View style={styles.burnedLine}>
+            <View style={styles.burnedDot} />
+            <Text style={styles.burnedText}>−{caloriesBurned} kcal burned from workout</Text>
+          </View>
           <Text style={styles.netText}>Net: {Math.max(0, Math.round(consumed - caloriesBurned))} kcal (after workout)</Text>
         </View>
       )}
@@ -99,26 +101,31 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand.primary,
   },
   burnedRow: {
+    marginBottom: spacing.sm,
+    gap: 2,
+  },
+  burnedLine: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing.xs,
-    marginBottom: spacing.sm,
   },
   burnedDot: {
     width: 10,
     height: 10,
     borderRadius: 2,
     backgroundColor: colors.error,
+    flexShrink: 0,
   },
   burnedText: {
     color: colors.text.secondary,
     fontSize: typography.xs,
+    flexShrink: 1,
   },
   netText: {
     color: colors.warning,
     fontSize: typography.xs,
     fontWeight: '600',
+    paddingLeft: 14,
   },
   macroRow: {
     flexDirection: 'row',

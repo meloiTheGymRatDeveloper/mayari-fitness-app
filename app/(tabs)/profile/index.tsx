@@ -28,7 +28,7 @@ const NAV_SECTIONS = [
   {
     label: 'NUTRITION',
     items: [
-      { label: 'Calorie & Macro Goals', route: '/(tabs)/nutrition/goals', emoji: '🎯' },
+      { label: 'Calorie & Macro Goals', route: '/(tabs)/profile/goals', emoji: '🎯' },
     ],
   },
   {

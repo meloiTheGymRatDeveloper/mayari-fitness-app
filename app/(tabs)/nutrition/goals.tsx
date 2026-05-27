@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity, TextInput } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
@@ -30,6 +31,7 @@ function calcDefaultGoals(profile: UserProfile) {
 
 export default function MacroGoalsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { profile, fetchProfile, session } = useAuthStore();
   const [useCustom, setUseCustom] = useState(false);
   const [calories, setCalories] = useState('');
@@ -92,7 +94,7 @@ export default function MacroGoalsScreen() {
     : null;
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
       <TouchableOpacity onPress={() => router.back()} style={styles.back}>
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>

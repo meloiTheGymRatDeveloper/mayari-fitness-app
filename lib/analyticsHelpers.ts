@@ -16,6 +16,11 @@ export function shortDate(dateStr: string): string {
   return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
 }
 
+export function compactDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00Z');
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+}
+
 export function getMonday(d: Date): Date {
   const copy = new Date(d);
   const day = copy.getDay();

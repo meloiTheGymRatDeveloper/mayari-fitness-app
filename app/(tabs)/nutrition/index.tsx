@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../../stores/authStore';
@@ -7,13 +7,13 @@ import MacroSummaryCard from '../../../components/nutrition/MacroSummaryCard';
 import MealSection from '../../../components/nutrition/MealSection';
 import WaterBar from '../../../components/nutrition/WaterBar';
 import { colors, typography, spacing } from '../../../constants/theme';
-import { useLatestGroceryList } from '../../../hooks/useMealPlan';
 import { useLatestTipByType } from '../../../hooks/useCoachTips';
 import Skeleton from '../../../components/ui/Skeleton';
 import { useActiveFast } from '../../../hooks/useFasting';
 import { useDeleteFoodLog } from '../../../hooks/useNutrition';
 import { useTodayCaloriesBurned } from '../../../hooks/useWorkout';
 import type { MealSlot } from '../../../types/database';
+import { useMayariTriggers } from '../../../hooks/useMayariTriggers';
 
 const MEAL_SLOTS: MealSlot[] = ['almusal', 'tanghalian', 'merienda', 'hapunan'];
 
@@ -76,13 +76,59 @@ export default function NutritionScreen() {
   const removeWater = useRemoveWater();
   const deleteLog = useDeleteFoodLog();
 
-  const { data: groceryList } = useLatestGroceryList();
-  const groceryBadgeCount = (groceryList?.items ?? []).filter(i => !i.checked).length;
   const nutritionTip = useLatestTipByType('nutrition');
   const { data: caloriesBurned = 0 } = useTodayCaloriesBurned(todayStr());
+  const { fire } = useMayariTriggers();
 
   const mealStyle = profile?.meal_time_style ?? 'filipino';
   const isLoading = logsLoading || waterLoading;
+
+  useEffect(() => {
+    if (date !== todayStr()) return;
+    if (foodLogs.length === 0) return;
+
+    const calGoal = profile?.calorie_goal ?? 0;
+    const protGoal = profile?.protein_goal_g ?? 0;
+    const carbGoal = profile?.carbs_goal_g ?? 0;
+    const fatGoal = profile?.fat_goal_g ?? 0;
+
+    let totalCal = 0, totalProt = 0, totalCarb = 0, totalFat = 0;
+    for (const log of foodLogs) {
+      const item = (log as { food_item?: { calories_per_100g?: number | null; protein_per_100g?: number | null; carbs_per_100g?: number | null; fat_per_100g?: number | null } }).food_item;
+      if (!item) continue;
+      const q = log.quantity_g / 100;
+      totalCal  += (item.calories_per_100g ?? 0) * q;
+      totalProt += (item.protein_per_100g  ?? 0) * q;
+      totalCarb += (item.carbs_per_100g    ?? 0) * q;
+      totalFat  += (item.fat_per_100g      ?? 0) * q;
+    }
+
+    if (foodLogs.length === 1) {
+      fire('first_food_log_today', {});
+    }
+
+    if (calGoal > 0 && totalCal >= calGoal * 0.95 && totalCal <= calGoal * 1.05) {
+      fire('calorie_goal_hit', { calories: Math.round(totalCal), goal: calGoal });
+    }
+
+    const hour = new Date().getHours();
+    if (calGoal > 0 && foodLogs.length >= 3 && hour >= 18 && totalCal < calGoal * 0.6) {
+      fire('calorie_deficit_aggressive', { calories: Math.round(totalCal), goal: calGoal });
+    }
+
+    const goalsSet = calGoal > 0 && protGoal > 0 && carbGoal > 0 && fatGoal > 0;
+    if (goalsSet) {
+      const within = (actual: number, goal: number) => actual >= goal * 0.9 && actual <= goal * 1.1;
+      if (within(totalCal, calGoal) && within(totalProt, protGoal) && within(totalCarb, carbGoal) && within(totalFat, fatGoal)) {
+        fire('full_macro_day', {
+          calories: Math.round(totalCal),
+          protein_g: Math.round(totalProt),
+          carbs_g: Math.round(totalCarb),
+          fat_g: Math.round(totalFat),
+        });
+      }
+    }
+  }, [foodLogs, date, profile, fire]);
 
   return (
     <View style={styles.root}>
@@ -106,22 +152,6 @@ export default function NutritionScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow} contentContainerStyle={styles.chipRowContent}>
         <TouchableOpacity style={styles.chip} onPress={() => router.push('/(tabs)/nutrition/fasting')}>
           <Text style={styles.chipText}>⏱ Fasting</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.chip} onPress={() => router.push('/(tabs)/nutrition/mealplan')}>
-          <Text style={styles.chipText}>📅 Meal Plan</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.chip} onPress={() => router.push('/(tabs)/nutrition/grocery')}>
-          <View style={styles.chipInner}>
-            <Text style={styles.chipText}>🛒 Grocery</Text>
-            {groceryBadgeCount > 0 && (
-              <View style={styles.chipBadge}>
-                <Text style={styles.chipBadgeText}>{groceryBadgeCount}</Text>
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.chip} onPress={() => router.push('/(tabs)/nutrition/mealbuilder')}>
-          <Text style={styles.chipText}>🤖 Meal Builder</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -259,13 +289,6 @@ const styles = StyleSheet.create({
   },
   burnBannerText: { color: '#F59E0B', fontSize: typography.sm, fontWeight: '600' },
   dimmed: { opacity: 0.4 },
-  chipInner: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  chipBadge: {
-    backgroundColor: colors.brand.primary, borderRadius: 10,
-    minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  chipBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
   errorBlock: { alignItems: 'center', paddingVertical: spacing.xl },
   errorText: { color: colors.text.secondary, fontSize: typography.base, marginBottom: spacing.md },
   retryBtn: { backgroundColor: colors.brand.primary, borderRadius: 12, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },

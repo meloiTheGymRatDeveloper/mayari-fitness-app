@@ -15,7 +15,6 @@ import { useStreaks } from '../../hooks/useStreaks';
 import DayStrip from '../../components/home/DayStrip';
 import CaloriesCard from '../../components/home/CaloriesCard';
 import MealSlotCard from '../../components/home/MealSlotCard';
-import MicrosSection from '../../components/home/MicrosSection';
 import StreakMilestoneToast from '../../components/shared/StreakMilestoneToast';
 import { colors, typography, spacing } from '../../constants/theme';
 import type { MealSlot } from '../../types/database';
@@ -120,12 +119,6 @@ export default function HomeScreen() {
           <SlotRow key={slot} slot={slot} date={date} daily={daily} />
         ))}
 
-        <MicrosSection
-          vitaminC={daily.micros.vitaminC}
-          iron={daily.micros.iron}
-          calcium={daily.micros.calcium}
-        />
-
         <TouchableOpacity
           style={styles.coachCard}
           onPress={() => router.push('/(tabs)/coach')}
@@ -139,13 +132,6 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.plannerCard} onPress={() => router.push('/(tabs)/nutrition/mealplan' as never)} activeOpacity={0.8}>
-          <View>
-            <Text style={styles.plannerTitle}>📅 Meal Planner</Text>
-            <Text style={styles.plannerSub}>Plan this week's meals</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.brand.primary} />
-        </TouchableOpacity>
       </ScrollView>
       <StreakMilestoneToast milestone={activeMilestone} />
     </View>
@@ -189,12 +175,4 @@ const styles = StyleSheet.create({
   },
   coachTitle: { color: colors.brand.secondary, fontSize: typography.sm, fontWeight: '600', marginBottom: spacing.xs },
   coachBody: { color: colors.text.secondary, fontSize: typography.sm, lineHeight: 20 },
-  plannerCard: {
-    marginHorizontal: spacing.lg, marginTop: spacing.sm,
-    backgroundColor: colors.bg.elevated, borderRadius: 14,
-    padding: spacing.md, borderWidth: 1, borderColor: colors.brand.primary,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-  },
-  plannerTitle: { color: colors.brand.secondary, fontSize: typography.sm, fontWeight: '600', marginBottom: 2 },
-  plannerSub: { color: colors.text.muted, fontSize: typography.xs },
 });

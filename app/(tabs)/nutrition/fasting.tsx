@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { supabase } from '../../../lib/supabase';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { FastingLog } from '../../../types/database';
+import { useMayariTriggers } from '../../../hooks/useMayariTriggers';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -66,6 +67,8 @@ export default function FastingScreen() {
   // Force re-render every minute for the live timer
   const [, setTick] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { fire } = useMayariTriggers();
+  const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const userId = useRef<string | null>(null);
 
@@ -130,6 +133,7 @@ export default function FastingScreen() {
           .eq('id', activeFast.id);
 
         if (error) throw error;
+        fire('fasting_completed', { window_hours: activeFast.target_window_hours });
         await loadData();
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Could not auto-complete fast.';
@@ -166,6 +170,27 @@ export default function FastingScreen() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [checkAutoComplete]);
+
+  // IF window warning — fires 30 minutes before eating window opens
+  useEffect(() => {
+    if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
+    if (!activeFast?.eating_window_start) return;
+
+    const warningAt = new Date(activeFast.eating_window_start).getTime() - 30 * 60 * 1000;
+    const delay = warningAt - Date.now();
+    if (delay <= 0) return;
+
+    warningTimerRef.current = setTimeout(() => {
+      const startTime = new Date(activeFast.eating_window_start!).toLocaleTimeString('en-PH', {
+        hour: 'numeric', minute: '2-digit', hour12: true,
+      });
+      fire('if_window_warning', { eating_start_time: startTime });
+    }, delay);
+
+    return () => {
+      if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
+    };
+  }, [activeFast?.eating_window_start, fire]);
 
   // ------------------------------------------------------------------
   // Actions

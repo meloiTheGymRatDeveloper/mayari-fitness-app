@@ -1,6 +1,7 @@
-// app/(tabs)/coach/index.tsx
+﻿// app/(tabs)/coach/index.tsx
 import { useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../../../constants/theme';
 import {
   useCoachTips, useMarkAllTipsRead, useRequestTip,
@@ -15,6 +16,21 @@ const TIP_ICONS: Record<string, string> = {
   streak: '🔥',
   pr: '🏆',
   general: '🌙',
+  insight: '💡',
+  risk: '⚠️',
+  achievement: '⭐',
+};
+
+// ── Border color mapping ──────────────────────────────────────────────────────
+const TIP_BORDER: Record<string, string> = {
+  nutrition: colors.brand.primary,
+  workout: colors.brand.primary,
+  streak: colors.brand.accent,
+  pr: colors.brand.accent,
+  general: colors.brand.primary,
+  insight: colors.brand.secondary,
+  risk: '#F59E0B',
+  achievement: colors.brand.accent,
 };
 
 // ── Relative time helper ──────────────────────────────────────────────────────
@@ -31,7 +47,7 @@ function relativeTime(isoString: string): string {
 // ── TipCard ───────────────────────────────────────────────────────────────────
 function TipCard({ tip }: { tip: CoachTip }) {
   return (
-    <View style={styles.tipCard}>
+    <View style={[styles.tipCard, { borderLeftWidth: 3, borderLeftColor: TIP_BORDER[tip.tip_type] ?? colors.brand.primary }]}>
       <Text style={styles.tipIcon}>{TIP_ICONS[tip.tip_type] ?? '🌙'}</Text>
       <View style={styles.tipBody}>
         <Text style={styles.tipContent}>{tip.content}</Text>
@@ -43,6 +59,7 @@ function TipCard({ tip }: { tip: CoachTip }) {
 
 // ── CoachScreen ───────────────────────────────────────────────────────────────
 export default function CoachScreen() {
+  const insets = useSafeAreaInsets();
   const { data: tips = [], isLoading } = useCoachTips();
   const markRead = useMarkAllTipsRead();
   const requestTip = useRequestTip();
@@ -53,7 +70,7 @@ export default function CoachScreen() {
   }, []);
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <Text style={styles.header}>Mayari Tips</Text>
 
       {isLoading ? (

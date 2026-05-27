@@ -7,6 +7,7 @@ import { useAuthStore } from '../../../stores/authStore';
 import { fallbackExercises } from '../../../constants/exercises';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { WorkoutSession, WorkoutSet, PersonalRecord, Exercise } from '../../../types/database';
+import { useMayariTriggers } from '../../../hooks/useMayariTriggers';
 
 interface NewPR { exercise_name: string; weight_kg: number; reps: number; }
 
@@ -33,6 +34,7 @@ export default function SummaryScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const userId = useAuthStore(s => s.session?.user.id);
+  const { fire } = useMayariTriggers();
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<WorkoutSession | null>(null);
   const [sets, setSets] = useState<WorkoutSet[]>([]);
@@ -114,6 +116,39 @@ export default function SummaryScreen() {
         }
 
         setNewPRs(detected);
+
+        // Fire Mayari triggers (non-blocking)
+        const durationMin = sess.ended_at
+          ? Math.round((new Date(sess.ended_at).getTime() - new Date(sess.started_at).getTime()) / 60000)
+          : 0;
+
+        fire('post_workout', {
+          exercises_count: byExercise.size,
+          total_volume_kg: Math.round((sess as WorkoutSession).total_volume_kg ?? 0),
+          duration_min: durationMin,
+        });
+
+        if (detected.length > 0) {
+          const bestPR = detected.reduce((a, b) => b.weight_kg > a.weight_kg ? b : a);
+          fire('pr_broken', {
+            exercise_name: bestPR.exercise_name,
+            weight_kg: bestPR.weight_kg,
+            reps: bestPR.reps,
+          }, true);
+        }
+
+        const weekStart = new Date();
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        weekStart.setHours(0, 0, 0, 0);
+        const { count: weekCount } = await supabase
+          .from('workout_sessions')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId!)
+          .gte('started_at', weekStart.toISOString())
+          .not('ended_at', 'is', null);
+        if ((weekCount ?? 0) === 1) {
+          fire('first_workout_week', {});
+        }
       } finally {
         setLoading(false);
       }

@@ -4,6 +4,8 @@ import {
   TouchableOpacity, Alert, ActivityIndicator,
 } from 'react-native';
 import { useMeasurements, useAddMeasurement } from '../../../hooks/useBodyMeasurements';
+import { useMayariTriggers } from '../../../hooks/useMayariTriggers';
+import { useAuthStore } from '../../../stores/authStore';
 import { colors, typography, spacing } from '../../../constants/theme';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
@@ -51,6 +53,8 @@ export default function MeasurementsScreen() {
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const { data: history = [], isLoading: loadingHistory } = useMeasurements();
   const addMeasurement = useAddMeasurement();
+  const { fire } = useMayariTriggers();
+  const targetWeight = useAuthStore(s => s.profile?.target_weight_kg);
 
   function setField(key: keyof FormState, value: string) {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -99,7 +103,19 @@ export default function MeasurementsScreen() {
       notes: null,
     };
     addMeasurement.mutate(payload, {
-      onSuccess: resetForm,
+      onSuccess: () => {
+        const newWeight = payload.weight_kg;
+        if (newWeight != null && targetWeight != null) {
+          const diff = Math.abs(newWeight - targetWeight);
+          if (diff <= 0.5) {
+            fire('weight_goal_hit', {
+              target_kg: targetWeight,
+              current_kg: newWeight,
+            }, true);
+          }
+        }
+        resetForm();
+      },
       onError: (e) => Alert.alert('Error', e instanceof Error ? e.message : 'Could not save measurement.'),
     });
   }

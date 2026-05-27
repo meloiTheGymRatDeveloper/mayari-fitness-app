@@ -13,11 +13,16 @@ export default function ProfileLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="measurements" options={{ title: 'Measurements' }} />
-      <Stack.Screen name="progress" options={{ title: 'Progress & Analytics' }} />
-      <Stack.Screen name="buddies/find" options={{ title: 'Find Gym Buddies' }} />
-      <Stack.Screen name="buddies/list" options={{ title: 'My Buddies' }} />
-      <Stack.Screen name="buddies/chat/[id]" options={{ title: 'Chat' }} />
+      <Stack.Screen name="goals" options={{ headerShown: false }} />
+      <Stack.Screen name="measurements" options={{ title: 'Measurements', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="progress" options={{ title: 'Progress & Analytics', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="referral" options={{ title: 'Referrals', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="subscription" options={{ title: 'Subscription', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="settings" options={{ title: 'Settings', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="streaks" options={{ title: 'Streaks', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="buddies/find" options={{ title: 'Find Gym Buddies', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="buddies/list" options={{ title: 'My Buddies', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="buddies/chat/[id]" options={{ title: 'Chat', headerBackTitle: 'Back' }} />
     </Stack>
   );
 }

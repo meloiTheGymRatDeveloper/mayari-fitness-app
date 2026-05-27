@@ -12,7 +12,32 @@ export type UnitsPref = 'metric' | 'imperial';
 export type ReferralStatus = 'pending' | 'active' | 'expired';
 export type Gender = 'male' | 'female' | 'prefer_not_to_say';
 export type ActivityLevel = 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extremely_active';
-export type TipType = 'nutrition' | 'workout' | 'streak' | 'pr' | 'general';
+export type TipType = 'nutrition' | 'workout' | 'streak' | 'pr' | 'general' | 'insight' | 'risk' | 'achievement';
+
+export type TriggerEvent =
+  | 'post_workout'
+  | 'pr_broken'
+  | 'streak_milestone'
+  | 'first_food_log_today'
+  | 'first_workout_week'
+  | 'full_macro_day'
+  | 'calorie_goal_hit'
+  | 'calorie_deficit_aggressive'
+  | 'fasting_completed'
+  | 'weight_goal_hit'
+  | 'abandoned_workout'
+  | 'if_window_warning'
+  | 'post_weekend_reset'
+  | 'workout_silence_2day'
+  | 'water_reminder'
+  | 'rest_day_recommended'
+  | 'rest_day_tomorrow'
+  | 'subscription_lapse'
+  | 'weekly_pattern'
+  | 'plateau_detected'
+  | 'food_variety_alert'
+  | 'protein_low_rest_day'
+  | 'late_workout_pattern';
 
 export interface PlannedExercise {
   exercise_id: string;
@@ -224,6 +249,7 @@ export interface CoachTip {
   user_id: string;
   content: string;
   tip_type: TipType;
+  trigger_event: TriggerEvent | null;
   read_at: string | null;
   created_at: string;
 }
