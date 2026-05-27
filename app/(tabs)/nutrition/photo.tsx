@@ -11,6 +11,8 @@ import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { colors, typography, spacing } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
+import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
+import ProGate from '../../../components/ui/ProGate';
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -26,6 +28,7 @@ interface ParsedFood {
 }
 
 export default function PhotoScreen() {
+  const { canUse } = useFeatureAccess();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { meal_slot, date } = useLocalSearchParams<{ meal_slot?: MealSlot; date?: string }>();
@@ -37,6 +40,15 @@ export default function PhotoScreen() {
 
   const effectiveDate = date ?? todayStr();
   const effectiveSlot = meal_slot ?? 'almusal';
+
+  if (!canUse('photoCalorie')) {
+    return (
+      <ProGate
+        title="Photo Calorie Estimation"
+        description="Snap a photo of your meal and Mayari will estimate the calories, protein, carbs, and fat for you."
+      />
+    );
+  }
 
   const handleCapture = async () => {
     if (!cameraRef.current) return;
