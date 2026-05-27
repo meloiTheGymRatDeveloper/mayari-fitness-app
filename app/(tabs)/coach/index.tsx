@@ -8,6 +8,8 @@ import {
 } from '../../../hooks/useCoachTips';
 import type { CoachTip } from '../../../types/database';
 import Skeleton from '../../../components/ui/Skeleton';
+import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
+import ProGate from '../../../components/ui/ProGate';
 
 // ── Icon mapping ──────────────────────────────────────────────────────────────
 const TIP_ICONS: Record<string, string> = {
@@ -59,6 +61,7 @@ function TipCard({ tip }: { tip: CoachTip }) {
 
 // ── CoachScreen ───────────────────────────────────────────────────────────────
 export default function CoachScreen() {
+  const { canUse } = useFeatureAccess();
   const insets = useSafeAreaInsets();
   const { data: tips = [], isLoading } = useCoachTips();
   const markRead = useMarkAllTipsRead();
@@ -68,6 +71,15 @@ export default function CoachScreen() {
     markRead.mutate();
     requestTip.mutate();
   }, []);
+
+  if (!canUse('coachTips')) {
+    return (
+      <ProGate
+        title="Coach Mayari"
+        description="Get personalised tips on workouts, nutrition, and streaks — powered by AI and tailored to your Filipino lifestyle."
+      />
+    );
+  }
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
