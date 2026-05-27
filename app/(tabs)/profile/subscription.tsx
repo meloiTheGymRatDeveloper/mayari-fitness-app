@@ -7,8 +7,12 @@ import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../../../constants/theme';
-import { useSubscription, useCreateSubscription, useCancelSubscription } from '../../../hooks/useSubscription';
+import { useSubscription, useCreatePaymentLink, useCancelSubscription } from '../../../hooks/useSubscription';
 import { useMyReferrals, calcReferralDiscount } from '../../../hooks/useReferrals';
+
+const MONTHLY_PRICE = 89;
+const YEARLY_PRICE = 799;
+const CONSISTENCY_DISCOUNT_PCT = 0.1;
 
 function formatDate(iso: string | null) {
   if (!iso) return '';
@@ -17,11 +21,15 @@ function formatDate(iso: string | null) {
   });
 }
 
-const FEATURES = [
-  'Unlimited food logging + AI photo scan',
-  'AI meal planning + meal builder',
-  'Coach Mayari full access',
-  'Analytics + progress charts',
+const PRO_FEATURES = [
+  'Coach Mayari — personalised AI tips',
+  'Photo calorie estimation',
+  'Voice food logging (Tagalog/English)',
+  'AI food lookup',
+  'Intermittent fasting timer',
+  'Advanced analytics dashboard',
+  'Unlimited buddy connections + chat',
+  'Push notifications',
 ];
 
 export default function SubscriptionScreen() {
@@ -29,8 +37,9 @@ export default function SubscriptionScreen() {
   const router = useRouter();
   const { data: sub, isLoading, refetch } = useSubscription();
   const { data: referrals } = useMyReferrals();
-  const createSub = useCreateSubscription();
+  const createPaymentLink = useCreatePaymentLink();
   const cancelSub = useCancelSubscription();
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [opening, setOpening] = useState(false);
 
   const isActive = sub?.tier === 'beta' || sub?.tier === 'active' || sub?.tier === 'achiever';
@@ -38,15 +47,20 @@ export default function SubscriptionScreen() {
     sub?.tier === 'free' &&
     sub?.current_period_end != null &&
     new Date(sub.current_period_end) < new Date();
-  const referralCount = (referrals ?? []).filter(r => r.status === 'active').length;
-  const discountPct = calcReferralDiscount(referrals);
-  const untilMax = Math.max(0, 5 - referralCount);
-  const progressWidth = `${Math.round((discountPct / 50) * 100)}%` as `${number}%`;
+
+  const referralDiscount = calcReferralDiscount(referrals);
+  const consistencyDiscount = sub?.consistency_discount_pct
+    ? Math.round(MONTHLY_PRICE * CONSISTENCY_DISCOUNT_PCT)
+    : 0;
+
+  const monthlyFinal = Math.max(1, MONTHLY_PRICE - consistencyDiscount - referralDiscount);
+  const displayedPrice = selectedPlan === 'yearly' ? YEARLY_PRICE : monthlyFinal;
+  const yearlySaving = MONTHLY_PRICE * 12 - YEARLY_PRICE;
 
   async function handleSubscribe() {
     try {
       setOpening(true);
-      const result = await createSub.mutateAsync();
+      const result = await createPaymentLink.mutateAsync(selectedPlan);
       await WebBrowser.openBrowserAsync(result.checkout_url);
       await refetch();
     } catch (err: unknown) {
@@ -98,11 +112,11 @@ export default function SubscriptionScreen() {
                 Your last payment didn't go through. Resubscribe to restore access.
               </Text>
               <TouchableOpacity
-                style={[styles.paymentFailedBtn, (opening || createSub.isPending) && styles.disabled]}
+                style={[styles.paymentFailedBtn, (opening || createPaymentLink.isPending) && styles.disabled]}
                 onPress={handleSubscribe}
-                disabled={opening || createSub.isPending}
+                disabled={opening || createPaymentLink.isPending}
               >
-                <Text style={styles.paymentFailedBtnText}>Resubscribe · ₱10/month</Text>
+                <Text style={styles.paymentFailedBtnText}>Resubscribe</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -112,9 +126,9 @@ export default function SubscriptionScreen() {
             <Text style={styles.planLabel}>CURRENT PLAN</Text>
             <View style={styles.planRow}>
               <View>
-                <Text style={styles.planTier}>{isActive ? 'Beta' : 'Free'}</Text>
+                <Text style={styles.planTier}>{isActive ? 'Pro' : 'Free'}</Text>
                 {isActive && sub?.current_period_end ? (
-                  <Text style={styles.planSub}>Renews {formatDate(sub.current_period_end)} · ₱10</Text>
+                  <Text style={styles.planSub}>Renews {formatDate(sub.current_period_end)}</Text>
                 ) : (
                   <Text style={styles.planSub}>Limited features</Text>
                 )}
@@ -127,25 +141,68 @@ export default function SubscriptionScreen() {
             </View>
           </View>
 
-          {/* Beta offer (free users only) */}
+          {/* Pro plan offer (free users only) */}
           {!isActive && (
             <View style={styles.offerCard}>
-              <Text style={styles.offerLabel}>🌙 BETA OFFER</Text>
-              <View style={styles.offerPriceRow}>
-                <Text style={styles.offerPrice}>₱10</Text>
-                <Text style={styles.offerPriceSub}>/month</Text>
+              <Text style={styles.offerLabel}>🌙 MAYARI PRO</Text>
+
+              {/* Plan toggle */}
+              <View style={styles.planToggle}>
+                <TouchableOpacity
+                  style={[styles.toggleBtn, selectedPlan === 'monthly' && styles.toggleBtnActive]}
+                  onPress={() => setSelectedPlan('monthly')}
+                >
+                  <Text style={[styles.toggleBtnText, selectedPlan === 'monthly' && styles.toggleBtnTextActive]}>
+                    Monthly
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.toggleBtn, selectedPlan === 'yearly' && styles.toggleBtnActive]}
+                  onPress={() => setSelectedPlan('yearly')}
+                >
+                  <Text style={[styles.toggleBtnText, selectedPlan === 'yearly' && styles.toggleBtnTextActive]}>
+                    Yearly
+                  </Text>
+                  {yearlySaving > 0 && (
+                    <Text style={styles.savingsBadge}>Save ₱{yearlySaving}</Text>
+                  )}
+                </TouchableOpacity>
               </View>
-              <Text style={styles.offerSubtitle}>Unlimited access during beta · cancel anytime</Text>
-              {FEATURES.map(f => (
+
+              {/* Price display */}
+              <View style={styles.offerPriceRow}>
+                <Text style={styles.offerPrice}>₱{displayedPrice}</Text>
+                <Text style={styles.offerPriceSub}>
+                  {selectedPlan === 'yearly' ? '/year' : '/month'}
+                </Text>
+              </View>
+
+              {/* Discount breakdown (monthly only) */}
+              {selectedPlan === 'monthly' && (consistencyDiscount > 0 || referralDiscount > 0) && (
+                <View style={styles.discountBreakdown}>
+                  <Text style={styles.discountLine}>Regular price: ₱{MONTHLY_PRICE}/month</Text>
+                  {consistencyDiscount > 0 && (
+                    <Text style={styles.discountLine}>Consistency discount: −₱{consistencyDiscount}</Text>
+                  )}
+                  {referralDiscount > 0 && (
+                    <Text style={styles.discountLine}>Referral discount: −₱{referralDiscount}</Text>
+                  )}
+                </View>
+              )}
+
+              {PRO_FEATURES.map(f => (
                 <Text key={f} style={styles.offerFeature}>✓ {f}</Text>
               ))}
+
               <TouchableOpacity
-                style={[styles.subscribeBtn, (opening || createSub.isPending) && styles.disabled]}
+                style={[styles.subscribeBtn, (opening || createPaymentLink.isPending) && styles.disabled]}
                 onPress={handleSubscribe}
-                disabled={opening || createSub.isPending}
+                disabled={opening || createPaymentLink.isPending}
               >
                 <Text style={styles.subscribeBtnText}>
-                  {opening || createSub.isPending ? 'Opening...' : 'Subscribe · ₱10/month'}
+                  {opening || createPaymentLink.isPending
+                    ? 'Opening...'
+                    : `Subscribe · ₱${displayedPrice}${selectedPlan === 'yearly' ? '/year' : '/month'}`}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -154,18 +211,15 @@ export default function SubscriptionScreen() {
           {/* Referral discount card */}
           <View style={styles.card}>
             <Text style={styles.cardLabel}>REFERRAL DISCOUNT</Text>
-            <View style={styles.discountRow}>
-              <Text style={styles.discountLeft}>
-                {referralCount} friend{referralCount !== 1 ? 's' : ''} referred
+            {referralDiscount > 0 ? (
+              <Text style={styles.referralDiscountActive}>
+                ₱{referralDiscount}/month off applied ✓
               </Text>
-              <Text style={styles.discountRight}>{discountPct}% saved</Text>
-            </View>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: progressWidth }]} />
-            </View>
-            <Text style={styles.discountNote}>
-              {`Activates at ₱50/month when beta ends · ${untilMax} more for max discount`}
-            </Text>
+            ) : (
+              <Text style={styles.discountNote}>
+                Refer a friend and get ₱20/month off while they stay subscribed.
+              </Text>
+            )}
           </View>
 
           {/* Referral link */}
@@ -175,8 +229,8 @@ export default function SubscriptionScreen() {
           >
             <Text style={styles.referralEmoji}>🎁</Text>
             <View style={styles.referralText}>
-              <Text style={styles.referralTitle}>Refer friends, save later</Text>
-              <Text style={styles.referralSub}>10% off per referral when beta ends · max 50%</Text>
+              <Text style={styles.referralTitle}>Refer friends, save ₱20/month</Text>
+              <Text style={styles.referralSub}>1 active referral = ₱20 off every billing cycle</Text>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -239,16 +293,37 @@ const styles = StyleSheet.create({
     color: colors.brand.secondary, fontSize: typography.xs,
     fontWeight: '700', letterSpacing: 1,
   },
+  planToggle: {
+    flexDirection: 'row', backgroundColor: colors.bg.secondary,
+    borderRadius: 10, padding: 3, marginTop: spacing.sm, marginBottom: spacing.xs,
+  },
+  toggleBtn: {
+    flex: 1, paddingVertical: spacing.xs, alignItems: 'center',
+    borderRadius: 8, position: 'relative',
+  },
+  toggleBtnActive: { backgroundColor: colors.brand.primary },
+  toggleBtnText: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600' },
+  toggleBtnTextActive: { color: colors.white },
+  savingsBadge: {
+    position: 'absolute', top: -8, right: 4,
+    backgroundColor: colors.success, borderRadius: 8,
+    paddingHorizontal: 5, paddingVertical: 1,
+    color: '#fff', fontWeight: '700', fontSize: 9,
+  } as never,
   offerPriceRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginTop: spacing.xs },
   offerPrice: { color: colors.text.primary, fontSize: 28, fontWeight: '800' },
   offerPriceSub: { color: colors.text.secondary, fontSize: typography.sm, marginBottom: 4 },
-  offerSubtitle: { color: colors.text.secondary, fontSize: typography.xs, marginBottom: spacing.xs },
+  discountBreakdown: {
+    backgroundColor: colors.bg.secondary, borderRadius: 8,
+    padding: spacing.sm, gap: 2, marginBottom: spacing.xs,
+  },
+  discountLine: { color: colors.text.secondary, fontSize: typography.xs },
   offerFeature: { color: colors.text.primary, fontSize: typography.xs },
   subscribeBtn: {
     backgroundColor: colors.brand.primary, borderRadius: 12,
     paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.sm,
   },
-  subscribeBtnText: { color: colors.white, fontSize: typography.base, fontWeight: '700' },
+  subscribeBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
   disabled: { opacity: 0.5 },
   card: {
     backgroundColor: colors.bg.secondary, borderRadius: 14, padding: spacing.md,
@@ -258,17 +333,8 @@ const styles = StyleSheet.create({
     color: colors.text.muted, fontSize: typography.xs,
     fontWeight: '700', letterSpacing: 1, marginBottom: spacing.sm,
   },
-  discountRow: {
-    flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm,
-  },
-  discountLeft: { color: colors.text.secondary, fontSize: typography.sm },
-  discountRight: { color: colors.warning, fontSize: typography.sm, fontWeight: '700' },
-  progressTrack: {
-    backgroundColor: colors.bg.elevated, borderRadius: 4,
-    height: 6, marginBottom: spacing.xs,
-  },
-  progressFill: {
-    backgroundColor: colors.brand.primary, borderRadius: 4, height: 6,
+  referralDiscountActive: {
+    color: colors.success, fontSize: typography.sm, fontWeight: '600',
   },
   discountNote: { color: colors.text.muted, fontSize: typography.xs },
   referralRow: {

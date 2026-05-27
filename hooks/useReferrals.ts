@@ -21,7 +21,8 @@ export function useMyReferrals() {
   });
 }
 
+// Returns flat ₱20 off if user has at least one active referral (max 1 discount/month)
 export function calcReferralDiscount(referrals: ReferralWithUser[] | undefined): number {
-  const activeCount = (referrals ?? []).filter(r => r.status === 'active').length;
-  return Math.min(activeCount * 10, 50);
+  const hasActive = (referrals ?? []).some(r => r.status === 'active');
+  return hasActive ? 20 : 0;
 }

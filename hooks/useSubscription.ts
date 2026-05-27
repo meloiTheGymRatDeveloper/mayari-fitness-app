@@ -24,19 +24,21 @@ export function useSubscription() {
 interface PaymentLinkResult {
   checkout_url: string;
   amount_pesos: number;
+  plan: 'monthly' | 'yearly';
 }
 
 export function useCreatePaymentLink() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (): Promise<PaymentLinkResult> => {
+    mutationFn: async (plan: 'monthly' | 'yearly' = 'monthly'): Promise<PaymentLinkResult> => {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) throw new Error('Not authenticated');
 
       const res = await supabase.functions.invoke('create-payment-link', {
         headers: { Authorization: `Bearer ${token}` },
+        body: { plan },
       });
       if (res.error) throw new Error(res.error.message);
       return res.data as PaymentLinkResult;
