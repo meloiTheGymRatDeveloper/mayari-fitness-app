@@ -14,6 +14,8 @@ import { colors, spacing, typography } from '../../../constants/theme';
 import { useBodyAnalytics } from '../../../hooks/useBodyAnalytics';
 import { useNutritionAnalytics } from '../../../hooks/useNutritionAnalytics';
 import { useWorkoutAnalytics } from '../../../hooks/useWorkoutAnalytics';
+import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
+import ProGate from '../../../components/ui/ProGate';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 // 24px container padding × 2 sides + 24px section padding × 2 sides = 96px total
@@ -100,6 +102,7 @@ function Chip({ label, color }: { label: string; color?: string }) {
 // ─── main screen ─────────────────────────────────────────────────────────────
 
 export default function ProgressScreen() {
+  const { canUse } = useFeatureAccess();
   const { profile } = useAuthStore();
 
   const { data: body, isLoading: bodyLoading } = useBodyAnalytics();
@@ -112,6 +115,15 @@ export default function ProgressScreen() {
   const totalScore = Math.min(100, Math.round(wRaw + nRaw));
   const wScore = Math.round((wRaw / 50) * 100);
   const nScore = Math.round((nRaw / 50) * 100);
+
+  if (!canUse('advancedAnalytics')) {
+    return (
+      <ProGate
+        title="Advanced Analytics"
+        description="Track body trends, nutrition averages, workout volume, and your consistency score — all in one dashboard."
+      />
+    );
+  }
 
   if (loading) {
     return (
