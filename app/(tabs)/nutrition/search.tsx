@@ -107,7 +107,7 @@ export default function FoodSearchScreen() {
     }, 300);
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [query]);
+  }, [query, isPro]);
 
   function fireAI(snap: string) {
     setAiLoading(true);

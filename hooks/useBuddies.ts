@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
-import { FREE_BUDDY_LIMIT } from './useFeatureAccess';
+import { FREE_BUDDY_LIMIT, PRO_STATUSES } from './useFeatureAccess';
 import type { NearbyUser, BuddyRequest, BuddyConnection, PrimaryGoal } from '../types/database';
 
 export interface RequestWithUser extends BuddyRequest {
@@ -119,10 +119,8 @@ export function useSendBuddyRequest() {
         .single();
       if (profileError) throw profileError;
 
-      const isPro =
-        profile?.subscription_status === 'active' ||
-        profile?.subscription_status === 'achiever' ||
-        profile?.subscription_status === 'beta';
+      const isPro = profile?.subscription_status != null &&
+        PRO_STATUSES.includes(profile.subscription_status);
 
       if (!isPro) {
         const { count, error: countError } = await supabase

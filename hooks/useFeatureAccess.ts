@@ -10,7 +10,7 @@ export type ProFeature =
   | 'advancedAnalytics'
   | 'unlimitedBuddies';
 
-const PRO_STATUSES: SubscriptionStatus[] = ['beta', 'active', 'achiever'];
+export const PRO_STATUSES: SubscriptionStatus[] = ['beta', 'active', 'achiever'];
 
 export const FREE_BUDDY_LIMIT = 3;
 
