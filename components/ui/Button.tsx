@@ -32,7 +32,7 @@ export default function Button({
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' || variant === 'ghost' ? colors.brand.primary : colors.text.primary} />
+        <ActivityIndicator color={variant === 'outline' || variant === 'ghost' ? colors.brand.primary : colors.bg.primary} />
       ) : (
         <Text style={[styles.label, styles[`${variant}Text`], textStyle]}>{label}</Text>
       )}
@@ -68,11 +68,10 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: typography.base,
-    fontWeight: '600',
     fontFamily: fonts.bold,
   },
   primaryText: {
-    color: colors.text.primary,
+    color: colors.bg.primary,  // dark text on gold = 5.5:1 contrast
   },
   secondaryText: {
     color: colors.text.primary,

@@ -36,6 +36,7 @@ const styles = StyleSheet.create({
   subtitle: {
     color: colors.text.secondary, fontSize: typography.sm,
     textAlign: 'center', lineHeight: 20, marginBottom: spacing.xl,
+    fontFamily: fonts.regular,
   },
   cta: { minWidth: 180 },
 });

@@ -48,6 +48,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text.primary,
     textAlign: 'center',
+    fontFamily: fonts.bold,
   },
   description: {
     fontSize: typography.base,
