@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, typography, spacing } from '../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../constants/theme';
 
 interface ProGateProps {
   title: string;
@@ -54,18 +54,20 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 22,
+    fontFamily: fonts.regular,
   },
   upgradeBtn: {
-    backgroundColor: colors.brand.primary,
+    backgroundColor: colors.brand.gold,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl * 1.5,
     borderRadius: 12,
     marginTop: spacing.lg,
   },
   upgradeBtnText: {
-    color: colors.text.primary,
+    color: colors.bg.primary,
     fontSize: typography.base,
     fontWeight: '700',
+    fontFamily: fonts.bold,
   },
   backBtn: {
     paddingVertical: spacing.sm,

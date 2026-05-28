@@ -37,5 +37,5 @@ export default function Skeleton({ width, height, borderRadius = 8, style }: Ske
 }
 
 const styles = StyleSheet.create({
-  base: { backgroundColor: '#1E2040' },
+  base: { backgroundColor: 'rgba(196,165,90,0.08)' },
 });

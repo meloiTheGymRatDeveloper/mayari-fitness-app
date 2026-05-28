@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, typography, spacing } from '../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../constants/theme';
 import Button from './Button';
 
 interface EmptyStateProps {
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 56, marginBottom: spacing.md, textAlign: 'center' },
   title: {
     color: colors.text.primary, fontSize: typography.xl, fontWeight: '700',
-    textAlign: 'center', marginBottom: spacing.sm,
+    textAlign: 'center', marginBottom: spacing.sm, fontFamily: fonts.bold,
   },
   subtitle: {
     color: colors.text.secondary, fontSize: typography.sm,

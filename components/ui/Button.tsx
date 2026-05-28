@@ -1,5 +1,5 @@
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { colors, typography, spacing } from '../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../constants/theme';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost';
 
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   primary: {
-    backgroundColor: colors.brand.primary,
+    backgroundColor: colors.brand.gold,
   },
   secondary: {
     backgroundColor: colors.bg.elevated,
@@ -69,6 +69,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: typography.base,
     fontWeight: '600',
+    fontFamily: fonts.bold,
   },
   primaryText: {
     color: colors.text.primary,
