@@ -7,6 +7,7 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
@@ -49,6 +50,7 @@ const NAV_SECTIONS: NavSection[] = [
 
 export default function MoreScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { profile, clear, updateAvatar } = useAuthStore();
   const [stats, setStats] = useState<Stats>({ workoutStreak: 0, nutritionStreak: 0, buddyCount: 0, totalWorkouts: 0, totalXp: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
@@ -141,7 +143,7 @@ export default function MoreScreen() {
   ];
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing['2xl'] }]}>
       {/* Header row */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.avatarWrap} onPress={handleAvatarPress} disabled={uploading}>
@@ -228,7 +230,7 @@ export default function MoreScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
-  container: { paddingHorizontal: spacing.lg, paddingTop: spacing['2xl'], paddingBottom: spacing['2xl'] },
+  container: { paddingHorizontal: spacing.lg, paddingBottom: spacing['2xl'] },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.md },
   avatarWrap: { position: 'relative' },
   avatarEditBadge: {

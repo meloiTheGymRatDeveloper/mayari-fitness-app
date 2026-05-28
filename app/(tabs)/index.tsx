@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
     paddingHorizontal: spacing.lg, marginBottom: spacing.md,
   },
-  greeting: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: 'bold' },
+  greeting: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: 'bold', fontFamily: fonts.bold },
   dateText: { color: colors.text.muted, fontSize: typography.sm, marginTop: spacing.xs },
   calBtn: {
     backgroundColor: colors.bg.secondary, borderRadius: 10,
@@ -184,14 +184,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: colors.brand.gold,
   },
-  tipCardLabel: {
-    color: colors.brand.gold,
-    fontSize: typography.xs,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    fontFamily: fonts.bold,
-    marginBottom: 4,
-  },
+  tipCardLabel: { ...labelStyle, marginBottom: 4 },
   tipCardContent: { color: colors.text.primary, fontSize: typography.base, lineHeight: 22 },
   moonOrb: {
     position: 'absolute',

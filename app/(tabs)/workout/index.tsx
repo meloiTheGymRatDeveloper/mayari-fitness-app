@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brand.primary,
   },
   browseBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '700', fontFamily: fonts.bold },
-  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700' },
+  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700', fontFamily: fonts.bold },
   planList: { marginBottom: spacing.lg, gap: spacing.sm },
   planCard: {
     backgroundColor: colors.bg.secondary,
