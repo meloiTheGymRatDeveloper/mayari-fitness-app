@@ -62,20 +62,25 @@ export default function MoreScreen() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setLoadingStats(true);
-    const [streakRes, buddyRes, sessionRes] = await Promise.all([
-      supabase.from('streaks').select('workout_current, nutrition_current').eq('user_id', user.id).maybeSingle(),
-      supabase.from('buddy_connections').select('id', { count: 'exact', head: true }).or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`),
-      supabase.from('workout_sessions').select('xp_earned').eq('user_id', user.id),
-    ]);
-    const sessions = sessionRes.data ?? [];
-    setStats({
-      workoutStreak: streakRes.data?.workout_current ?? 0,
-      nutritionStreak: streakRes.data?.nutrition_current ?? 0,
-      buddyCount: buddyRes.count ?? 0,
-      totalWorkouts: sessions.length,
-      totalXp: sessions.reduce((acc, s) => acc + (s.xp_earned ?? 0), 0),
-    });
-    setLoadingStats(false);
+    try {
+      const [streakRes, buddyRes, sessionRes] = await Promise.all([
+        supabase.from('streaks').select('workout_current, nutrition_current').eq('user_id', user.id).maybeSingle(),
+        supabase.from('buddy_connections').select('id', { count: 'exact', head: true }).or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`),
+        supabase.from('workout_sessions').select('xp_earned').eq('user_id', user.id).limit(500),
+      ]);
+      const sessions = sessionRes.data ?? [];
+      setStats({
+        workoutStreak: streakRes.data?.workout_current ?? 0,
+        nutritionStreak: streakRes.data?.nutrition_current ?? 0,
+        buddyCount: buddyRes.count ?? 0,
+        totalWorkouts: sessions.length,
+        totalXp: sessions.reduce((acc, s) => acc + (s.xp_earned ?? 0), 0),
+      });
+    } catch {
+      // silently degrade — stats show 0
+    } finally {
+      setLoadingStats(false);
+    }
   }
 
   async function handleSignOut() {
@@ -127,6 +132,14 @@ export default function MoreScreen() {
   const initials = (profile?.display_name ?? profile?.username ?? '?')
     .split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
 
+  const isPro = ['active', 'achiever', 'beta'].includes(profile?.subscription_status ?? 'free');
+
+  const statChips: { label: string; emoji: string; onPress: (() => void) | undefined }[] = [
+    { label: `${stats.workoutStreak} day streak`, emoji: '🔥', onPress: () => router.push('/(tabs)/profile/streaks' as never) },
+    { label: `${stats.totalWorkouts} workouts`, emoji: '💪', onPress: undefined },
+    { label: `${stats.totalXp} XP`, emoji: '⭐', onPress: undefined },
+  ];
+
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       {/* Header row */}
@@ -151,10 +164,10 @@ export default function MoreScreen() {
             <Text style={styles.usernameText}>@{profile?.username ?? ''}</Text>
             <View style={[
               styles.tierBadge,
-              profile?.subscription_status === 'active' ? styles.tierPro : styles.tierFree,
+              isPro ? styles.tierPro : styles.tierFree,
             ]}>
               <Text style={styles.tierText}>
-                {profile?.subscription_status === 'active' ? 'Pro' : 'Free'}
+                {isPro ? 'Pro' : 'Free'}
               </Text>
             </View>
           </View>
@@ -166,11 +179,7 @@ export default function MoreScreen() {
         <ActivityIndicator color={colors.brand.primary} style={{ marginBottom: spacing.md }} />
       ) : (
         <View style={styles.statsRow}>
-          {[
-            { label: `${stats.workoutStreak} day streak`, emoji: '🔥', onPress: () => router.push('/(tabs)/profile/streaks' as never) },
-            { label: `${stats.totalWorkouts} workouts`, emoji: '💪', onPress: undefined as (() => void) | undefined },
-            { label: `${stats.totalXp} XP`, emoji: '⭐', onPress: undefined as (() => void) | undefined },
-          ].map(({ label, emoji, onPress }) => (
+          {statChips.map(({ label, emoji, onPress }) => (
             <TouchableOpacity
               key={label}
               style={styles.statChip}
