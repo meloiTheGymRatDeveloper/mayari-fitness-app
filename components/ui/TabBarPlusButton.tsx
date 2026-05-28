@@ -11,7 +11,7 @@ export default function TabBarPlusButton({ onPress }: BottomTabBarButtonProps) {
 
   useEffect(() => {
     glowOpacity.value = withRepeat(withTiming(0.95, { duration: 1500 }), -1, true);
-  }, []);
+  }, [glowOpacity]);
 
   const glowStyle = useAnimatedStyle(() => ({
     shadowOpacity: glowOpacity.value,
