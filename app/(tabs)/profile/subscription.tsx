@@ -6,7 +6,7 @@ import {
 import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import { useSubscription, useCreatePaymentLink, useCancelSubscription } from '../../../hooks/useSubscription';
 import { useMyReferrals, calcReferralDiscount } from '../../../hooks/useReferrals';
 
@@ -264,8 +264,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  back: { color: colors.brand.primary, fontSize: typography.base, width: 60 },
-  title: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
+  back: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.medium, width: 60 },
+  title: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold },
   content: { padding: spacing.lg, gap: spacing.md },
   planCard: {
     backgroundColor: colors.bg.secondary, borderRadius: 14, padding: spacing.md,
@@ -273,16 +273,16 @@ const styles = StyleSheet.create({
   },
   planCardActive: { borderColor: colors.success },
   planLabel: {
-    color: colors.text.muted, fontSize: typography.xs,
-    fontWeight: '700', letterSpacing: 1, marginBottom: spacing.sm,
+    ...labelStyle,
+    marginBottom: spacing.sm,
   },
   planRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  planTier: { color: colors.text.primary, fontSize: typography.xl, fontWeight: '700' },
-  planSub: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
+  planTier: { color: colors.text.primary, fontSize: typography.xl, fontFamily: fonts.bold },
+  planSub: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, marginTop: 2 },
   badge: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1 },
   badgeActive: { backgroundColor: `${colors.success}22`, borderColor: colors.success },
   badgeFree: { backgroundColor: colors.bg.elevated, borderColor: colors.border },
-  badgeText: { fontSize: typography.xs, fontWeight: '600' },
+  badgeText: { fontSize: typography.xs, fontFamily: fonts.semibold },
   badgeTextActive: { color: colors.success },
   badgeTextFree: { color: colors.text.muted },
   offerCard: {
@@ -290,8 +290,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.brand.primary, gap: spacing.xs,
   },
   offerLabel: {
-    color: colors.brand.secondary, fontSize: typography.xs,
-    fontWeight: '700', letterSpacing: 1,
+    ...labelStyle,
+    color: colors.brand.secondary,
   },
   planToggle: {
     flexDirection: 'row', backgroundColor: colors.bg.secondary,
@@ -302,41 +302,41 @@ const styles = StyleSheet.create({
     borderRadius: 8, position: 'relative',
   },
   toggleBtnActive: { backgroundColor: colors.brand.primary },
-  toggleBtnText: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600' },
+  toggleBtnText: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.semibold },
   toggleBtnTextActive: { color: colors.white },
   savingsBadge: {
     position: 'absolute', top: -8, right: 4,
     backgroundColor: colors.success, borderRadius: 8,
     paddingHorizontal: 5, paddingVertical: 1,
-    color: '#fff', fontWeight: '700', fontSize: 9,
+    color: '#fff', fontFamily: fonts.bold, fontSize: 9,
   } as never,
   offerPriceRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginTop: spacing.xs },
-  offerPrice: { color: colors.text.primary, fontSize: 28, fontWeight: '800' },
-  offerPriceSub: { color: colors.text.secondary, fontSize: typography.sm, marginBottom: 4 },
+  offerPrice: { color: colors.brand.gold, fontSize: 28, fontFamily: fonts.extrabold },
+  offerPriceSub: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.regular, marginBottom: 4 },
   discountBreakdown: {
     backgroundColor: colors.bg.secondary, borderRadius: 8,
     padding: spacing.sm, gap: 2, marginBottom: spacing.xs,
   },
-  discountLine: { color: colors.text.secondary, fontSize: typography.xs },
-  offerFeature: { color: colors.text.primary, fontSize: typography.xs },
+  discountLine: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.regular },
+  offerFeature: { color: colors.text.primary, fontSize: typography.xs, fontFamily: fonts.regular },
   subscribeBtn: {
-    backgroundColor: colors.brand.primary, borderRadius: 12,
+    backgroundColor: colors.brand.gold, borderRadius: 12,
     paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.sm,
   },
-  subscribeBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  subscribeBtnText: { color: colors.bg.primary, fontSize: typography.base, fontFamily: fonts.bold },
   disabled: { opacity: 0.5 },
   card: {
     backgroundColor: colors.bg.secondary, borderRadius: 14, padding: spacing.md,
     borderWidth: 1, borderColor: colors.border,
   },
   cardLabel: {
-    color: colors.text.muted, fontSize: typography.xs,
-    fontWeight: '700', letterSpacing: 1, marginBottom: spacing.sm,
+    ...labelStyle,
+    marginBottom: spacing.sm,
   },
   referralDiscountActive: {
-    color: colors.success, fontSize: typography.sm, fontWeight: '600',
+    color: colors.success, fontSize: typography.sm, fontFamily: fonts.semibold,
   },
-  discountNote: { color: colors.text.muted, fontSize: typography.xs },
+  discountNote: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular },
   referralRow: {
     backgroundColor: colors.bg.secondary, borderRadius: 14, padding: spacing.md,
     borderWidth: 1, borderColor: colors.border,
@@ -344,16 +344,16 @@ const styles = StyleSheet.create({
   },
   referralEmoji: { fontSize: 20 },
   referralText: { flex: 1 },
-  referralTitle: { color: colors.text.primary, fontSize: typography.sm, fontWeight: '600' },
-  referralSub: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
+  referralTitle: { color: colors.text.primary, fontSize: typography.sm, fontFamily: fonts.semibold },
+  referralSub: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, marginTop: 2 },
   chevron: { color: colors.text.muted, fontSize: 20 },
   cancelBtn: {
     borderRadius: 14, paddingVertical: spacing.md,
     alignItems: 'center', borderWidth: 1, borderColor: colors.border,
   },
-  cancelBtnText: { color: colors.error, fontSize: typography.base, fontWeight: '600' },
+  cancelBtnText: { color: colors.error, fontSize: typography.base, fontFamily: fonts.semibold },
   footnote: {
-    color: colors.text.muted, fontSize: typography.xs,
+    color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular,
     textAlign: 'center', marginTop: spacing.xs,
   },
   paymentFailedCard: {
@@ -366,12 +366,13 @@ const styles = StyleSheet.create({
   paymentFailedTitle: {
     color: colors.warning,
     fontSize: typography.base,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     marginBottom: spacing.xs,
   },
   paymentFailedBody: {
     color: colors.text.secondary,
     fontSize: typography.sm,
+    fontFamily: fonts.regular,
     lineHeight: 20,
     marginBottom: spacing.md,
   },
@@ -384,6 +385,6 @@ const styles = StyleSheet.create({
   paymentFailedBtnText: {
     color: '#000',
     fontSize: typography.sm,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
 });

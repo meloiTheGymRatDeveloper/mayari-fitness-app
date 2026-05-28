@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useExercises } from '../../../../hooks/useWorkout';
-import { colors, typography, spacing } from '../../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../../constants/theme';
 import type { Exercise } from '../../../../types/database';
 
 type Filter = 'all' | 'push' | 'pull' | 'legs' | 'core';
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border },
   chipActive: { backgroundColor: colors.brand.primary, borderColor: colors.brand.primary },
   chipText: { color: colors.text.secondary, fontSize: typography.sm },
-  chipTextActive: { color: '#fff', fontWeight: '600' },
+  chipTextActive: { color: '#fff', fontFamily: fonts.semibold },
   list: { paddingHorizontal: spacing.lg, paddingBottom: spacing['2xl'] },
   item: {
     flexDirection: 'row',
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   itemName: { color: colors.text.primary, fontSize: typography.base },
   itemMuscles: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
   groupBadge: { borderRadius: 8, paddingHorizontal: spacing.sm, paddingVertical: 2 },
-  groupBadgeText: { fontSize: typography.xs, fontWeight: '600', textTransform: 'uppercase' },
+  groupBadgeText: { fontSize: typography.xs, fontFamily: fonts.semibold, textTransform: 'uppercase' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
   empty: { color: colors.text.muted, textAlign: 'center', marginTop: 40 },
 });

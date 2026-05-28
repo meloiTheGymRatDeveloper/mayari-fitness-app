@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Dimensions, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, typography, spacing } from '../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 
 const { width } = Dimensions.get('window');
@@ -103,20 +103,21 @@ const styles = StyleSheet.create({
   title: {
     color: colors.brand.secondary,
     fontSize: typography['3xl'],
-    fontWeight: 'bold',
+    fontFamily: fonts.extrabold,
     marginBottom: spacing.xs,
     textAlign: 'center',
   },
   subtitle: {
     color: colors.text.primary,
     fontSize: typography.lg,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
     marginBottom: spacing.md,
     textAlign: 'center',
   },
   body: {
     color: colors.text.secondary,
     fontSize: typography.base,
+    fontFamily: fonts.regular,
     textAlign: 'center',
     lineHeight: 24,
   },

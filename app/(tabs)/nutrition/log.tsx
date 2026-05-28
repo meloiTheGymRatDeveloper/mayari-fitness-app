@@ -3,7 +3,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRecentFoods } from '../../../hooks/useNutrition';
 import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
 
 const SLOT_LABELS: Record<MealSlot, string> = {
@@ -83,22 +83,23 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   back: { marginBottom: spacing.lg },
-  backText: { color: colors.brand.primary, fontSize: typography.base },
-  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700' },
-  sub: { color: colors.brand.secondary, fontSize: typography.base, marginBottom: spacing.lg },
+  backText: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.medium },
+  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.bold },
+  sub: { color: colors.brand.secondary, fontSize: typography.base, fontFamily: fonts.medium, marginBottom: spacing.lg },
   actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
   actionBtn: { width: '47%', backgroundColor: colors.bg.secondary, borderRadius: 16, padding: spacing.lg, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   actionIcon: { fontSize: 32, marginBottom: spacing.xs },
-  actionLabel: { color: colors.text.primary, fontSize: typography.sm, fontWeight: '600', textAlign: 'center' },
+  actionLabel: { color: colors.text.primary, fontSize: typography.sm, fontFamily: fonts.semibold, textAlign: 'center' },
   lockBadge: {
     fontSize: 10,
     color: colors.brand.primary,
+    fontFamily: fonts.medium,
     marginTop: 2,
   },
-  sectionTitle: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: spacing.sm },
-  empty: { color: colors.text.muted, fontSize: typography.sm, textAlign: 'center', marginTop: spacing.lg },
+  sectionTitle: { ...labelStyle, marginBottom: spacing.sm },
+  empty: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular, textAlign: 'center', marginTop: spacing.lg },
   recentItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
-  recentName: { color: colors.text.primary, fontSize: typography.base },
-  recentBrand: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
-  recentCal: { color: colors.text.muted, fontSize: typography.sm },
+  recentName: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.medium },
+  recentBrand: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, marginTop: 2 },
+  recentCal: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular },
 });

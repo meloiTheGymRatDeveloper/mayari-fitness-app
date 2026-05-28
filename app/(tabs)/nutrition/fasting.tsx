@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '../../../lib/supabase';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import type { FastingLog } from '../../../types/database';
 import { useMayariTriggers } from '../../../hooks/useMayariTriggers';
 import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
   heading: {
     color: colors.text.primary,
     fontSize: typography['2xl'],
-    fontWeight: '700',
+    fontFamily: fonts.extrabold,
     marginBottom: spacing.lg,
   },
 
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
   presetChipText: {
     color: colors.text.secondary,
     fontSize: typography.sm,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
   },
   presetChipTextSelected: {
     color: colors.text.primary,
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
   stepperBtnText: {
     color: colors.text.primary,
     fontSize: typography.xl,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     lineHeight: 24,
   },
   stepperDisplay: {
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
   stepperHours: {
     color: colors.text.primary,
     fontSize: typography['2xl'],
-    fontWeight: '700',
+    fontFamily: fonts.extrabold,
   },
   previewLabel: {
     color: colors.text.secondary,
@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: '#FFFFFF',
     fontSize: typography.base,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
 
   // Ring
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
   ringTime: {
     color: colors.text.primary,
     fontSize: 28,
-    fontWeight: '700',
+    fontFamily: fonts.extrabold,
   },
   ringLabel: {
     color: colors.text.muted,
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
   dangerOutlineButtonText: {
     color: colors.error,
     fontSize: typography.base,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
 
   // Success outline button (End Eating Window)
@@ -739,14 +739,14 @@ const styles = StyleSheet.create({
   successOutlineButtonText: {
     color: colors.success,
     fontSize: typography.base,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
 
   // History section
   sectionTitle: {
     color: colors.text.primary,
     fontSize: typography.lg,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     marginBottom: spacing.md,
   },
   emptyHistory: {
@@ -775,7 +775,7 @@ const styles = StyleSheet.create({
     flex: 2,
     color: colors.text.primary,
     fontSize: typography.sm,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
     textAlign: 'center',
   },
   historyActual: {

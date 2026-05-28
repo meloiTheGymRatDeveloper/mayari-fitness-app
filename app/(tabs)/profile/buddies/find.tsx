@@ -6,7 +6,7 @@ import {
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../../../lib/supabase';
-import { colors, typography, spacing } from '../../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../../constants/theme';
 import Button from '../../../../components/ui/Button';
 import { useFindNearbyUsers, useSendBuddyRequest, useBuddyConnections } from '../../../../hooks/useBuddies';
 import { useFeatureAccess, FREE_BUDDY_LIMIT } from '../../../../hooks/useFeatureAccess';
@@ -221,12 +221,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg.primary },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, backgroundColor: colors.bg.primary },
   permissionIcon: { fontSize: 48, marginBottom: spacing.md },
-  permissionTitle: { color: colors.text.primary, fontSize: typography.xl, fontWeight: '700', textAlign: 'center', marginBottom: spacing.sm },
+  permissionTitle: { color: colors.text.primary, fontSize: typography.xl, fontFamily: fonts.bold, textAlign: 'center', marginBottom: spacing.sm },
   permissionBody: { color: colors.text.secondary, fontSize: typography.base, textAlign: 'center', lineHeight: 22 },
   openSettingsBtn: { marginTop: spacing.lg },
   retryBtn: { marginTop: spacing.sm },
   filterSection: { paddingHorizontal: spacing.md, paddingTop: spacing.md },
-  filterLabel: { color: colors.text.secondary, fontSize: typography.xs, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.sm },
+  filterLabel: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.bold, letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.sm },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
   chip: {
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   },
   chipActive: { borderColor: colors.brand.primary, backgroundColor: colors.brand.primary + '33' },
   chipText: { color: colors.text.secondary, fontSize: typography.sm },
-  chipTextActive: { color: colors.brand.primary, fontWeight: '700' },
+  chipTextActive: { color: colors.brand.primary, fontFamily: fonts.bold },
   listLoader: { marginTop: spacing.xl },
   list: { padding: spacing.md, gap: spacing.sm },
   emptyText: { color: colors.text.muted, fontSize: typography.sm, textAlign: 'center', marginTop: spacing.xl },
@@ -245,9 +245,9 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
   },
   avatar: { backgroundColor: colors.bg.elevated, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.brand.primary + '66' },
-  avatarText: { color: colors.brand.primary, fontWeight: '700', fontSize: typography.base },
+  avatarText: { color: colors.brand.primary, fontFamily: fonts.bold, fontSize: typography.base },
   userInfo: { flex: 1 },
-  userName: { color: colors.text.primary, fontSize: typography.base, fontWeight: '700' },
+  userName: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.bold },
   userMeta: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
   requestBtn: {
     backgroundColor: colors.brand.primary,
@@ -255,6 +255,6 @@ const styles = StyleSheet.create({
   },
   requestBtnSent: { backgroundColor: colors.bg.elevated, borderWidth: 1, borderColor: colors.border },
   requestBtnDisabled: { backgroundColor: colors.bg.elevated, borderColor: colors.border, borderWidth: 1 },
-  requestBtnText: { color: '#fff', fontSize: typography.sm, fontWeight: '700' },
+  requestBtnText: { color: '#fff', fontSize: typography.sm, fontFamily: fonts.bold },
   requestBtnTextSent: { color: colors.text.muted },
 });

@@ -10,7 +10,7 @@ import {
 import Svg, { Circle } from 'react-native-svg';
 import { LineChart, BarChart, PieChart } from 'react-native-gifted-charts';
 import { useAuthStore } from '../../../stores/authStore';
-import { colors, spacing, typography } from '../../../constants/theme';
+import { colors, spacing, typography, fonts, labelStyle } from '../../../constants/theme';
 import { useBodyAnalytics } from '../../../hooks/useBodyAnalytics';
 import { useNutritionAnalytics } from '../../../hooks/useNutritionAnalytics';
 import { useWorkoutAnalytics } from '../../../hooks/useWorkoutAnalytics';
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { paddingHorizontal: 24, paddingTop: spacing.lg, paddingBottom: spacing['2xl'] },
   loadingWrap: { flex: 1, backgroundColor: colors.bg.primary, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { color: colors.text.secondary, fontSize: typography.base },
+  loadingText: { color: colors.text.secondary, fontSize: typography.base, fontFamily: fonts.regular },
 
   section: {
     marginBottom: spacing.xl,
@@ -459,17 +459,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   sectionTitle: {
-    color: colors.text.secondary,
-    fontSize: typography.xs,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    ...labelStyle,
     marginBottom: spacing.md,
   },
   chartLabel: {
     color: colors.text.secondary,
     fontSize: typography.xs,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
     marginBottom: spacing.sm,
   },
   refLineNote: {
@@ -485,6 +481,7 @@ const styles = StyleSheet.create({
   emptyText: {
     color: colors.text.muted,
     fontSize: typography.sm,
+    fontFamily: fonts.regular,
     textAlign: 'center',
   },
 
@@ -497,16 +494,16 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.bg.elevated,
   },
-  chipText: { color: colors.text.secondary, fontSize: typography.xs },
+  chipText: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.regular },
 
   legendRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, flexWrap: 'wrap' },
   legendDot: { width: 8, height: 8, borderRadius: 4, marginRight: 4 },
-  legendText: { color: colors.text.muted, fontSize: typography.xs },
+  legendText: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular },
 
   pieRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.sm },
   pieLegend: { flex: 1, gap: 8 },
   pieLegendRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  pieCenter: { color: colors.text.muted, fontSize: typography.xs, fontWeight: '700' },
+  pieCenter: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.bold },
 
   prCardRow: { flexDirection: 'row', gap: spacing.sm, paddingVertical: 4 },
   prCard: {
@@ -517,9 +514,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.brand.accent + '44',
   },
-  prExercise: { color: colors.text.secondary, fontSize: typography.xs, fontWeight: '600', marginBottom: 4 },
-  prWeight: { color: colors.brand.accent, fontSize: typography.lg, fontWeight: '800' },
-  prDate: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
+  prExercise: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.semibold, marginBottom: 4 },
+  prWeight: { color: colors.brand.gold, fontSize: typography.lg, fontFamily: fonts.extrabold },
+  prDate: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, marginTop: 2 },
 
   scoreWrap: { alignItems: 'center' },
   ringWrap: { width: 200, height: 200, alignItems: 'center', justifyContent: 'center' },
@@ -528,12 +525,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scoreNumber: { fontSize: 44, fontWeight: '900', lineHeight: 52 },
-  scoreOf: { color: colors.text.muted, fontSize: typography.sm },
+  scoreNumber: { fontSize: 44, fontFamily: fonts.extrabold, lineHeight: 52 },
+  scoreOf: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular },
   scoreLabel: {
     color: colors.text.primary,
     fontSize: typography.base,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
     textAlign: 'center',
     marginTop: spacing.md,
     marginBottom: spacing.sm,
@@ -542,6 +539,7 @@ const styles = StyleSheet.create({
   discountNote: {
     color: colors.text.muted,
     fontSize: typography.xs,
+    fontFamily: fonts.regular,
     textAlign: 'center',
     marginTop: spacing.md,
     paddingHorizontal: spacing.sm,

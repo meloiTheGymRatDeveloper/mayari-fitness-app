@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../../lib/supabase';
 import { useLogFood, useUpdateFoodLog, useDeleteFoodLog } from '../../../../hooks/useNutrition';
 import { useAddFoodToPlan } from '../../../../hooks/useMealPlan';
-import { colors, typography, spacing } from '../../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../../constants/theme';
 import type { FoodItem, MealSlot, WeekDay } from '../../../../types/database';
 import { calculateNetCarbs } from '../../../../lib/nutrition';
 import { useAuthStore } from '../../../../stores/authStore';
@@ -288,9 +288,9 @@ export default function FoodDetailScreen() {
 
       <View style={styles.macroRow}>
         {[
-          { label: 'Protein', value: protein, color: '#6366F1' },
-          { label: 'Carbs', value: carbs, color: '#F59E0B' },
-          { label: 'Fat', value: fat, color: '#EF4444' },
+          { label: 'Protein', value: protein, color: colors.brand.secondary },
+          { label: 'Carbs', value: carbs, color: colors.brand.primary },
+          { label: 'Fat', value: fat, color: colors.brand.gold },
         ].map(({ label, value, color }) => (
           <View key={label} style={[styles.macroPill, { borderColor: color + '66' }]}>
             <Text style={[styles.macroPillValue, { color }]}>{value != null ? Math.round(value) : '—'}g</Text>
@@ -371,41 +371,41 @@ const styles = StyleSheet.create({
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center' },
   notFound: { color: colors.text.secondary, fontSize: typography.base },
   back: { marginBottom: spacing.lg },
-  backText: { color: colors.brand.primary, fontSize: typography.base },
+  backText: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.medium },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap', marginBottom: 4 },
-  foodName: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700', flex: 1 },
+  foodName: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.bold, flex: 1 },
   phBadge: { fontSize: 22 },
-  brand: { color: colors.text.muted, fontSize: typography.sm, marginBottom: spacing.lg },
+  brand: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular, marginBottom: spacing.lg },
   qtyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
-  qtyLabel: { color: colors.text.secondary, fontSize: typography.base },
-  qtyInput: { backgroundColor: colors.bg.secondary, borderRadius: 10, borderWidth: 1, borderColor: colors.border, color: colors.text.primary, fontSize: typography.xl, fontWeight: '700', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, width: 100, textAlign: 'center' },
+  qtyLabel: { color: colors.text.secondary, fontSize: typography.base, fontFamily: fonts.medium },
+  qtyInput: { backgroundColor: colors.bg.secondary, borderRadius: 10, borderWidth: 1, borderColor: colors.border, color: colors.text.primary, fontSize: typography.xl, fontFamily: fonts.bold, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, width: 100, textAlign: 'center' },
   slotRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.lg },
   slotBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border },
   slotBtnActive: { backgroundColor: colors.brand.primary, borderColor: colors.brand.primary },
-  slotText: { color: colors.text.secondary, fontSize: typography.xs, fontWeight: '600' },
+  slotText: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.semibold },
   slotTextActive: { color: '#fff' },
   calCard: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs, marginBottom: spacing.md },
-  calNumber: { color: colors.text.primary, fontSize: 56, fontWeight: '700' },
-  calUnit: { color: colors.text.muted, fontSize: typography.lg },
+  calNumber: { color: colors.text.primary, fontSize: 56, fontFamily: fonts.extrabold },
+  calUnit: { color: colors.text.muted, fontSize: typography.lg, fontFamily: fonts.regular },
   macroRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   macroPill: { flex: 1, borderRadius: 12, borderWidth: 1.5, padding: spacing.sm, alignItems: 'center' },
-  macroPillValue: { fontSize: typography.lg, fontWeight: '700' },
-  macroPillLabel: { color: colors.text.muted, fontSize: typography.xs },
-  subMacro: { color: colors.text.muted, fontSize: typography.xs, marginBottom: spacing.lg },
-  netCarbsLine: { color: colors.text.muted, fontSize: typography.xs, marginBottom: spacing.lg },
-  netCarbsValue: { color: colors.brand.primary, fontWeight: '600' },
+  macroPillValue: { fontSize: typography.lg, fontFamily: fonts.bold },
+  macroPillLabel: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular },
+  subMacro: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, marginBottom: spacing.lg },
+  netCarbsLine: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, marginBottom: spacing.lg },
+  netCarbsValue: { color: colors.brand.primary, fontFamily: fonts.semibold },
   microHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, marginBottom: spacing.sm },
-  microTitle: { color: colors.text.secondary, fontSize: typography.base, fontWeight: '600' },
+  microTitle: { color: colors.text.secondary, fontSize: typography.base, fontFamily: fonts.semibold },
   microChevron: { color: colors.text.muted, fontSize: typography.sm },
   microGrid: { backgroundColor: colors.bg.secondary, borderRadius: 12, padding: spacing.md, marginBottom: spacing.lg },
   microColumns: { flexDirection: 'row', gap: spacing.sm },
   microCol: { flex: 1, gap: spacing.xs },
-  microItem: { color: colors.text.secondary, fontSize: typography.xs, lineHeight: 20 },
+  microItem: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.regular, lineHeight: 20 },
   microHighlight: { color: colors.error },
-  noMicroText: { color: colors.text.muted, fontSize: typography.sm, textAlign: 'center' },
-  addBtn: { backgroundColor: colors.brand.primary, borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.sm },
+  noMicroText: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular, textAlign: 'center' },
+  addBtn: { backgroundColor: colors.brand.gold, borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.sm },
   addBtnOff: { opacity: 0.5 },
-  addBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  addBtnText: { color: colors.bg.primary, fontSize: typography.base, fontFamily: fonts.bold },
   removeBtn: { borderWidth: 1, borderColor: colors.error, borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.sm },
-  removeBtnText: { color: colors.error, fontSize: typography.base, fontWeight: '600' },
+  removeBtnText: { color: colors.error, fontSize: typography.base, fontFamily: fonts.semibold },
 });

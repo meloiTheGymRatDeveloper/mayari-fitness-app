@@ -9,7 +9,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
 import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
 import ProGate from '../../../components/ui/ProGate';
@@ -196,11 +196,11 @@ const styles = StyleSheet.create({
   camera: { flex: 1 },
   cameraUI: { flex: 1, justifyContent: 'space-between', padding: spacing.lg },
   closeBtn: { alignSelf: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 18, width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
-  closeBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  hint: { color: '#fff', fontSize: typography.sm, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+  closeBtnText: { color: '#fff', fontSize: 16, fontFamily: fonts.bold },
+  hint: { color: '#fff', fontSize: typography.sm, fontFamily: fonts.regular, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xl },
   galleryPill: { backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, width: 80, alignItems: 'center' },
-  galleryPillText: { color: '#fff', fontSize: typography.xs, fontWeight: '600' },
+  galleryPillText: { color: '#fff', fontSize: typography.xs, fontFamily: fonts.semibold },
   shutter: { width: 72, height: 72, borderRadius: 36, borderWidth: 4, borderColor: '#fff', justifyContent: 'center', alignItems: 'center' },
   shutterInner: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#fff' },
   preview: { flex: 1 },
@@ -208,12 +208,12 @@ const styles = StyleSheet.create({
   overlayText: { color: '#fff', fontSize: typography.base },
   previewBtns: { position: 'absolute', bottom: spacing.xl, left: 0, right: 0, paddingHorizontal: spacing.lg, gap: spacing.sm },
   btn: { backgroundColor: colors.brand.primary, borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center', marginBottom: spacing.sm },
-  btnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  btnText: { color: '#fff', fontSize: typography.base, fontFamily: fonts.bold },
   retryBtn: { borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  retryText: { color: colors.text.secondary, fontSize: typography.base, fontWeight: '600' },
+  retryText: { color: colors.text.secondary, fontSize: typography.base, fontFamily: fonts.semibold },
   galleryBtn: { marginTop: spacing.md, borderWidth: 1, borderColor: colors.brand.primary, borderRadius: 12, paddingVertical: spacing.sm, paddingHorizontal: spacing.lg },
-  galleryBtnText: { color: colors.brand.primary, fontWeight: '600' },
-  permText: { color: colors.text.secondary, fontSize: typography.base, textAlign: 'center', marginBottom: spacing.lg, lineHeight: 22 },
+  galleryBtnText: { color: colors.brand.primary, fontFamily: fonts.semibold },
+  permText: { color: colors.text.secondary, fontSize: typography.base, fontFamily: fonts.regular, textAlign: 'center', marginBottom: spacing.lg, lineHeight: 22 },
   backLink: { marginTop: spacing.md },
   backLinkText: { color: colors.text.muted, fontSize: typography.sm },
 });

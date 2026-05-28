@@ -7,7 +7,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../../../../lib/supabase';
-import { colors, typography, spacing } from '../../../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../../../constants/theme';
 import type { BuddyMessage } from '../../../../../types/database';
 
 interface BuddyInfo {
@@ -254,8 +254,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   backBtn: { padding: spacing.sm, marginRight: spacing.sm },
-  backText: { color: colors.brand.primary, fontSize: typography['2xl'], fontWeight: '700' },
-  headerName: { flex: 1, color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
+  backText: { color: colors.brand.primary, fontSize: typography['2xl'], fontFamily: fonts.bold },
+  headerName: { flex: 1, color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold },
   loader: { flex: 1 },
   messageList: { padding: spacing.md, gap: spacing.sm },
   messageRow: { flexDirection: 'row', justifyContent: 'flex-start' },
@@ -287,5 +287,5 @@ const styles = StyleSheet.create({
     minHeight: 44, alignItems: 'center', justifyContent: 'center',
   },
   sendBtnDisabled: { opacity: 0.4 },
-  sendBtnText: { color: '#fff', fontWeight: '700', fontSize: typography.base },
+  sendBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: typography.base },
 });

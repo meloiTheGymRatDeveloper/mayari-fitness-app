@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
     paddingHorizontal: spacing.lg, marginBottom: spacing.md,
   },
-  greeting: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: 'bold', fontFamily: fonts.bold },
+  greeting: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.bold },
   dateText: { color: colors.text.muted, fontSize: typography.sm, marginTop: spacing.xs },
   calBtn: {
     backgroundColor: colors.bg.secondary, borderRadius: 10,
@@ -203,6 +203,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.elevated, borderRadius: 14,
     padding: spacing.md, borderWidth: 1, borderColor: colors.brand.primary,
   },
-  coachTitle: { color: colors.brand.secondary, fontSize: typography.sm, fontWeight: '600', marginBottom: spacing.xs },
+  coachTitle: { color: colors.brand.secondary, fontSize: typography.sm, fontFamily: fonts.semibold, marginBottom: spacing.xs },
   coachBody: { color: colors.text.secondary, fontSize: typography.sm, lineHeight: 20 },
 });

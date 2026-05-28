@@ -2,7 +2,7 @@ import {
   View, Text, ScrollView, ActivityIndicator, StyleSheet,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { colors, typography, spacing } from '../../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../../constants/theme';
 import { useSessionDetail } from '../../../../hooks/useWorkout';
 import type { WorkoutSet } from '../../../../types/database';
 
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   statLabel: {
     color: colors.text.muted,
     fontSize: typography.xs,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 2,
@@ -146,10 +146,10 @@ const styles = StyleSheet.create({
   statValue: {
     color: colors.text.primary,
     fontSize: typography.sm,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
     textAlign: 'center',
   },
-  xpValue: { color: colors.brand.accent },
+  xpValue: { color: colors.brand.gold },
   exerciseGroup: {
     backgroundColor: colors.bg.secondary,
     borderRadius: 12,
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   exerciseName: {
     color: colors.brand.secondary,
     fontSize: typography.base,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     marginBottom: spacing.sm,
   },
   setRow: {
@@ -173,8 +173,8 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   setRowWarmup: { opacity: 0.6 },
-  setNum: { color: colors.text.muted, fontSize: typography.xs, width: 44 },
-  setWeight: { color: colors.text.primary, fontSize: typography.sm, flex: 1 },
+  setNum: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, width: 44 },
+  setWeight: { color: colors.text.primary, fontSize: typography.sm, fontFamily: fonts.medium, flex: 1 },
   setTextMuted: { color: colors.text.muted },
   warmupChip: {
     backgroundColor: colors.bg.elevated,
@@ -187,6 +187,6 @@ const styles = StyleSheet.create({
   warmupChipText: {
     color: colors.text.muted,
     fontSize: typography.xs,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
 });

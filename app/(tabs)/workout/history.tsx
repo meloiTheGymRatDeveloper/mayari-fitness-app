@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import { useSessionHistory } from '../../../hooks/useWorkout';
 import EmptyState from '../../../components/ui/EmptyState';
 import type { WorkoutSession } from '../../../types/database';
@@ -105,11 +105,7 @@ const styles = StyleSheet.create({
   },
   group: { marginBottom: spacing.lg },
   monthLabel: {
-    color: colors.text.muted,
-    fontSize: typography.xs,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    ...labelStyle,
     marginBottom: spacing.sm,
   },
   sessionRow: {
@@ -123,10 +119,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  sessionDate: { color: colors.text.primary, fontSize: typography.sm, fontWeight: '600' },
-  sessionVol: { color: colors.text.secondary, fontSize: typography.xs, marginTop: 2 },
+  sessionDate: { color: colors.text.primary, fontSize: typography.sm, fontFamily: fonts.semibold },
+  sessionVol: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.regular, marginTop: 2 },
   sessionRight: { alignItems: 'flex-end', gap: 2 },
-  sessionDur: { color: colors.text.muted, fontSize: typography.xs },
-  sessionXp: { color: colors.brand.accent, fontSize: typography.xs, fontWeight: '600' },
+  sessionDur: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular },
+  sessionXp: { color: colors.brand.gold, fontSize: typography.xs, fontFamily: fonts.semibold },
   chevron: { color: colors.text.muted, fontSize: 18 },
 });

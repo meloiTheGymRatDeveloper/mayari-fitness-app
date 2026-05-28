@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import type { UserProfile } from '../../../types/database';
 import { computeAllTargets } from '../../../lib/calories';
 
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   back: { marginBottom: spacing.lg },
   backText: { color: colors.brand.primary, fontSize: typography.base },
-  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700', marginBottom: spacing.xs },
+  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.bold, marginBottom: spacing.xs },
   sub: { color: colors.text.secondary, fontSize: typography.sm, marginBottom: spacing.lg },
   toggleRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   toggleBtn: {
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   toggleActive: { backgroundColor: colors.brand.primary, borderColor: colors.brand.primary },
-  toggleText: { color: colors.text.secondary, fontWeight: '600' },
+  toggleText: { color: colors.text.secondary, fontFamily: fonts.semibold },
   toggleTextActive: { color: '#fff' },
   goalsCard: {
     backgroundColor: colors.bg.secondary,
@@ -196,11 +196,11 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   goalLabel: { color: colors.text.secondary, fontSize: typography.base },
-  goalValue: { color: colors.text.primary, fontSize: typography.base, fontWeight: '600' },
+  goalValue: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.semibold },
   goalInput: {
     color: colors.text.primary,
     fontSize: typography.base,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
     backgroundColor: colors.bg.elevated,
     borderRadius: 8,
     paddingHorizontal: spacing.sm,
@@ -210,9 +210,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  saveBtn: { backgroundColor: colors.brand.primary, borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center' },
+  saveBtn: { backgroundColor: colors.brand.gold, borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center' },
   saveBtnOff: { opacity: 0.5 },
-  saveBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  saveBtnText: { color: colors.bg.primary, fontSize: typography.base, fontFamily: fonts.bold },
   goalRowLast: { borderBottomWidth: 0 },
   goalValueMuted: { color: colors.text.muted, fontSize: typography.sm, fontStyle: 'italic' },
 });

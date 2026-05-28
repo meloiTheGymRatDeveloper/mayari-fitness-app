@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../../lib/supabase';
 import { useAuthStore } from '../../../../stores/authStore';
 import { useSubmitFood } from '../../../../hooks/useNutrition';
-import { colors, typography, spacing } from '../../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../../constants/theme';
 import type { MealSlot, WeekDay } from '../../../../types/database';
 
 interface FieldConfig {
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: spacing.lg, paddingBottom: spacing['2xl'] },
   header: { paddingVertical: spacing.lg, gap: spacing.xs },
   back: { color: colors.brand.primary, fontSize: typography.base, marginBottom: spacing.sm },
-  title: { color: colors.text.primary, fontSize: typography.xl, fontWeight: 'bold' },
+  title: { color: colors.text.primary, fontSize: typography.xl, fontFamily: fonts.extrabold },
   subtitle: { color: colors.text.muted, fontSize: typography.sm },
   barcodeBanner: {
     backgroundColor: colors.bg.secondary, borderRadius: 8, padding: spacing.sm,
@@ -204,12 +204,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.secondary, borderRadius: 12, borderWidth: 1, borderColor: colors.border,
   },
   toggleLeft: { flex: 1, marginRight: spacing.md },
-  toggleLabel: { color: colors.text.primary, fontSize: typography.sm, fontWeight: '600' },
+  toggleLabel: { color: colors.text.primary, fontSize: typography.sm, fontFamily: fonts.semibold },
   toggleSub: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
   saveBtn: {
-    marginTop: spacing.lg, backgroundColor: colors.brand.primary,
+    marginTop: spacing.lg, backgroundColor: colors.brand.gold,
     borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center',
   },
   saveBtnDisabled: { opacity: 0.5 },
-  saveBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  saveBtnText: { color: colors.bg.primary, fontSize: typography.base, fontFamily: fonts.bold },
 });

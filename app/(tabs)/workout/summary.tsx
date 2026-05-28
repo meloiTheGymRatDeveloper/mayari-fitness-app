@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { fallbackExercises } from '../../../constants/exercises';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import type { WorkoutSession, WorkoutSet, PersonalRecord, Exercise } from '../../../types/database';
 import { useMayariTriggers } from '../../../hooks/useMayariTriggers';
 
@@ -245,27 +245,27 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center' },
-  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700', marginBottom: spacing.lg },
-  errorText: { color: colors.text.secondary, fontSize: typography.base },
+  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.bold, marginBottom: spacing.lg },
+  errorText: { color: colors.text.secondary, fontSize: typography.base, fontFamily: fonts.regular },
   statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   statBox: { flex: 1, backgroundColor: colors.bg.secondary, borderRadius: 12, padding: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  statValue: { color: colors.text.primary, fontSize: typography.xl, fontWeight: '700' },
-  statLabel: { color: colors.text.muted, fontSize: typography.xs, marginTop: 4 },
+  statValue: { color: colors.text.primary, fontSize: typography.xl, fontFamily: fonts.bold },
+  statLabel: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, marginTop: 4 },
   prCard: {
     backgroundColor: colors.bg.elevated,
     borderRadius: 16,
     padding: spacing.lg,
     marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.brand.accent,
+    borderColor: colors.brand.gold,
   },
-  prTitle: { color: colors.brand.accent, fontSize: typography.lg, fontWeight: '700', marginBottom: spacing.sm },
+  prTitle: { color: colors.brand.gold, fontSize: typography.lg, fontFamily: fonts.bold, marginBottom: spacing.sm },
   prRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  prName: { color: colors.text.primary, fontSize: typography.sm },
-  prValue: { color: colors.brand.accent, fontSize: typography.sm, fontWeight: '600' },
+  prName: { color: colors.text.primary, fontSize: typography.sm, fontFamily: fonts.regular },
+  prValue: { color: colors.brand.gold, fontSize: typography.sm, fontFamily: fonts.semibold },
   section: { marginBottom: spacing.lg },
-  sectionTitle: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: spacing.sm },
-  exerciseItem: { color: colors.text.primary, fontSize: typography.base, paddingVertical: 3 },
+  sectionTitle: { ...labelStyle, marginBottom: spacing.sm },
+  exerciseItem: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.regular, paddingVertical: 3 },
   burnCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -275,11 +275,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#F59E0B',
+    borderColor: colors.warning,
   },
   burnIcon: { fontSize: 32 },
-  burnLabel: { color: colors.text.secondary, fontSize: typography.sm },
-  burnValue: { color: '#F59E0B', fontSize: typography['2xl'], fontWeight: '700' },
-  doneBtn: { backgroundColor: colors.brand.primary, borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center' },
-  doneBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  burnLabel: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.medium },
+  burnValue: { color: colors.warning, fontSize: typography['2xl'], fontFamily: fonts.bold },
+  doneBtn: { backgroundColor: colors.brand.gold, borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center' },
+  doneBtnText: { color: colors.bg.primary, fontSize: typography.base, fontFamily: fonts.bold },
 });

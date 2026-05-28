@@ -10,7 +10,7 @@ import { useWorkoutStore } from '../../../../stores/workoutStore';
 import { supabase } from '../../../../lib/supabase';
 import { updatePlanDayExercises } from '../../../../lib/workoutGenerator';
 import { EXERCISE_ALTERNATIVES } from '../../../../constants/exerciseAlternatives';
-import { colors, typography, spacing } from '../../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../../constants/theme';
 import type { WorkoutPlan, DayPlan, PlannedExercise } from '../../../../types/database';
 
 export default function DayExercisesScreen() {
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center' },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xl },
-  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700' },
+  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.bold },
   exRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -336,8 +336,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   exInfo: { flex: 1 },
-  exName: { color: colors.text.primary, fontSize: typography.base, fontWeight: '600' },
-  exMeta: { color: colors.text.muted, fontSize: typography.sm, marginTop: 2 },
+  exName: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.semibold },
+  exMeta: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular, marginTop: 2 },
   exActions: { flexDirection: 'row', gap: 6 },
   actionBtn: {
     width: 30,
@@ -349,18 +349,18 @@ const styles = StyleSheet.create({
   },
   actionBtnRed: { backgroundColor: '#EF444420' },
   actionBtnText: { fontSize: 14 },
-  deleteBtnText: { color: colors.error, fontSize: typography.sm, fontWeight: '700' },
+  deleteBtnText: { color: colors.error, fontSize: typography.sm, fontFamily: fonts.bold },
   addExBtn: { paddingVertical: spacing.sm, marginBottom: spacing.xl },
-  addExBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
+  addExBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontFamily: fonts.semibold },
   startBtn: {
-    backgroundColor: colors.brand.primary,
+    backgroundColor: colors.brand.gold,
     borderRadius: 14,
     paddingVertical: spacing.md + 4,
     alignItems: 'center',
     marginTop: spacing.sm,
   },
   startBtnOff: { opacity: 0.5 },
-  startBtnText: { color: '#fff', fontSize: typography.lg, fontWeight: '700' },
+  startBtnText: { color: colors.bg.primary, fontSize: typography.lg, fontFamily: fonts.bold },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   modalContent: {
     backgroundColor: colors.bg.elevated,
@@ -369,9 +369,9 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     maxHeight: '70%',
   },
-  modalTitle: { color: colors.text.primary, fontSize: typography.xl, fontWeight: '700', marginBottom: spacing.md },
+  modalTitle: { color: colors.text.primary, fontSize: typography.xl, fontFamily: fonts.bold, marginBottom: spacing.md },
   editRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
-  editLabel: { color: colors.text.secondary, fontSize: typography.base, flex: 1 },
+  editLabel: { color: colors.text.secondary, fontSize: typography.base, fontFamily: fonts.medium, flex: 1 },
   editInput: {
     backgroundColor: colors.bg.primary,
     borderWidth: 1,
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     color: colors.text.primary,
     fontSize: typography.base,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
     textAlign: 'center',
     width: 72,
     paddingVertical: spacing.sm,
@@ -403,19 +403,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   customAddBtnOff: { opacity: 0.4 },
-  customAddBtnText: { color: '#fff', fontSize: typography.sm, fontWeight: '700' },
-  orDivider: { color: colors.text.muted, fontSize: typography.xs, textAlign: 'center', marginBottom: spacing.sm },
+  customAddBtnText: { color: '#fff', fontSize: typography.sm, fontFamily: fonts.bold },
+  orDivider: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, textAlign: 'center', marginBottom: spacing.sm },
   modalList: { maxHeight: 260 },
   modalOption: { paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
-  modalOptionText: { color: colors.text.primary, fontSize: typography.base },
+  modalOptionText: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.regular },
   modalSaveBtn: {
-    backgroundColor: colors.brand.primary,
+    backgroundColor: colors.brand.gold,
     borderRadius: 12,
     padding: spacing.md,
     alignItems: 'center',
     marginTop: spacing.sm,
   },
-  modalSaveBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  modalSaveBtnText: { color: colors.bg.primary, fontSize: typography.base, fontFamily: fonts.bold },
   modalCancelBtn: { marginTop: spacing.sm, alignItems: 'center', padding: spacing.md },
-  modalCancelText: { color: colors.brand.primary, fontSize: typography.base, fontWeight: '700' },
+  modalCancelText: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.bold },
 });

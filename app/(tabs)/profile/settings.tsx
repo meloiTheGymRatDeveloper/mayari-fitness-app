@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import Button from '../../../components/ui/Button';
 
 function SectionHeader({ label }: { label: string }) {
@@ -324,10 +324,11 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing['2xl'] },
-  screenTitle: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '800', marginBottom: spacing.lg },
+  screenTitle: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.extrabold, marginBottom: spacing.lg },
   sectionHeader: {
-    color: colors.text.secondary, fontSize: typography.xs, fontWeight: '700',
-    letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.sm, marginTop: spacing.lg,
+    ...labelStyle,
+    marginBottom: spacing.sm,
+    marginTop: spacing.lg,
   },
   card: {
     backgroundColor: colors.bg.secondary, borderRadius: 16,
@@ -338,12 +339,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
   },
   settingBlock: { paddingHorizontal: spacing.md, paddingVertical: spacing.md },
-  settingLabel: { color: colors.text.primary, fontSize: typography.base },
+  settingLabel: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.medium },
   divider: { height: 1, backgroundColor: colors.border },
   segmentControl: { flexDirection: 'row', backgroundColor: colors.bg.primary, borderRadius: 10, overflow: 'hidden' },
   segment: { paddingHorizontal: 12, paddingVertical: 6 },
   segmentActive: { backgroundColor: colors.brand.primary },
-  segmentText: { color: colors.text.secondary, fontSize: typography.xs, fontWeight: '600' },
+  segmentText: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.semibold },
   segmentTextActive: { color: '#fff' },
   inlineEdit: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm },
   inlineInput: {
@@ -352,27 +353,27 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
   },
   saveChip: { backgroundColor: colors.brand.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
-  saveChipText: { color: '#fff', fontWeight: '700', fontSize: typography.sm },
-  editLink: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600', marginTop: spacing.xs },
+  saveChipText: { color: '#fff', fontFamily: fonts.bold, fontSize: typography.sm },
+  editLink: { color: colors.brand.primary, fontSize: typography.sm, fontFamily: fonts.semibold, marginTop: spacing.xs },
   signOutBtn: { margin: spacing.md },
   dangerCard: {
     borderRadius: 16, borderWidth: 2, borderColor: colors.error + '66',
     padding: spacing.md, marginTop: spacing.lg,
   },
-  dangerTitle: { color: colors.error, fontSize: typography.base, fontWeight: '700', marginBottom: spacing.xs },
-  dangerDesc: { color: colors.text.secondary, fontSize: typography.sm, marginBottom: spacing.md },
+  dangerTitle: { color: colors.error, fontSize: typography.base, fontFamily: fonts.bold, marginBottom: spacing.xs },
+  dangerDesc: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.regular, marginBottom: spacing.md },
   deleteBtn: {
     backgroundColor: colors.error + '22', borderRadius: 12, padding: spacing.md,
     alignItems: 'center', borderWidth: 1, borderColor: colors.error + '44',
   },
-  deleteBtnText: { color: colors.error, fontSize: typography.base, fontWeight: '700' },
+  deleteBtnText: { color: colors.error, fontSize: typography.base, fontFamily: fonts.bold },
   timeChip: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: colors.bg.primary, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 6,
     borderWidth: 1, borderColor: colors.border,
   },
-  timeChipText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
+  timeChipText: { color: colors.brand.primary, fontSize: typography.sm, fontFamily: fonts.semibold },
   chevron: { color: colors.text.muted, fontSize: 18, lineHeight: 20 },
   modalOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
@@ -386,7 +387,7 @@ const styles = StyleSheet.create({
     maxHeight: '70%',
   },
   modalTitle: {
-    color: colors.text.primary, fontSize: typography.lg, fontWeight: '700',
+    color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold,
     textAlign: 'center', marginBottom: spacing.md,
     paddingHorizontal: spacing.lg,
   },
@@ -395,7 +396,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
   },
   timeOptionSelected: { backgroundColor: colors.brand.primary + '18' },
-  timeOptionText: { color: colors.text.primary, fontSize: typography.base },
-  timeOptionTextSelected: { color: colors.brand.primary, fontWeight: '600' },
-  timeOptionCheck: { color: colors.brand.primary, fontSize: typography.base, fontWeight: '700' },
+  timeOptionText: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.regular },
+  timeOptionTextSelected: { color: colors.brand.primary, fontFamily: fonts.semibold },
+  timeOptionCheck: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.bold },
 });

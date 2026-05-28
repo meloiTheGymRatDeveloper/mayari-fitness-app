@@ -7,7 +7,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { searchFoods } from '../../../lib/foodSearch';
 import { supabase } from '../../../lib/supabase';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import type { FoodItem, MealSlot, WeekDay } from '../../../types/database';
 import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
 
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg.primary },
   header: { padding: spacing.lg, gap: spacing.sm },
   back: { marginBottom: spacing.xs },
-  backText: { color: colors.brand.primary, fontSize: typography.base },
+  backText: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.medium },
   input: {
     backgroundColor: colors.bg.secondary,
     borderRadius: 12,
@@ -319,6 +319,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     color: colors.text.primary,
     fontSize: typography.base,
+    fontFamily: fonts.regular,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
@@ -341,8 +342,8 @@ const styles = StyleSheet.create({
     borderColor: colors.brand.primary,
     backgroundColor: colors.brand.primary + '22',
   },
-  filterText: { color: colors.text.secondary, fontSize: typography.sm },
-  filterTextActive: { color: colors.brand.primary, fontWeight: '600' },
+  filterText: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.regular },
+  filterTextActive: { color: colors.brand.primary, fontFamily: fonts.semibold },
   list: { paddingHorizontal: spacing.lg, paddingBottom: spacing['2xl'] },
   item: {
     flexDirection: 'row',
@@ -354,7 +355,7 @@ const styles = StyleSheet.create({
   },
   itemLeft: { flex: 1, marginRight: spacing.sm },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
-  itemName: { color: colors.text.primary, fontSize: typography.base },
+  itemName: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.medium },
   phBadge: { fontSize: 14 },
   sourceBadge: {
     fontSize: typography.xs,
@@ -371,11 +372,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 4,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
-  itemBrand: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
-  nameFil: { color: colors.text.muted, fontSize: typography.xs, fontStyle: 'italic', marginTop: 1 },
-  itemCal: { color: colors.text.muted, fontSize: typography.sm },
+  itemBrand: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, marginTop: 2 },
+  nameFil: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, fontStyle: 'italic', marginTop: 1 },
+  itemCal: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular },
   // AI loading
   aiLoadingRow: {
     flexDirection: 'row',
@@ -384,14 +385,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     justifyContent: 'center',
   },
-  aiLoadingText: { color: colors.text.muted, fontSize: typography.sm },
+  aiLoadingText: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular },
   // Section separators
   sectionLabel: {
-    color: colors.text.muted,
-    fontSize: typography.xs,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...labelStyle,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -399,7 +396,7 @@ const styles = StyleSheet.create({
   },
   // Empty state
   emptyWrap: { alignItems: 'center', marginTop: 40, gap: spacing.md },
-  empty: { color: colors.text.muted, textAlign: 'center' },
+  empty: { color: colors.text.muted, fontFamily: fonts.regular, textAlign: 'center' },
   manualBtn: {
     borderWidth: 1,
     borderColor: colors.brand.primary,
@@ -407,15 +404,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
-  manualBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
+  manualBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontFamily: fonts.semibold },
   // Footer
   footerBlock: { marginTop: spacing.lg, gap: spacing.xs },
   askAIRow: { paddingVertical: spacing.sm, alignItems: 'center' },
-  askAIText: { color: colors.brand.primary, fontSize: typography.sm },
+  askAIText: { color: colors.brand.primary, fontSize: typography.sm, fontFamily: fonts.medium },
   manualBtnFooter: {
     alignSelf: 'center',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
   },
-  footerBtnText: { color: colors.text.muted, fontSize: typography.sm },
+  footerBtnText: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular },
 });

@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { usePlanEditorStore } from '../../../stores/planEditorStore';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import type { PlannedExercise } from '../../../types/database';
 
 const MUSCLE_GROUPS = ['push', 'pull', 'legs', 'core'] as const;
@@ -289,13 +289,13 @@ const styles = StyleSheet.create({
   exName: {
     color: colors.text.primary,
     fontSize: typography.base,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     flex: 1,
     marginRight: spacing.sm,
   },
   exActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   muscleTag: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  muscleText: { fontSize: typography.xs, fontWeight: '700', textTransform: 'capitalize' },
+  muscleText: { fontSize: typography.xs, fontFamily: fonts.bold, textTransform: 'capitalize' },
   iconBtn: { padding: 4 },
   iconBtnText: { fontSize: 15 },
   statsRow: {
@@ -306,8 +306,8 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   statItem: { flex: 1, alignItems: 'center' },
-  statValue: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
-  statLabel: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
+  statValue: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold },
+  statLabel: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, marginTop: 2 },
   statDivider: { width: 1, height: 32, backgroundColor: colors.border },
   addBtn: {
     borderWidth: 1,
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.sm,
   },
-  addBtnText: { color: colors.brand.primary, fontSize: typography.base, fontWeight: '600' },
+  addBtnText: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.semibold },
   // Form styles
   formCard: {
     backgroundColor: colors.bg.elevated,
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   formLabel: {
     color: colors.text.secondary,
     fontSize: typography.xs,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 6,
@@ -369,8 +369,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 14,
   },
-  muscleChipText: { color: colors.text.secondary, fontSize: typography.sm, textTransform: 'capitalize' },
-  muscleChipTextActive: { color: colors.white, fontWeight: '700' },
+  muscleChipText: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.regular, textTransform: 'capitalize' },
+  muscleChipTextActive: { color: colors.white, fontFamily: fonts.bold },
   formActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   cancelBtn: {
     flex: 1,
@@ -380,14 +380,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
   },
-  cancelBtnText: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600' },
+  cancelBtnText: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.semibold },
   saveBtn: {
     flex: 1,
-    backgroundColor: colors.brand.primary,
+    backgroundColor: colors.brand.gold,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
   },
-  saveBtnText: { color: colors.white, fontSize: typography.sm, fontWeight: '700' },
+  saveBtnText: { color: colors.bg.primary, fontSize: typography.sm, fontFamily: fonts.bold },
   errorText: { color: colors.error, fontSize: typography.base },
 });

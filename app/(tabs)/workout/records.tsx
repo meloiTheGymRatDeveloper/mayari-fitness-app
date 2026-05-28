@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { usePersonalRecords } from '../../../hooks/useWorkout';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import type { PersonalRecord } from '../../../types/database';
 
 type MuscleGroup = PersonalRecord['muscle_group'];
@@ -88,15 +88,11 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
-  emptyTitle: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700', marginBottom: spacing.xs, textAlign: 'center' },
-  emptyBody: { color: colors.text.secondary, fontSize: typography.sm, textAlign: 'center' },
+  emptyTitle: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold, marginBottom: spacing.xs, textAlign: 'center' },
+  emptyBody: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.regular, textAlign: 'center' },
   section: { marginBottom: spacing.lg },
   groupLabel: {
-    color: colors.brand.secondary,
-    fontSize: typography.sm,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    ...labelStyle,
     marginBottom: spacing.sm,
   },
   prCard: {
@@ -111,9 +107,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   prLeft: { flex: 1 },
-  prName: { color: colors.text.primary, fontSize: typography.base },
-  prDate: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
+  prName: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.medium },
+  prDate: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, marginTop: 2 },
   prRight: { alignItems: 'flex-end' },
   prTrophy: { fontSize: 18 },
-  prRecord: { color: colors.brand.accent, fontSize: typography.base, fontWeight: '700' },
+  prRecord: { color: colors.brand.gold, fontSize: typography.base, fontFamily: fonts.bold },
 });

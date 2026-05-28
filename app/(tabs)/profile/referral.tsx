@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share } fr
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import { useAuthStore } from '../../../stores/authStore';
 import { useMyReferrals, calcReferralDiscount } from '../../../hooks/useReferrals';
 
@@ -45,8 +45,8 @@ export default function ReferralScreen() {
           <Text style={styles.heroEmoji}>🎁</Text>
           <Text style={styles.heroTitle}>Refer friends, earn discounts</Text>
           <Text style={styles.heroSub}>
-            Each friend who signs up gives you{'\n'}
-            <Text style={styles.heroHighlight}>10% off</Text> when beta ends · max 50%
+            Each active referral earns you{'\n'}
+            <Text style={styles.heroHighlight}>₱20 off</Text> every month while they stay subscribed
           </Text>
         </View>
 
@@ -95,11 +95,11 @@ export default function ReferralScreen() {
           </View>
         </View>
 
-        {/* Beta note */}
+        {/* How it works note */}
         <View style={styles.betaNote}>
-          <Text style={styles.betaNoteTitle}>⏳ Activates when beta ends</Text>
+          <Text style={styles.betaNoteTitle}>ℹ️ How it works</Text>
           <Text style={styles.betaNoteBody}>
-            Your {discountPct > 0 ? `${discountPct}%` : ''} discount is locked in. It applies automatically when Mayari moves to ₱50/month.
+            You earn ₱20 off your monthly bill for each active referral. The discount applies automatically every billing cycle while your referred friend stays subscribed. Max 1 discount per month.
           </Text>
         </View>
 
@@ -115,23 +115,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  back: { color: colors.brand.primary, fontSize: typography.base, width: 60 },
-  title: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
+  back: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.medium, width: 60 },
+  title: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold },
   content: { padding: spacing.lg, gap: spacing.md },
   heroCard: {
     backgroundColor: colors.bg.elevated, borderRadius: 14, padding: spacing.lg,
     borderWidth: 1, borderColor: colors.brand.primary, alignItems: 'center', gap: spacing.xs,
   },
   heroEmoji: { fontSize: 36, marginBottom: spacing.xs },
-  heroTitle: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700', textAlign: 'center' },
-  heroSub: { color: colors.text.secondary, fontSize: typography.sm, textAlign: 'center', lineHeight: 20 },
-  heroHighlight: { color: colors.brand.secondary, fontWeight: '700' },
+  heroTitle: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold, textAlign: 'center' },
+  heroSub: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.regular, textAlign: 'center', lineHeight: 20 },
+  heroHighlight: { color: colors.brand.gold, fontFamily: fonts.bold },
   codeCard: {
     backgroundColor: colors.bg.secondary, borderRadius: 14, padding: spacing.md,
     borderWidth: 1, borderColor: colors.border, gap: spacing.sm,
   },
   codeLabel: {
-    color: colors.text.muted, fontSize: typography.xs, fontWeight: '700', letterSpacing: 1,
+    ...labelStyle,
   },
   codeRow: { flexDirection: 'row', gap: spacing.sm },
   codeChip: {
@@ -139,32 +139,32 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md, alignItems: 'center',
     borderWidth: 1, borderColor: colors.border,
   },
-  codeText: { color: colors.brand.primary, fontSize: typography['2xl'], fontWeight: '800', letterSpacing: 3 },
+  codeText: { color: colors.brand.gold, fontSize: typography['2xl'], fontFamily: fonts.extrabold, letterSpacing: 3 },
   copyBtn: {
-    backgroundColor: colors.brand.primary, borderRadius: 10,
+    backgroundColor: colors.brand.gold, borderRadius: 10,
     paddingHorizontal: spacing.lg, justifyContent: 'center',
   },
-  copyBtnText: { color: colors.white, fontSize: typography.sm, fontWeight: '700' },
+  copyBtnText: { color: colors.bg.primary, fontSize: typography.sm, fontFamily: fonts.bold },
   shareBtn: {
     backgroundColor: colors.bg.elevated, borderRadius: 10, paddingVertical: spacing.sm,
     alignItems: 'center', borderWidth: 1, borderColor: colors.border,
   },
-  shareBtnText: { color: colors.brand.secondary, fontSize: typography.sm, fontWeight: '600' },
+  shareBtnText: { color: colors.brand.secondary, fontSize: typography.sm, fontFamily: fonts.semibold },
   statsRow: { flexDirection: 'row', gap: spacing.sm },
   statCard: {
     flex: 1, backgroundColor: colors.bg.secondary, borderRadius: 12, padding: spacing.sm,
     alignItems: 'center', borderWidth: 1, borderColor: colors.border,
   },
   statCardAccent: { borderColor: colors.warning },
-  statValue: { color: colors.brand.primary, fontSize: typography['2xl'], fontWeight: '800' },
+  statValue: { color: colors.brand.gold, fontSize: typography['2xl'], fontFamily: fonts.extrabold },
   statValueAccent: { color: colors.warning },
-  statLabel: { color: colors.text.muted, fontSize: 10, marginTop: 2, textAlign: 'center' },
+  statLabel: { color: colors.text.muted, fontSize: 10, fontFamily: fonts.regular, marginTop: 2, textAlign: 'center' },
   progressCard: {
     backgroundColor: colors.bg.secondary, borderRadius: 14, padding: spacing.md,
     borderWidth: 1, borderColor: colors.border, gap: spacing.sm,
   },
   cardLabel: {
-    color: colors.text.muted, fontSize: typography.xs, fontWeight: '700', letterSpacing: 1,
+    ...labelStyle,
   },
   progressTrack: {
     backgroundColor: colors.bg.elevated, borderRadius: 4, height: 8,
@@ -173,13 +173,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand.primary, borderRadius: 4, height: 8,
   },
   progressLabels: { flexDirection: 'row', justifyContent: 'space-between' },
-  progressLabelLeft: { color: colors.text.muted, fontSize: 10 },
-  progressLabelMid: { color: colors.warning, fontSize: 10, fontWeight: '600' },
-  progressLabelRight: { color: colors.text.muted, fontSize: 10 },
+  progressLabelLeft: { color: colors.text.muted, fontSize: 10, fontFamily: fonts.regular },
+  progressLabelMid: { color: colors.warning, fontSize: 10, fontFamily: fonts.semibold },
+  progressLabelRight: { color: colors.text.muted, fontSize: 10, fontFamily: fonts.regular },
   betaNote: {
     backgroundColor: colors.bg.elevated, borderRadius: 12, padding: spacing.md,
-    borderWidth: 1, borderColor: colors.warning, gap: spacing.xs,
+    borderWidth: 1, borderColor: colors.border, gap: spacing.xs,
   },
-  betaNoteTitle: { color: colors.warning, fontSize: typography.xs, fontWeight: '700' },
-  betaNoteBody: { color: colors.text.secondary, fontSize: typography.xs, lineHeight: 18 },
+  betaNoteTitle: { color: colors.brand.gold, fontSize: typography.xs, fontFamily: fonts.bold },
+  betaNoteBody: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.regular, lineHeight: 18 },
 });

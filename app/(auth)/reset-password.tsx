@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { colors, typography, spacing } from '../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
@@ -104,23 +104,24 @@ const styles = StyleSheet.create({
   title: {
     color: colors.text.primary,
     fontSize: typography['2xl'],
-    fontWeight: 'bold',
+    fontFamily: fonts.extrabold,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   body: {
     color: colors.text.secondary,
     fontSize: typography.base,
+    fontFamily: fonts.regular,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: spacing.xl,
   },
-  emailText: { color: colors.brand.secondary, fontWeight: '600' },
+  emailText: { color: colors.brand.secondary, fontFamily: fonts.semibold },
   codeInput: {
     textAlign: 'center',
     fontSize: typography['2xl'],
     letterSpacing: 8,
-    fontWeight: 'bold',
+    fontFamily: fonts.extrabold,
   },
   btn: { marginBottom: spacing.sm },
 });

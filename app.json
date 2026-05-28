@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "scheme": "mayari",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -43,7 +43,8 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#0A0A1E",
-          "resizeMode": "contain"
+          "resizeMode": "contain",
+          "image": "./assets/splash-icon.png"
         }
       ],
       "expo-web-browser",

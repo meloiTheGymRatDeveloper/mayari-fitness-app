@@ -4,7 +4,7 @@ import {
   TouchableOpacity, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, typography, spacing } from '../../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../../constants/theme';
 import Button from '../../../../components/ui/Button';
 import Skeleton from '../../../../components/ui/Skeleton';
 import EmptyState from '../../../../components/ui/EmptyState';
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   tabBar: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border },
   tab: { flex: 1, paddingVertical: spacing.md, alignItems: 'center' },
   tabActive: { borderBottomWidth: 2, borderBottomColor: colors.brand.primary },
-  tabText: { color: colors.text.muted, fontSize: typography.sm, fontWeight: '600' },
+  tabText: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.semibold },
   tabTextActive: { color: colors.brand.primary },
   skeletonList: { padding: spacing.md, gap: spacing.md },
   skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.bg.secondary, borderRadius: 16, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   list: { padding: spacing.md, gap: spacing.sm },
   emptyText: { color: colors.text.muted, fontSize: typography.sm, textAlign: 'center', marginTop: spacing.xl },
   avatar: { backgroundColor: colors.bg.elevated, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.brand.primary + '66' },
-  avatarText: { color: colors.brand.primary, fontWeight: '700', fontSize: typography.sm },
+  avatarText: { color: colors.brand.primary, fontFamily: fonts.bold, fontSize: typography.sm },
   requestCard: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     backgroundColor: colors.bg.secondary,
@@ -207,14 +207,14 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
   },
   requestInfo: { flex: 1 },
-  requestName: { color: colors.text.primary, fontSize: typography.base, fontWeight: '700' },
+  requestName: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.bold },
   requestMeta: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
   requestActions: { gap: spacing.xs },
   acceptBtn: { paddingVertical: 6, minHeight: 36, paddingHorizontal: spacing.sm },
   declineBtn: { paddingVertical: 6, minHeight: 36, paddingHorizontal: spacing.sm },
   outgoingSection: { marginTop: spacing.lg },
   outgoingHeader: { paddingVertical: spacing.sm },
-  outgoingTitle: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '700' },
+  outgoingTitle: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.bold },
   outgoingRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     paddingVertical: spacing.sm,
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 4,
     borderWidth: 1, borderColor: colors.warning + '44',
   },
-  pendingBadgeText: { color: colors.warning, fontSize: typography.xs, fontWeight: '600' },
+  pendingBadgeText: { color: colors.warning, fontSize: typography.xs, fontFamily: fonts.semibold },
   connectionCard: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     backgroundColor: colors.bg.secondary,
@@ -234,12 +234,12 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
   },
   connectionInfo: { flex: 1 },
-  connectionName: { color: colors.text.primary, fontSize: typography.base, fontWeight: '700' },
+  connectionName: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.bold },
   connectionMeta: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
   chatBtn: {
     backgroundColor: colors.brand.primary + '22',
     borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8,
     borderWidth: 1, borderColor: colors.brand.primary + '66',
   },
-  chatBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '700' },
+  chatBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontFamily: fonts.bold },
 });

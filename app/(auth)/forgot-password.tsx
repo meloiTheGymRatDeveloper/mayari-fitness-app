@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { supabase } from '../../lib/supabase';
-import { colors, typography, spacing } from '../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
@@ -63,13 +63,14 @@ const styles = StyleSheet.create({
   title: {
     color: colors.text.primary,
     fontSize: typography['2xl'],
-    fontWeight: 'bold',
+    fontFamily: fonts.extrabold,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
   body: {
     color: colors.text.secondary,
     fontSize: typography.sm,
+    fontFamily: fonts.regular,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: spacing.xl,

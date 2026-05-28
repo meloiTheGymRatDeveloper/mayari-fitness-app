@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAdminSubmissions, useApproveSubmission, useRejectSubmission } from '../../../../hooks/useNutrition';
 import type { FoodSubmission } from '../../../../types/database';
-import { colors, typography, spacing } from '../../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../../constants/theme';
 
 export default function AdminSubmissionsScreen() {
   const insets = useSafeAreaInsets();
@@ -105,14 +105,14 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg.primary },
   header: { padding: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.border },
   back: { color: colors.brand.primary, fontSize: typography.base, marginBottom: spacing.xs },
-  title: { color: colors.text.primary, fontSize: typography.xl, fontWeight: '700' },
+  title: { color: colors.text.primary, fontSize: typography.xl, fontFamily: fonts.extrabold },
   count: { color: colors.text.muted, fontSize: typography.sm, marginTop: 2 },
   list: { padding: spacing.lg, gap: spacing.md },
   card: {
     backgroundColor: colors.bg.secondary, borderRadius: 12,
     padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.xs,
   },
-  foodName: { color: colors.text.primary, fontSize: typography.base, fontWeight: '600' },
+  foodName: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.semibold },
   brand: { color: colors.text.muted, fontSize: typography.sm },
   macros: { color: colors.brand.secondary, fontSize: typography.sm },
   meta: { color: colors.text.muted, fontSize: typography.xs },
@@ -121,12 +121,12 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: colors.success, borderRadius: 8,
     paddingVertical: spacing.sm, alignItems: 'center',
   },
-  approveBtnText: { color: '#fff', fontWeight: '700', fontSize: typography.sm },
+  approveBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: typography.sm },
   rejectBtn: {
     flex: 1, borderWidth: 1, borderColor: colors.error, borderRadius: 8,
     paddingVertical: spacing.sm, alignItems: 'center',
   },
-  rejectBtnText: { color: colors.error, fontWeight: '600', fontSize: typography.sm },
+  rejectBtnText: { color: colors.error, fontFamily: fonts.semibold, fontSize: typography.sm },
   btnDisabled: { opacity: 0.5 },
   empty: { color: colors.text.muted, textAlign: 'center', marginTop: 60 },
 });

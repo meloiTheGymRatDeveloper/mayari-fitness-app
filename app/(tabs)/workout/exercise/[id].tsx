@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useExerciseById } from '../../../../hooks/useWorkout';
-import { colors, typography, spacing } from '../../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../../constants/theme';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -69,11 +69,11 @@ const styles = StyleSheet.create({
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center' },
   notFound: { color: colors.text.secondary, fontSize: typography.base },
-  name: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700', marginBottom: spacing.lg },
+  name: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.bold, marginBottom: spacing.lg },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border },
   fieldLabel: { color: colors.text.muted, fontSize: typography.sm },
   fieldValue: { color: colors.text.primary, fontSize: typography.sm, flex: 1, textAlign: 'right' },
-  groupText: { color: colors.brand.primary, fontWeight: '700' },
+  groupText: { color: colors.brand.primary, fontFamily: fonts.bold },
   descCard: { marginTop: spacing.lg, backgroundColor: colors.bg.secondary, borderRadius: 12, padding: spacing.md },
   descText: { color: colors.text.secondary, fontSize: typography.sm, lineHeight: 22 },
 });

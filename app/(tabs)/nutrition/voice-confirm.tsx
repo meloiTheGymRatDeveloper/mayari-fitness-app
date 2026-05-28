@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
 
 interface ParsedFood {
@@ -177,12 +177,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   back: { color: colors.brand.primary, fontSize: typography.base, width: 60 },
-  title: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
+  title: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold },
   content: { padding: spacing.lg, gap: spacing.md },
   subtitle: { color: colors.text.secondary, fontSize: typography.sm },
   card: { backgroundColor: colors.bg.secondary, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
   nameInput: {
-    color: colors.text.primary, fontSize: typography.base, fontWeight: '600',
+    color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.semibold,
     borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: spacing.xs, marginBottom: spacing.sm,
   },
   fieldRow: { flexDirection: 'row', gap: spacing.xs },
@@ -198,6 +198,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md, alignItems: 'center',
   },
   disabled: { opacity: 0.5 },
-  confirmText: { color: colors.white, fontSize: typography.base, fontWeight: '700' },
+  confirmText: { color: colors.white, fontSize: typography.base, fontFamily: fonts.bold },
   empty: { color: colors.text.muted, textAlign: 'center', marginTop: spacing.xl },
 });

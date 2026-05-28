@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIn
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '../../../../stores/authStore';
 import { supabase } from '../../../../lib/supabase';
-import { colors, typography, spacing } from '../../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../../constants/theme';
 import type { WorkoutPlan, DayPlan } from '../../../../types/database';
 
 function getPlanLetter(plans: WorkoutPlan[], planId: string): string {
@@ -92,9 +92,9 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center' },
-  planMeta: { color: colors.brand.secondary, fontSize: typography.sm, fontWeight: '600', marginBottom: 4 },
-  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700', marginBottom: 4 },
-  subheading: { color: colors.text.muted, fontSize: typography.sm, marginBottom: spacing.xl },
+  planMeta: { color: colors.brand.secondary, fontSize: typography.sm, fontFamily: fonts.semibold, marginBottom: 4 },
+  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.bold, marginBottom: 4 },
+  subheading: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular, marginBottom: spacing.xl },
   dayList: { gap: spacing.sm },
   dayCard: {
     backgroundColor: colors.bg.secondary,
@@ -106,8 +106,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dayInfo: { flex: 1 },
-  dayLabel: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
-  dayMeta: { color: colors.text.muted, fontSize: typography.sm, marginTop: 2 },
+  dayLabel: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold },
+  dayMeta: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular, marginTop: 2 },
   chevron: { color: colors.text.muted, fontSize: 24 },
-  errorText: { color: colors.text.secondary, fontSize: typography.base },
+  errorText: { color: colors.text.secondary, fontSize: typography.base, fontFamily: fonts.regular },
 });

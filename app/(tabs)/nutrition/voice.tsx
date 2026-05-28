@@ -12,7 +12,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { supabase } from '../../../lib/supabase';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
 import { useFeatureAccess } from '../../../hooks/useFeatureAccess';
 import ProGate from '../../../components/ui/ProGate';
@@ -244,23 +244,25 @@ const styles = StyleSheet.create({
   center: { justifyContent: 'center', alignItems: 'center' },
   back: { marginBottom: spacing.lg },
   backAbs: { position: 'absolute', top: 60, left: spacing.lg },
-  backText: { color: colors.brand.primary, fontSize: typography.base },
+  backText: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.regular },
   heading: {
     color: colors.text.primary,
     fontSize: typography.xl,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     marginBottom: spacing.xs,
   },
-  sub: { color: colors.text.muted, fontSize: typography.sm, marginBottom: spacing.lg },
+  sub: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular, marginBottom: spacing.lg },
   prompt: {
     color: colors.text.secondary,
     fontSize: typography.lg,
+    fontFamily: fonts.regular,
     marginBottom: spacing.xl,
     textAlign: 'center',
   },
   transcript: {
     color: colors.text.primary,
     fontSize: typography.base,
+    fontFamily: fonts.regular,
     marginBottom: spacing.xl,
     textAlign: 'center',
     paddingHorizontal: spacing.xl,
@@ -276,9 +278,9 @@ const styles = StyleSheet.create({
   },
   micBtnActive: { backgroundColor: colors.error },
   micIcon: { fontSize: 40 },
-  micHint: { color: colors.text.muted, fontSize: typography.sm, marginBottom: spacing.xl },
+  micHint: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular, marginBottom: spacing.xl },
   typeLink: { marginTop: spacing.lg },
-  typeLinkText: { color: colors.brand.primary, fontSize: typography.sm },
+  typeLinkText: { color: colors.brand.primary, fontSize: typography.sm, fontFamily: fonts.regular },
   textInput: {
     backgroundColor: colors.bg.secondary,
     borderRadius: 12,
@@ -298,10 +300,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   parseBtnOff: { opacity: 0.4 },
-  parseBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  parseBtnText: { color: '#fff', fontSize: typography.base, fontFamily: fonts.bold },
   processingText: {
     color: colors.text.secondary,
     marginTop: spacing.md,
     fontSize: typography.base,
+    fontFamily: fonts.regular,
   },
 });

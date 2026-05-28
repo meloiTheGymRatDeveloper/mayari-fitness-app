@@ -9,7 +9,7 @@ import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { computeAllTargets } from '../../../lib/calories';
 import type { CalorieTargets } from '../../../lib/calories';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import type { Gender, ActivityLevel, PrimaryGoal, ExperienceLevel, EquipmentType } from '../../../types/database';
@@ -981,14 +981,14 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     marginBottom: spacing.xs,
   },
-  optionalBadgeText: { color: colors.brand.primary, fontSize: typography.xs, fontWeight: '600' },
+  optionalBadgeText: { color: colors.brand.primary, fontSize: typography.xs, fontFamily: fonts.semibold },
 
   stepContent: { flex: 1, marginBottom: spacing.xl },
   stepEmoji: { fontSize: 56, textAlign: 'center', marginBottom: spacing.md },
-  stepTitle: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: 'bold', textAlign: 'center', marginBottom: spacing.xs },
-  stepBody: { color: colors.text.secondary, fontSize: typography.sm, textAlign: 'center', marginBottom: spacing.lg, lineHeight: 20 },
+  stepTitle: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.extrabold, textAlign: 'center', marginBottom: spacing.xs },
+  stepBody: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.regular, textAlign: 'center', marginBottom: spacing.lg, lineHeight: 20 },
 
-  fieldLabel: { color: colors.text.muted, fontSize: typography.xs, fontWeight: '600', marginBottom: spacing.xs, letterSpacing: 0.5 },
+  fieldLabel: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.semibold, marginBottom: spacing.xs, letterSpacing: 0.5 },
   fieldHelper: { color: colors.text.muted, fontSize: typography.xs, marginTop: 4, marginBottom: spacing.sm },
 
   errorChip: {
@@ -1012,7 +1012,7 @@ const styles = StyleSheet.create({
   unitBadgeStatic: {
     backgroundColor: colors.bg.elevated, borderRadius: 7, paddingHorizontal: 9, paddingVertical: 4,
   },
-  unitBadgeText: { color: colors.brand.primary, fontSize: typography.xs, fontWeight: '700' },
+  unitBadgeText: { color: colors.brand.primary, fontSize: typography.xs, fontFamily: fonts.bold },
 
   bfReferenceCard: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
@@ -1020,7 +1020,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brand.primary, borderRadius: 10, padding: spacing.md, marginTop: spacing.md,
   },
   bfReferenceIcon: { fontSize: 20 },
-  bfReferenceTitle: { color: colors.brand.secondary, fontSize: typography.sm, fontWeight: '600' },
+  bfReferenceTitle: { color: colors.brand.secondary, fontSize: typography.sm, fontFamily: fonts.semibold },
   bfReferenceSub: { color: colors.text.muted, fontSize: typography.xs },
   bfReferenceArrow: { color: colors.brand.primary, fontSize: typography.base },
 
@@ -1031,15 +1031,15 @@ const styles = StyleSheet.create({
     padding: spacing.lg, height: '85%',
   },
   modalDragHandle: { width: 36, height: 4, backgroundColor: colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
-  modalTitle: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700', textAlign: 'center', marginBottom: 4 },
-  modalSub: { color: colors.text.secondary, fontSize: typography.sm, textAlign: 'center', marginBottom: spacing.md },
+  modalTitle: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold, textAlign: 'center', marginBottom: 4 },
+  modalSub: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.regular, textAlign: 'center', marginBottom: spacing.md },
   modalToggleRow: {
     flexDirection: 'row', backgroundColor: colors.bg.elevated, borderRadius: 20,
     padding: 3, gap: 3, alignSelf: 'center', marginBottom: spacing.md,
   },
   modalTab: { paddingHorizontal: spacing.lg, paddingVertical: 6, borderRadius: 16 },
   modalTabActive: { backgroundColor: colors.brand.primary },
-  modalTabText: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600' },
+  modalTabText: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.semibold },
   modalTabTextActive: { color: colors.text.primary },
   modalImageScroll: { flex: 1, marginBottom: spacing.md },
   modalImage: { flex: 1, width: '100%' },
@@ -1054,11 +1054,11 @@ const styles = StyleSheet.create({
   },
   listCardSelected: { borderColor: colors.brand.primary, backgroundColor: colors.bg.elevated },
   listEmoji: { fontSize: 24 },
-  listLabel: { color: colors.text.secondary, fontSize: typography.base, fontWeight: '600' },
+  listLabel: { color: colors.text.secondary, fontSize: typography.base, fontFamily: fonts.semibold },
   listLabelSelected: { color: colors.brand.primary },
-  listSub: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
-  checkmark: { color: colors.brand.primary, fontSize: typography.lg, fontWeight: 'bold' },
-  palBadge: { color: colors.text.muted, fontSize: typography.xs, fontWeight: '600' },
+  listSub: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular, marginTop: 2 },
+  checkmark: { color: colors.brand.primary, fontSize: typography.lg, fontFamily: fonts.bold },
+  palBadge: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.semibold },
   palBadgeSelected: { color: colors.brand.primary },
 
   optionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
@@ -1068,7 +1068,7 @@ const styles = StyleSheet.create({
   },
   optionCardSelected: { borderColor: colors.brand.primary, backgroundColor: colors.bg.elevated },
   optionEmoji: { fontSize: 28, marginBottom: spacing.xs },
-  optionLabel: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600', textAlign: 'center', marginBottom: 2 },
+  optionLabel: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.semibold, textAlign: 'center', marginBottom: 2 },
   optionLabelSelected: { color: colors.brand.primary },
   optionSub: { color: colors.text.muted, fontSize: typography.xs, textAlign: 'center' },
 
@@ -1078,23 +1078,23 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center',
   },
   dayChipSelected: { backgroundColor: colors.brand.primary, borderColor: colors.brand.primary },
-  dayLabel: { color: colors.text.secondary, fontSize: typography.xs, fontWeight: '600' },
+  dayLabel: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.semibold },
   dayLabelSelected: { color: colors.text.primary },
   dayCount: { color: colors.text.muted, fontSize: typography.sm, textAlign: 'center', marginTop: spacing.sm },
 
   // Results
   resultsHero: { alignItems: 'center', marginBottom: spacing.lg },
   resultsEmoji: { fontSize: 52, marginBottom: spacing.sm },
-  resultsTaglish: { color: colors.brand.secondary, fontSize: typography.sm, fontWeight: '600', marginBottom: 4, letterSpacing: 0.5 },
-  resultsTitle: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '800', marginBottom: 4 },
+  resultsTaglish: { color: colors.brand.secondary, fontSize: typography.sm, fontFamily: fonts.semibold, marginBottom: 4, letterSpacing: 0.5 },
+  resultsTitle: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.extrabold, marginBottom: 4 },
   resultsSubtitle: { color: colors.text.secondary, fontSize: typography.sm },
 
   calorieCard: {
     backgroundColor: colors.bg.secondary, borderRadius: 16, padding: spacing.lg,
     marginBottom: spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: colors.border,
   },
-  calorieCardLabel: { color: colors.text.muted, fontSize: typography.xs, fontWeight: '600', marginBottom: 6, letterSpacing: 0.5 },
-  calorieNumber: { color: colors.brand.primary, fontSize: 48, fontWeight: '800', lineHeight: 56 },
+  calorieCardLabel: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.semibold, marginBottom: 6, letterSpacing: 0.5 },
+  calorieNumber: { color: colors.brand.primary, fontSize: 48, fontFamily: fonts.extrabold, lineHeight: 56 },
   calorieUnit: { color: colors.text.secondary, fontSize: typography.sm, marginBottom: spacing.md },
   calorieBreakdown: { backgroundColor: colors.bg.primary, borderRadius: 10, padding: spacing.sm, width: '100%', gap: 4 },
   calorieBreakdownText: { color: colors.text.muted, fontSize: typography.xs, textAlign: 'center' },
@@ -1104,8 +1104,8 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: colors.bg.secondary, borderRadius: 12,
     padding: spacing.sm, alignItems: 'center', borderWidth: 1.5,
   },
-  macroValue: { fontSize: typography.xl, fontWeight: '800' },
-  macroLabel: { color: colors.text.secondary, fontSize: typography.xs, fontWeight: '600', marginTop: 2 },
+  macroValue: { fontSize: typography.xl, fontFamily: fonts.extrabold },
+  macroLabel: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.semibold, marginTop: 2 },
   macroNote: { color: colors.text.muted, fontSize: 10, marginTop: 2 },
 
   adjustHint: {
@@ -1118,7 +1118,7 @@ const styles = StyleSheet.create({
   adjustHintSub: { color: colors.text.muted, fontSize: typography.xs },
 
   gradientBtn: { borderRadius: 12, padding: spacing.md, alignItems: 'center', marginBottom: spacing.md },
-  gradientBtnLabel: { color: colors.white, fontWeight: '800', fontSize: typography.lg },
+  gradientBtnLabel: { color: colors.white, fontFamily: fonts.extrabold, fontSize: typography.lg },
   gradientBtnSub: { color: 'rgba(255,255,255,0.75)', fontSize: typography.xs, marginTop: 2 },
 
   // Nav

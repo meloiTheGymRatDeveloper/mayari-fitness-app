@@ -108,8 +108,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── subscription.created ─────────────────────────────────────────────────
-    if (eventType === "subscription.created") {
+    // ── subscription.activated ───────────────────────────────────────────────
+    if (eventType === "subscription.activated") {
       const subscriptionId = event?.data?.attributes?.data?.id as string | undefined;
       if (!subscriptionId) return new Response("ok", { status: 200 });
 
@@ -140,8 +140,86 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── subscription.cancelled / subscription.payment_failed ──────────────────
-    if (eventType === "subscription.cancelled" || eventType === "subscription.payment_failed") {
+    // ── subscription.invoice.paid (renewal) ──────────────────────────────────
+    if (eventType === "subscription.invoice.paid") {
+      const subscriptionId = event?.data?.attributes?.data?.attributes?.subscription_id as string | undefined;
+      if (!subscriptionId) return new Response("ok", { status: 200 });
+
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("user_id")
+        .eq("paymongo_subscription_id", subscriptionId)
+        .maybeSingle();
+
+      if (sub?.user_id) {
+        const now = new Date();
+        const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+        const [subResult, userResult] = await Promise.all([
+          supabase.from("subscriptions").update({
+            tier: "beta",
+            current_period_start: now.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+          }).eq("user_id", sub.user_id),
+          supabase.from("users").update({
+            subscription_status: "beta",
+            subscription_expires_at: periodEnd.toISOString(),
+          }).eq("id", sub.user_id),
+        ]);
+        if (subResult.error) throw subResult.error;
+        if (userResult.error) throw userResult.error;
+      }
+    }
+
+    // ── subscription.invoice.payment_failed ──────────────────────────────────
+    if (eventType === "subscription.invoice.payment_failed") {
+      const subscriptionId = event?.data?.attributes?.data?.attributes?.subscription_id as string | undefined;
+      if (!subscriptionId) return new Response("ok", { status: 200 });
+
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("user_id")
+        .eq("paymongo_subscription_id", subscriptionId)
+        .maybeSingle();
+
+      if (sub?.user_id) {
+        const [subResult, userResult] = await Promise.all([
+          supabase.from("subscriptions").update({
+            tier: "free",
+            paymongo_subscription_id: null,
+          }).eq("user_id", sub.user_id),
+          supabase.from("users").update({
+            subscription_status: "free",
+            subscription_expires_at: null,
+          }).eq("id", sub.user_id),
+        ]);
+        if (subResult.error) throw subResult.error;
+        if (userResult.error) throw userResult.error;
+
+        const { data: u } = await supabase
+          .from("users")
+          .select("push_token")
+          .eq("id", sub.user_id)
+          .maybeSingle();
+        if (u?.push_token) {
+          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({
+              userId: sub.user_id,
+              title: "Payment failed",
+              body: "Your Mayari subscription could not be renewed. Tap to resubscribe.",
+            }),
+          });
+        }
+      }
+    }
+
+    // ── subscription.past_due / subscription.unpaid ───────────────────────────
+    if (eventType === "subscription.past_due" || eventType === "subscription.unpaid") {
       const subscriptionId = event?.data?.attributes?.data?.id as string | undefined;
       if (!subscriptionId) return new Response("ok", { status: 200 });
 
@@ -153,11 +231,11 @@ Deno.serve(async (req) => {
 
       if (sub?.user_id) {
         const [subResult, userResult] = await Promise.all([
-          supabase.from("subscriptions").update(
-            eventType === "subscription.payment_failed"
-              ? { tier: "free", paymongo_subscription_id: null }
-              : { tier: "free", paymongo_subscription_id: null, current_period_end: null }
-          ).eq("user_id", sub.user_id),
+          supabase.from("subscriptions").update({
+            tier: "free",
+            paymongo_subscription_id: null,
+            current_period_end: null,
+          }).eq("user_id", sub.user_id),
           supabase.from("users").update({
             subscription_status: "free",
             subscription_expires_at: null,
@@ -165,28 +243,6 @@ Deno.serve(async (req) => {
         ]);
         if (subResult.error) throw subResult.error;
         if (userResult.error) throw userResult.error;
-
-        if (eventType === "subscription.payment_failed") {
-          const { data: u } = await supabase
-            .from("users")
-            .select("push_token")
-            .eq("id", sub.user_id)
-            .maybeSingle();
-          if (u?.push_token) {
-            await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-              },
-              body: JSON.stringify({
-                userId: sub.user_id,
-                title: "Payment failed",
-                body: "Your Mayari subscription could not be renewed. Tap to resubscribe.",
-              }),
-            });
-          }
-        }
       }
     }
 

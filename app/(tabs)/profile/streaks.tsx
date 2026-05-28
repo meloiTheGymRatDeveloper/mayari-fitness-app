@@ -1,5 +1,5 @@
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import { useStreaks, useStreakCalendar } from '../../../hooks/useStreaks';
 import Skeleton from '../../../components/ui/Skeleton';
 
@@ -130,24 +130,25 @@ export default function StreaksScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing['2xl'] },
-  screenTitle: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '800', marginBottom: spacing.lg },
+  screenTitle: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.extrabold, marginBottom: spacing.lg },
   streakRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   streakCard: {
     flex: 1, backgroundColor: colors.bg.secondary, borderRadius: 20,
     padding: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border,
   },
   streakEmoji: { fontSize: 32, marginBottom: 4 },
-  streakNumber: { color: colors.text.primary, fontSize: typography['3xl'], fontWeight: '900' },
-  streakTypeLabel: { color: colors.text.secondary, fontSize: typography.xs, fontWeight: '600', marginTop: 2 },
-  streakMessage: { color: colors.brand.secondary, fontSize: typography.xs, textAlign: 'center', marginTop: 4 },
+  streakNumber: { color: colors.text.primary, fontSize: typography['3xl'], fontFamily: fonts.extrabold },
+  streakTypeLabel: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.semibold, marginTop: 2 },
+  streakMessage: { color: colors.brand.secondary, fontSize: typography.xs, fontFamily: fonts.regular, textAlign: 'center', marginTop: 4 },
   pbRow: {
     backgroundColor: colors.bg.elevated, borderRadius: 12, padding: spacing.sm,
     marginBottom: spacing.lg, alignItems: 'center',
   },
-  pbText: { color: colors.text.secondary, fontSize: typography.sm },
+  pbText: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.regular },
   sectionTitle: {
-    color: colors.text.secondary, fontSize: typography.xs, fontWeight: '700',
-    letterSpacing: 1, textTransform: 'uppercase', marginBottom: spacing.sm, marginTop: spacing.md,
+    ...labelStyle,
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
   },
   milestonesScroll: { marginBottom: spacing.md },
   milestonesRow: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.md },
@@ -156,8 +157,8 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center',
   },
   milestoneBadgeUnlocked: { borderColor: colors.brand.accent, backgroundColor: colors.brand.accent + '22' },
-  milestoneDays: { color: colors.text.primary, fontSize: typography.xl, fontWeight: '800' },
-  milestoneDaysLabel: { color: colors.text.muted, fontSize: typography.xs },
+  milestoneDays: { color: colors.text.primary, fontSize: typography.xl, fontFamily: fonts.extrabold },
+  milestoneDaysLabel: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular },
   milestoneStar: { fontSize: 16, position: 'absolute', top: 4, right: 4 },
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
   legendDot: { width: 12, height: 12, borderRadius: 6 },

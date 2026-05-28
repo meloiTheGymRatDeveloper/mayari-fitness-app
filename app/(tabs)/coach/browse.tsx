@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../stores/authStore';
 import { usePlanEditorStore } from '../../../stores/planEditorStore';
 import { getAlgorithmPlan } from '../../../constants/algorithmPlans';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 
 const FREQUENCIES = [2, 3, 4, 5, 6];
 const DURATIONS = [30, 45, 60, 75, 90];
@@ -134,14 +134,10 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     marginBottom: spacing.md,
   },
-  back: { color: colors.brand.primary, fontSize: typography.sm },
-  heading: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
+  back: { color: colors.brand.primary, fontSize: typography.sm, fontFamily: fonts.regular },
+  heading: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold },
   sectionLabel: {
-    color: colors.text.secondary,
-    fontSize: typography.xs,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    ...labelStyle,
     marginBottom: spacing.sm,
   },
   chipsRow: {
@@ -159,8 +155,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   chipActive: { backgroundColor: colors.brand.primary, borderColor: colors.brand.primary },
-  chipText: { color: colors.text.secondary, fontSize: typography.sm },
-  chipTextActive: { color: colors.white, fontWeight: '700' },
+  chipText: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.regular },
+  chipTextActive: { color: colors.white, fontFamily: fonts.bold },
   planCard: {
     backgroundColor: colors.bg.secondary,
     borderWidth: 1,
@@ -178,17 +174,17 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: 4,
   },
-  planName: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
+  planName: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold },
   recommendedBadge: {
     backgroundColor: colors.brand.primary + '33',
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  recommendedText: { color: colors.brand.primary, fontSize: 10, fontWeight: '700' },
-  planDesc: { color: colors.text.secondary, fontSize: typography.sm, marginBottom: spacing.sm },
+  recommendedText: { color: colors.brand.primary, fontSize: 10, fontFamily: fonts.bold },
+  planDesc: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.regular, marginBottom: spacing.sm },
   planMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
-  planMetaText: { color: colors.text.muted, fontSize: typography.xs },
-  planMetaDot: { color: colors.text.muted, fontSize: typography.xs },
+  planMetaText: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular },
+  planMetaDot: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular },
   chevron: { color: colors.text.muted, fontSize: 20, paddingRight: spacing.md },
 });

@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
 
 type Confidence = 'low' | 'medium' | 'high';
@@ -114,12 +114,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   back: { color: colors.brand.primary, fontSize: typography.base, width: 60 },
-  title: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
+  title: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold },
   content: { padding: spacing.lg, gap: spacing.md },
   confidenceBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   dot: { width: 10, height: 10, borderRadius: 5 },
   confidenceText: { color: colors.text.secondary, fontSize: typography.sm },
-  label: { color: colors.text.muted, fontSize: typography.xs, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
+  label: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.bold, letterSpacing: 1, textTransform: 'uppercase' },
   nameInput: {
     backgroundColor: colors.bg.secondary, borderRadius: 10,
     padding: spacing.md, color: colors.text.primary, fontSize: typography.base,
@@ -138,5 +138,5 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md, alignItems: 'center',
   },
   disabled: { opacity: 0.5 },
-  confirmText: { color: colors.white, fontSize: typography.base, fontWeight: '700' },
+  confirmText: { color: colors.white, fontSize: typography.base, fontFamily: fonts.bold },
 });

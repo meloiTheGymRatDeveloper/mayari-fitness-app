@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, Camera } from 'expo-camera';
 import { getFoodByBarcode } from '../../../lib/foodSearch';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
 
 export default function BarcodeScannerScreen() {
@@ -104,12 +104,12 @@ export default function BarcodeScannerScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
-  permText: { color: colors.text.secondary, textAlign: 'center', marginBottom: spacing.lg },
+  permText: { color: colors.text.secondary, fontFamily: fonts.regular, textAlign: 'center', marginBottom: spacing.lg },
   backBtn: { backgroundColor: colors.brand.primary, borderRadius: 12, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
-  backBtnText: { color: '#fff', fontWeight: '600' },
+  backBtnText: { color: '#fff', fontFamily: fonts.semibold },
   overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center' },
   closeBtn: { position: 'absolute', top: 56, left: spacing.lg, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  closeBtnText: { color: '#fff', fontWeight: '600' },
+  closeBtnText: { color: '#fff', fontFamily: fonts.semibold },
   guideBox: { width: 260, height: 160, borderWidth: 2, borderColor: '#fff', borderRadius: 12, backgroundColor: 'transparent' },
-  hint: { color: '#fff', marginTop: spacing.lg, fontSize: typography.sm, textAlign: 'center' },
+  hint: { color: '#fff', marginTop: spacing.lg, fontSize: typography.sm, fontFamily: fonts.regular, textAlign: 'center' },
 });

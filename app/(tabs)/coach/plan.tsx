@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { usePlanEditorStore } from '../../../stores/planEditorStore';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import type { DayPlan } from '../../../types/database';
 
 const DAY_COLORS = ['#F59E0B', '#22C55E', '#6366F1', '#A78BFA', '#F472B6', '#34D399'];
@@ -131,7 +131,7 @@ export default function PlanScreen() {
           disabled={saving}
         >
           {saving
-            ? <ActivityIndicator color={colors.white} />
+            ? <ActivityIndicator color={colors.bg.primary} />
             : <Text style={styles.btnText}>Save This Plan</Text>}
         </TouchableOpacity>
       </ScrollView>
@@ -168,28 +168,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dayIndexText: { fontSize: typography.sm, fontWeight: '800' },
+  dayIndexText: { fontSize: typography.sm, fontFamily: fonts.extrabold },
   dayInfo: { flex: 1 },
-  dayLabel: { color: colors.text.primary, fontSize: typography.base, fontWeight: '700', marginBottom: 4 },
+  dayLabel: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.bold, marginBottom: 4 },
   dayMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
-  dayMetaText: { color: colors.text.muted, fontSize: typography.xs },
+  dayMetaText: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.regular },
   muscleTag: {
     backgroundColor: colors.bg.elevated,
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  muscleTagText: { color: colors.brand.secondary, fontSize: 10, fontWeight: '600' },
+  muscleTagText: { color: colors.brand.secondary, fontSize: 10, fontFamily: fonts.semibold },
   chevron: { color: colors.text.muted, fontSize: 20 },
   btn: {
-    backgroundColor: colors.brand.primary,
+    backgroundColor: colors.brand.gold,
     borderRadius: 12,
     paddingVertical: spacing.md,
     alignItems: 'center',
     marginTop: spacing.lg,
   },
   btnOff: { opacity: 0.5 },
-  btnText: { color: colors.white, fontSize: typography.base, fontWeight: '700' },
+  btnText: { color: colors.bg.primary, fontSize: typography.base, fontFamily: fonts.bold },
   errorText: {
     color: colors.error,
     fontSize: typography.base,

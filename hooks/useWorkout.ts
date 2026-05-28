@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
+import { fallbackExercises } from '../constants/exercises';
 import type { WorkoutPlan, WorkoutSession, WorkoutSet, Exercise, PersonalRecord } from '../types/database';
 
 export function useActivePlan() {
@@ -68,7 +69,8 @@ export function useExercises() {
     queryFn: async () => {
       const { data, error } = await supabase.from('exercises').select('*').order('name');
       if (error) throw error;
-      return (data ?? []) as Exercise[];
+      const rows = (data ?? []) as Exercise[];
+      return rows.length > 0 ? rows : fallbackExercises;
     },
     staleTime: 1000 * 60 * 60,
   });
@@ -79,7 +81,7 @@ export function useExerciseById(id: string) {
     queryKey: ['exercises', id],
     queryFn: async () => {
       const { data, error } = await supabase.from('exercises').select('*').eq('id', id).single();
-      if (error) throw error;
+      if (error) return fallbackExercises.find(e => e.id === id) ?? null;
       return data as Exercise;
     },
     enabled: !!id,

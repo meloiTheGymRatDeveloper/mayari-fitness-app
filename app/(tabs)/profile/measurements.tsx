@@ -6,7 +6,7 @@ import {
 import { useMeasurements, useAddMeasurement } from '../../../hooks/useBodyMeasurements';
 import { useMayariTriggers } from '../../../hooks/useMayariTriggers';
 import { useAuthStore } from '../../../stores/authStore';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import type { BodyMeasurement } from '../../../types/database';
@@ -187,8 +187,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   sectionTitle: {
-    color: colors.text.secondary, fontSize: typography.xs,
-    fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase',
+    ...labelStyle,
     marginBottom: spacing.md,
   },
   formCard: {
@@ -202,7 +201,7 @@ const styles = StyleSheet.create({
   halfBtn: { flex: 1 },
   fullBtn: { flex: 1 },
   historyLoader: { marginTop: spacing.lg },
-  emptyText: { color: colors.text.muted, fontSize: typography.sm, textAlign: 'center', marginTop: spacing.xl },
+  emptyText: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular, textAlign: 'center', marginTop: spacing.xl },
   historyRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     backgroundColor: colors.bg.secondary,
@@ -210,7 +209,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     borderWidth: 1, borderColor: colors.border,
   },
-  historyDate: { color: colors.text.primary, fontSize: typography.base, fontWeight: '600' },
-  historyDetails: { color: colors.text.muted, fontSize: typography.sm, marginTop: 2 },
+  historyDate: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.semibold },
+  historyDetails: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular, marginTop: 2 },
   historyChevron: { color: colors.text.muted, fontSize: typography.xl },
 });

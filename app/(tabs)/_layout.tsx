@@ -1,14 +1,16 @@
 import { useEffect } from 'react';
 import { Tabs, useRouter } from 'expo-router';
-import { House, Barbell, ForkKnife, User } from 'phosphor-react-native';
+import { House, Barbell, Sparkle, User } from 'phosphor-react-native';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, fonts } from '../../constants/theme';
+import { useUnreadTipCount } from '../../hooks/useCoachTips';
 import TabBarPlusButton from '../../components/ui/TabBarPlusButton';
 import LogModal from '../../components/ui/LogModal';
 
 export default function TabsLayout() {
   const router = useRouter();
   const { session, isLoading } = useAuthStore();
+  const unreadTips = useUnreadTipCount();
 
   useEffect(() => {
     if (isLoading) return;
@@ -56,20 +58,21 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="coach"
+          name="log"
           options={{
             title: '',
             tabBarButton: (props) => <TabBarPlusButton {...props} />,
           }}
         />
         <Tabs.Screen
-          name="nutrition"
+          name="coach"
           options={{
-            title: 'Nutrition',
+            title: 'Coach',
+            tabBarBadge: unreadTips > 0 ? unreadTips : undefined,
             tabBarIcon: ({ color, focused }) =>
               focused
-                ? <ForkKnife size={24} color={color} weight="duotone" />
-                : <ForkKnife size={24} color={color} />,
+                ? <Sparkle size={24} color={color} weight="duotone" />
+                : <Sparkle size={24} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -82,7 +85,7 @@ export default function TabsLayout() {
                 : <User size={24} color={color} />,
           }}
         />
-        <Tabs.Screen name="log" options={{ href: null }} />
+        <Tabs.Screen name="nutrition" options={{ href: null, tabBarButton: () => null }} />
       </Tabs>
       <LogModal />
     </>

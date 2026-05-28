@@ -2,7 +2,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUsualFoods, usePinFood, useUnpinFood, useLogUsualFood, type UsualFood } from '../../../hooks/useUsual';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
 
 export default function UsualScreen() {
@@ -96,10 +96,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   back: { color: colors.brand.primary, fontSize: typography.base, width: 60 },
-  title: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
+  title: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold },
   list: { padding: spacing.lg, gap: spacing.sm },
   sectionHeader: {
-    color: colors.text.muted, fontSize: typography.xs, fontWeight: '700',
+    color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.bold,
     letterSpacing: 1, marginBottom: spacing.xs, marginTop: spacing.xs,
   },
   item: {
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
   },
   itemLeft: { flex: 1 },
-  itemName: { color: colors.text.primary, fontSize: typography.sm, fontWeight: '600' },
+  itemName: { color: colors.text.primary, fontSize: typography.sm, fontFamily: fonts.semibold },
   itemSub: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
   pinBadge: { fontSize: 14, marginRight: spacing.xs },
   tapHint: { color: colors.brand.primary, fontSize: typography.xs },

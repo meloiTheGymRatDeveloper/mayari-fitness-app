@@ -11,7 +11,7 @@ import { useAuthStore } from '../../../stores/authStore';
 import { supabase } from '../../../lib/supabase';
 import SetLogger from '../../../components/workout/SetLogger';
 import RestTimer from '../../../components/workout/RestTimer';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import type { PlannedExercise } from '../../../types/database';
 
 function formatElapsed(seconds: number): string {
@@ -367,8 +367,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   headerRight: { alignItems: 'flex-end' },
-  headerLabel: { color: colors.text.muted, fontSize: typography.xs, textTransform: 'uppercase', letterSpacing: 0.5 },
-  headerValue: { color: colors.text.primary, fontSize: typography.xl, fontWeight: '700' },
+  headerLabel: { color: colors.text.muted, fontSize: typography.xs, fontFamily: fonts.medium, textTransform: 'uppercase', letterSpacing: 0.5 },
+  headerValue: { color: colors.text.primary, fontSize: typography.xl, fontFamily: fonts.bold },
   scroll: { flex: 1 },
   container: { padding: spacing.lg, paddingBottom: 100 },
   exerciseCard: {
@@ -380,9 +380,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   exerciseHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm },
-  exerciseName: { color: colors.text.primary, fontSize: typography.base, fontWeight: '700', flex: 1 },
-  exerciseProgress: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
-  allDone: { color: colors.success, fontSize: typography.sm, paddingVertical: spacing.xs },
+  exerciseName: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.bold, flex: 1 },
+  exerciseProgress: { color: colors.brand.primary, fontSize: typography.sm, fontFamily: fonts.semibold },
+  allDone: { color: colors.success, fontSize: typography.sm, fontFamily: fonts.medium, paddingVertical: spacing.xs },
   footer: {
     padding: spacing.lg,
     backgroundColor: colors.bg.primary,
@@ -396,13 +396,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   finishBtnOff: { opacity: 0.5 },
-  finishBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  finishBtnText: { color: '#fff', fontSize: typography.base, fontFamily: fonts.bold },
   gifBtn: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, backgroundColor: colors.bg.elevated, borderRadius: 6, marginTop: spacing.xs, alignSelf: 'flex-start' },
   gifBtnText: { color: colors.brand.secondary, fontSize: typography.sm },
   gifModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   gifModalScroll: { maxHeight: '90%', backgroundColor: colors.bg.elevated, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
   gifModalContent: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
-  gifModalTitle: { color: colors.text.primary, fontSize: typography.xl, fontWeight: '700', marginBottom: spacing.md },
+  gifModalTitle: { color: colors.text.primary, fontSize: typography.xl, fontFamily: fonts.bold, marginBottom: spacing.md },
   formSpinner: { marginVertical: spacing.xl },
   gifImage: { width: '100%', height: 280, borderRadius: 8, marginBottom: spacing.md },
   gifPlaceholder: { color: colors.text.muted, fontSize: typography.base, textAlign: 'center', paddingVertical: spacing.xl },
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  instructionsToggleText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
+  instructionsToggleText: { color: colors.brand.primary, fontSize: typography.sm, fontFamily: fonts.semibold },
   instructionsList: { marginTop: spacing.sm },
   instructionRow: { flexDirection: 'row', marginBottom: spacing.sm, gap: spacing.sm },
   instructionBullet: {
@@ -437,8 +437,8 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     marginTop: 2,
   },
-  instructionBulletText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  instructionBulletText: { color: '#fff', fontSize: 11, fontFamily: fonts.bold },
   instructionStep: { color: colors.text.secondary, fontSize: typography.sm, flex: 1, lineHeight: 20 },
   gifCloseBtn: { marginTop: spacing.md, alignItems: 'center', padding: spacing.md },
-  gifCloseBtnText: { color: colors.brand.primary, fontSize: typography.base, fontWeight: '700' },
+  gifCloseBtnText: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.bold },
 });

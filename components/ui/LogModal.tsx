@@ -1,29 +1,42 @@
 import { Modal, View, Text, TouchableOpacity, TouchableWithoutFeedback, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { PencilSimple, MagnifyingGlass, Microphone, Camera, Barcode, Star } from 'phosphor-react-native';
 import { useUIStore } from '../../stores/uiStore';
-import { colors, typography, spacing } from '../../constants/theme';
+import { colors, fonts, typography, spacing } from '../../constants/theme';
 import { useFeatureAccess } from '../../hooks/useFeatureAccess';
 
 const SLOT_LABELS = {
-  almusal: '🌅 Almusal',
-  tanghalian: '☀️ Tanghalian',
-  merienda: '🍵 Merienda',
-  hapunan: '🌙 Hapunan',
+  almusal: 'Almusal',
+  tanghalian: 'Tanghalian',
+  merienda: 'Merienda',
+  hapunan: 'Hapunan',
 } as const;
 
-const OPTIONS = [
-  { key: 'manual',  emoji: '✏️', label: 'Manual',    sub: 'Know your macros?',       highlight: false },
-  { key: 'search',  emoji: '🔍', label: 'Search',    sub: 'Find food by name',        highlight: false },
-  { key: 'voice',   emoji: '🎙️', label: 'Voice Log', sub: '"I had sinangag…"',        highlight: true  },
-  { key: 'scan',    emoji: '📸', label: 'Meal Scan', sub: 'Photo → AI estimate',      highlight: false },
-  { key: 'barcode', emoji: '▦',  label: 'Barcode',   sub: 'Scan packaged food',       highlight: false },
-  { key: 'usual',   emoji: '⭐', label: 'Usual',     sub: 'One-tap from favorites',   highlight: false },
-] as const;
+type Option = {
+  key: string;
+  icon: React.ReactNode;
+  label: string;
+  sub: string;
+  highlight: boolean;
+};
+
+function getOptions(iconColor: string, highlightColor: string): Option[] {
+  return [
+    { key: 'manual',  icon: <PencilSimple size={22} color={iconColor} />,      label: 'Manual',    sub: 'Know your macros?',       highlight: false },
+    { key: 'search',  icon: <MagnifyingGlass size={22} color={iconColor} />,   label: 'Search',    sub: 'Find food by name',        highlight: false },
+    { key: 'voice',   icon: <Microphone size={22} color={highlightColor} weight="duotone" />, label: 'Voice Log', sub: '"I had sinangag…"', highlight: true },
+    { key: 'scan',    icon: <Camera size={22} color={iconColor} />,             label: 'Meal Scan', sub: 'Photo → AI estimate',      highlight: false },
+    { key: 'barcode', icon: <Barcode size={22} color={iconColor} />,            label: 'Barcode',   sub: 'Scan packaged food',       highlight: false },
+    { key: 'usual',   icon: <Star size={22} color={iconColor} />,               label: 'Usual',     sub: 'One-tap from favorites',   highlight: false },
+  ];
+}
 
 export default function LogModal() {
   const router = useRouter();
   const { logModalOpen, logModalMealSlot, logModalDate, closeLogModal } = useUIStore();
   const { isPro } = useFeatureAccess();
+
+  const options = getOptions(colors.text.secondary, colors.brand.goldLight);
 
   function handleOption(key: string) {
     closeLogModal();
@@ -56,7 +69,7 @@ export default function LogModal() {
           </View>
         </View>
         <View style={styles.grid}>
-          {OPTIONS.map((opt) => {
+          {options.map((opt) => {
             const isLocked = !isPro && (opt.key === 'voice' || opt.key === 'scan');
             return (
               <TouchableOpacity
@@ -65,11 +78,11 @@ export default function LogModal() {
                 onPress={() => handleOption(opt.key)}
               >
                 <View style={[styles.optionIcon, opt.highlight && styles.optionIconHighlight]}>
-                  <Text style={styles.emoji}>{opt.emoji}</Text>
+                  {opt.icon}
                 </View>
                 <Text style={styles.optionLabel}>{opt.label}</Text>
                 <Text style={styles.optionSub}>{opt.sub}</Text>
-                {isLocked && <Text style={styles.lockBadge}>🔒 Pro</Text>}
+                {isLocked && <Text style={styles.lockBadge}>Pro</Text>}
               </TouchableOpacity>
             );
           })}
@@ -83,43 +96,88 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
   sheet: {
     backgroundColor: colors.bg.secondary,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    borderTopWidth: 1, borderTopColor: colors.border,
-    padding: spacing.md, paddingBottom: spacing['2xl'],
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    padding: spacing.md,
+    paddingBottom: spacing['2xl'],
   },
   handle: {
-    width: 36, height: 4, backgroundColor: colors.border,
-    borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md,
-  },
-  titleRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    width: 36, height: 4,
+    backgroundColor: colors.border,
+    borderRadius: 2,
+    alignSelf: 'center',
     marginBottom: spacing.md,
   },
-  title: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  title: {
+    color: colors.text.primary,
+    fontSize: typography.lg,
+    fontFamily: fonts.bold,
+  },
   slotPill: {
-    backgroundColor: colors.bg.elevated, borderRadius: 20,
-    paddingHorizontal: 12, paddingVertical: 4,
-    borderWidth: 1, borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.elevated,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: colors.brand.gold,
   },
-  slotText: { color: colors.brand.secondary, fontSize: typography.xs, fontWeight: '600' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
+  slotText: {
+    color: colors.brand.gold,
+    fontSize: typography.xs,
+    fontFamily: fonts.semibold,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   option: {
-    width: '47%', backgroundColor: colors.bg.elevated,
-    borderRadius: 14, padding: spacing.md, alignItems: 'center',
-    gap: spacing.xs, borderWidth: 1, borderColor: colors.border,
+    width: '47%',
+    backgroundColor: colors.bg.elevated,
+    borderRadius: 14,
+    padding: spacing.md,
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  optionHighlight: { borderColor: colors.brand.primary },
+  optionHighlight: {
+    borderColor: colors.brand.gold,
+  },
   optionIcon: {
-    width: 40, height: 40, backgroundColor: colors.bg.secondary,
-    borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+    width: 40, height: 40,
+    backgroundColor: colors.bg.secondary,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  optionIconHighlight: { backgroundColor: colors.brand.primary },
-  emoji: { fontSize: 20 },
-  optionLabel: { color: colors.text.primary, fontSize: typography.xs, fontWeight: '600' },
-  optionSub: { color: colors.text.muted, fontSize: 10, textAlign: 'center' },
+  optionIconHighlight: {
+    backgroundColor: colors.brand.gold + '20',
+  },
+  optionLabel: {
+    color: colors.text.primary,
+    fontSize: typography.xs,
+    fontFamily: fonts.semibold,
+  },
+  optionSub: {
+    color: colors.text.muted,
+    fontSize: 10,
+    fontFamily: fonts.regular,
+    textAlign: 'center',
+  },
   lockBadge: {
     fontSize: 10,
-    color: colors.brand.primary,
+    fontFamily: fonts.semibold,
+    color: colors.brand.gold,
     marginTop: 2,
   },
 });

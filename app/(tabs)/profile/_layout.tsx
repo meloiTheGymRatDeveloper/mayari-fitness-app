@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { colors } from '../../../constants/theme';
+import { colors, fonts } from '../../../constants/theme';
 
 export default function ProfileLayout() {
   return (
@@ -9,7 +9,7 @@ export default function ProfileLayout() {
         headerTintColor: colors.text.primary,
         headerShadowVisible: false,
         headerBackTitle: '',
-        headerTitleStyle: { color: colors.text.primary, fontWeight: '700' },
+        headerTitleStyle: { color: colors.text.primary, fontFamily: fonts.bold },
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />

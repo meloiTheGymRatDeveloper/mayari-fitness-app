@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
-import { colors, typography, spacing } from '../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../constants/theme';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
@@ -117,13 +117,14 @@ const styles = StyleSheet.create({
   title: {
     color: colors.brand.secondary,
     fontSize: typography['3xl'],
-    fontWeight: 'bold',
+    fontFamily: fonts.extrabold,
     marginBottom: spacing.xs,
     textAlign: 'center',
   },
   subtitle: {
     color: colors.text.secondary,
     fontSize: typography.base,
+    fontFamily: fonts.regular,
     textAlign: 'center',
     marginBottom: spacing.xl,
   },
@@ -134,9 +135,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.lg,
     fontSize: typography.sm,
+    fontFamily: fonts.regular,
   },
   loginLinkBold: {
     color: colors.brand.primary,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
   },
 });

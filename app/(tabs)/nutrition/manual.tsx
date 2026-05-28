@@ -16,7 +16,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import { useLogFood } from '../../../hooks/useNutrition';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import type { MealSlot } from '../../../types/database';
 
 const MEAL_LABELS: Record<MealSlot, string> = {
@@ -289,7 +289,7 @@ export default function ManualEntryScreen() {
           disabled={logFood.isPending}
         >
           {logFood.isPending
-            ? <ActivityIndicator color="#fff" />
+            ? <ActivityIndicator color={colors.bg.primary} />
             : <Text style={styles.saveBtnText}>Add to Diary</Text>}
         </TouchableOpacity>
       </ScrollView>
@@ -302,9 +302,9 @@ const styles = StyleSheet.create({
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   back: { marginBottom: spacing.lg },
   backText: { color: colors.brand.primary, fontSize: typography.base },
-  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700', marginBottom: spacing.xs },
-  sub: { color: colors.text.muted, fontSize: typography.sm, marginBottom: spacing.xl, lineHeight: 20 },
-  label: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600', marginBottom: spacing.xs },
+  heading: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.bold, marginBottom: spacing.xs },
+  sub: { color: colors.text.muted, fontSize: typography.sm, fontFamily: fonts.regular, marginBottom: spacing.xl, lineHeight: 20 },
+  label: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.semibold, marginBottom: spacing.xs },
   input: {
     backgroundColor: colors.bg.secondary,
     borderRadius: 12,
@@ -341,13 +341,13 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
   },
-  macroLabel: { color: colors.text.secondary, fontSize: typography.xs, fontWeight: '600', marginBottom: spacing.xs },
+  macroLabel: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.semibold, marginBottom: spacing.xs },
   macroInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   macroInput: {
     flex: 1,
     color: colors.text.primary,
     fontSize: typography.xl,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     padding: 0,
   },
   macroUnit: { color: colors.text.muted, fontSize: typography.xs },
@@ -361,16 +361,16 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   slotBtnActive: { backgroundColor: colors.brand.primary, borderColor: colors.brand.primary },
-  slotText: { color: colors.text.secondary, fontSize: typography.xs, fontWeight: '600' },
+  slotText: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.semibold },
   slotTextActive: { color: '#fff' },
   saveBtn: {
-    backgroundColor: colors.brand.primary,
+    backgroundColor: colors.brand.gold,
     borderRadius: 12,
     paddingVertical: spacing.md,
     alignItems: 'center',
   },
   saveBtnOff: { opacity: 0.5 },
-  saveBtnText: { color: '#fff', fontSize: typography.base, fontWeight: '700' },
+  saveBtnText: { color: colors.bg.primary, fontSize: typography.base, fontFamily: fonts.bold },
   aiBtn: {
     borderWidth: 1,
     borderColor: colors.brand.primary,
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
   aiBtnText: {
     color: colors.brand.primary,
     fontSize: typography.sm,
-    fontWeight: '600' as const,
+    fontFamily: fonts.semibold,
   },
   aiNote: {
     color: colors.text.muted,

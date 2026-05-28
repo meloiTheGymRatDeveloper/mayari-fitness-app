@@ -140,7 +140,6 @@ const styles = StyleSheet.create({
   header: {
     color: colors.text.primary,
     fontSize: typography['2xl'],
-    fontWeight: '700',
     fontFamily: fonts.bold,
     marginBottom: spacing.lg,
   },
