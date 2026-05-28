@@ -230,7 +230,7 @@ export default function NutritionScreen() {
                 />
               ))}
             </View>
-            <Text style={styles.waterCount}>{waterLogs.length}/8 glasses</Text>
+            <Text style={styles.waterCount}>{Math.min(waterLogs.length, 8)}/8 glasses</Text>
           </View>
         </>
       )}

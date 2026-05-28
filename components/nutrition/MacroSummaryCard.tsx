@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import Animated, {
+import {
   useSharedValue, useAnimatedProps, withTiming, createAnimatedComponent,
 } from 'react-native-reanimated';
 import { colors, typography, spacing, fonts } from '../../constants/theme';
@@ -178,8 +178,8 @@ export default function MacroSummaryCard({ logs, profile }: Props) {
 
           {/* Macro bars — right */}
           <View style={styles.macroList}>
-            <MacroRow label="Protein" current={totals.protein} goal={goals.protein} color="#A78BFA" />
-            <MacroRow label="Carbs" current={totals.carbs} goal={goals.carbs} color="#6366F1" />
+            <MacroRow label="Protein" current={totals.protein} goal={goals.protein} color={colors.brand.secondary} />
+            <MacroRow label="Carbs" current={totals.carbs} goal={goals.carbs} color={colors.brand.primary} />
             <MacroRow label="Fat" current={totals.fat} goal={goals.fat} color={colors.brand.gold} />
             {profile?.net_carbs_display !== false && (
               <Text style={styles.netCarbs}>
@@ -244,10 +244,10 @@ const styles = StyleSheet.create({
   tab: { flex: 1, paddingVertical: 6, borderRadius: 8, alignItems: 'center', backgroundColor: colors.bg.elevated },
   tabActive: { backgroundColor: colors.brand.primary },
   tabText: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.medium },
-  tabTextActive: { color: '#fff', fontFamily: fonts.bold },
+  tabTextActive: { color: colors.white, fontFamily: fonts.bold },
   macrosLayout: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   arcWrap: { alignItems: 'center', justifyContent: 'center' },
-  arcCenter: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
+  arcCenter: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   arcKcal: { fontSize: typography.lg, fontFamily: fonts.bold },
   arcLabel: { color: colors.text.muted, fontSize: 9 },
   macroList: { flex: 1 },
