@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { House, Barbell, ForkKnife, User } from 'phosphor-react-native';
 import { useAuthStore } from '../../stores/authStore';
-import { useUnreadTipCount } from '../../hooks/useCoachTips';
 import { colors, fonts } from '../../constants/theme';
 import TabBarPlusButton from '../../components/ui/TabBarPlusButton';
 import LogModal from '../../components/ui/LogModal';
@@ -10,7 +9,6 @@ import LogModal from '../../components/ui/LogModal';
 export default function TabsLayout() {
   const router = useRouter();
   const { session, isLoading } = useAuthStore();
-  const unreadTips = useUnreadTipCount();
 
   useEffect(() => {
     if (isLoading) return;

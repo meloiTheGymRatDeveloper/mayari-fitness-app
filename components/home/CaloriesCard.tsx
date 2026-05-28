@@ -107,8 +107,8 @@ export default function CaloriesCard({
         </View>
 
         <View style={styles.macros}>
-          <MacroBar label="Protein" consumed={protein.consumed} goal={protein.goal} color="#A78BFA" />
-          <MacroBar label={carbsLabel} consumed={carbsConsumed} goal={carbs.goal} color="#6366F1" />
+          <MacroBar label="Protein" consumed={protein.consumed} goal={protein.goal} color={colors.brand.secondary} />
+          <MacroBar label={carbsLabel} consumed={carbsConsumed} goal={carbs.goal} color={colors.brand.primary} />
           <MacroBar label="Fat" consumed={fat.consumed} goal={fat.goal} color={colors.brand.gold} />
         </View>
       </View>
