@@ -29,17 +29,17 @@ const TIP_ICONS: Record<string, string> = {
 
 // ── Tip colour mapping ────────────────────────────────────────────────────────
 const TIP_COLOR: Record<string, string> = {
-  streak:      '#EDD280',
-  pr:          '#F59E0B',
-  achievement: '#F59E0B',
-  workout:     '#A78BFA',
-  nutrition:   '#22C55E',
-  insight:     '#A78BFA',
-  risk:        '#EF4444',
-  general:     '#C4A55A',
+  streak:      colors.brand.goldLight,
+  pr:          colors.brand.accent,
+  achievement: colors.brand.accent,
+  workout:     colors.brand.secondary,
+  nutrition:   colors.success,
+  insight:     colors.brand.secondary,
+  risk:        colors.error,
+  general:     colors.brand.gold,
 };
 function tipColor(tipType: string): string {
-  return TIP_COLOR[tipType] ?? '#C4A55A';
+  return TIP_COLOR[tipType] ?? colors.brand.gold;
 }
 
 // ── Relative time helper ──────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ export default function CoachScreen() {
     moonY.value = withRepeat(withTiming(4, { duration: 2000 }), -1, true);
     markRead.mutate();
     requestTip.mutate();
-  }, [moonY]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const moonAnimStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: moonY.value }],
   }));
@@ -158,7 +158,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: spacing.md,
     borderLeftWidth: 3,
-    borderLeftColor: colors.brand.gold,
   },
   tipHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   tipType: {
