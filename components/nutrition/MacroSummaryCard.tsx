@@ -1,8 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, typography, spacing } from '../../constants/theme';
+import Svg, { Circle } from 'react-native-svg';
+import Animated, {
+  useSharedValue, useAnimatedProps, withTiming, createAnimatedComponent,
+} from 'react-native-reanimated';
+import { colors, typography, spacing, fonts } from '../../constants/theme';
 import type { FoodLogWithItem, UserProfile } from '../../types/database';
 import { calculateNetCarbs } from '../../lib/nutrition';
+
+const AnimatedCircle = createAnimatedComponent(Circle);
+const R = 32;
+const STROKE = 7;
+const SIZE = (R + STROKE) * 2;
+const CIRC = 2 * Math.PI * R;
 
 function scale(value: number | null, quantity_g: number): number {
   if (value == null) return 0;
@@ -57,6 +67,30 @@ function getGoals(profile: UserProfile | null) {
   return { calories, protein, carbs, fat };
 }
 
+function MacroRow({ label, current, goal, color }: { label: string; current: number; goal: number; color: string }) {
+  const pct = goal > 0 ? Math.min(current / goal, 1) : 0;
+  return (
+    <View style={mr.row}>
+      <View style={mr.header}>
+        <Text style={mr.label}>{label}</Text>
+        <Text style={[mr.value, { color }]}>{Math.round(current)}/{goal}g</Text>
+      </View>
+      <View style={mr.track}>
+        <View style={[mr.fill, { width: `${pct * 100}%` as `${number}%`, backgroundColor: color }]} />
+      </View>
+    </View>
+  );
+}
+
+const mr = StyleSheet.create({
+  row: { marginBottom: 8 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
+  label: { color: colors.text.muted, fontSize: typography.xs },
+  value: { fontSize: typography.xs, fontFamily: fonts.semibold },
+  track: { height: 5, backgroundColor: colors.bg.elevated, borderRadius: 3, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 3 },
+});
+
 function ProgressBar({ value, max, color = colors.brand.primary }: { value: number; max: number; color?: string }) {
   const pct = Math.min(value / max, 1);
   return (
@@ -80,8 +114,18 @@ export default function MacroSummaryCard({ logs, profile }: Props) {
   const [tab, setTab] = useState<'macros' | 'nutrients'>('macros');
   const totals = calcTotals(logs);
   const goals = getGoals(profile);
+  const progress = useSharedValue(0);
+  const pct = goals.calories > 0 ? Math.min(totals.cal / goals.calories, 1) : 0;
   const remaining = Math.round(goals.calories - totals.cal);
   const isOver = remaining < 0;
+
+  useEffect(() => {
+    progress.value = withTiming(pct, { duration: 600 });
+  }, [pct, progress]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: CIRC * (1 - progress.value),
+  }));
 
   const hasNutrientData = logs.some(l =>
     l.food_item.sodium_mg_per_100g != null ||
@@ -102,34 +146,47 @@ export default function MacroSummaryCard({ logs, profile }: Props) {
       </View>
 
       {tab === 'macros' && (
-        <View>
-          <Text style={[styles.calRemaining, { color: isOver ? colors.error : colors.success }]}>
-            {Math.abs(remaining)} kcal {isOver ? 'over' : 'remaining'}
-          </Text>
-
-          {[
-            { label: 'Protein', current: totals.protein, goal: goals.protein, color: '#6366F1', unit: 'g' },
-            { label: 'Carbs', current: totals.carbs, goal: goals.carbs, color: '#F59E0B', unit: 'g' },
-            { label: 'Fat', current: totals.fat, goal: goals.fat, color: '#EF4444', unit: 'g' },
-          ].map(({ label, current, goal, color, unit }) => (
-            <View key={label} style={styles.macroRow}>
-              <Text style={styles.macroLabel}>{label}</Text>
-              <ProgressBar value={current} max={goal} color={color} />
-              <Text style={styles.macroMeta}>{Math.round(current)}/{goal}{unit}</Text>
+        <View style={styles.macrosLayout}>
+          {/* Arc ring — left */}
+          <View style={styles.arcWrap}>
+            <Svg width={SIZE} height={SIZE}>
+              <Circle
+                cx={SIZE / 2} cy={SIZE / 2} r={R}
+                stroke={colors.bg.elevated}
+                strokeWidth={STROKE}
+                fill="none"
+              />
+              <AnimatedCircle
+                cx={SIZE / 2} cy={SIZE / 2} r={R}
+                stroke={colors.brand.gold}
+                strokeWidth={STROKE}
+                fill="none"
+                strokeDasharray={CIRC}
+                strokeLinecap="round"
+                rotation={-90}
+                origin={`${SIZE / 2}, ${SIZE / 2}`}
+                animatedProps={animatedProps}
+              />
+            </Svg>
+            <View style={styles.arcCenter}>
+              <Text style={[styles.arcKcal, { color: isOver ? colors.error : colors.success }]}>
+                {Math.abs(remaining)}
+              </Text>
+              <Text style={styles.arcLabel}>{isOver ? 'over' : 'left'}</Text>
             </View>
-          ))}
-
-          <View style={styles.subRow}>
-            <Text style={styles.subText}>Fiber {Math.round(totals.fiber)}g</Text>
-            <Text style={styles.subText}>·</Text>
-            <Text style={styles.subText}>Sugar {Math.round(totals.sugar)}g</Text>
           </View>
-          {profile?.net_carbs_display !== false && (
-            <View style={styles.netCarbsRow}>
-              <Text style={styles.subText}>Net Carbs</Text>
-              <Text style={styles.netCarbsValue}>{Math.round(calculateNetCarbs(totals.carbs, totals.fiber))}g</Text>
-            </View>
-          )}
+
+          {/* Macro bars — right */}
+          <View style={styles.macroList}>
+            <MacroRow label="Protein" current={totals.protein} goal={goals.protein} color="#A78BFA" />
+            <MacroRow label="Carbs" current={totals.carbs} goal={goals.carbs} color="#6366F1" />
+            <MacroRow label="Fat" current={totals.fat} goal={goals.fat} color={colors.brand.gold} />
+            {profile?.net_carbs_display !== false && (
+              <Text style={styles.netCarbs}>
+                Net Carbs: {Math.round(calculateNetCarbs(totals.carbs, totals.fiber))}g
+              </Text>
+            )}
+          </View>
         </View>
       )}
 
@@ -140,7 +197,6 @@ export default function MacroSummaryCard({ logs, profile }: Props) {
               <Text style={styles.warningText}>Mataas ang sodium mo ngayon ⚠️</Text>
             </View>
           )}
-
           {[
             { emoji: '🧂', label: 'Sodium', value: totals.sodium, goal: 2300, unit: 'mg', isLimit: true },
             { emoji: '🦴', label: 'Calcium', value: totals.calcium, goal: 1000, unit: 'mg' },
@@ -149,8 +205,8 @@ export default function MacroSummaryCard({ logs, profile }: Props) {
             { emoji: '🍊', label: 'Vitamin C', value: totals.vitC, goal: 90, unit: 'mg' },
             { emoji: '💊', label: 'Vitamin B12', value: totals.vitB12, goal: 2.4, unit: 'mcg' },
           ].map(({ emoji, label, value, goal, unit, isLimit }) => {
-            const pct = value / goal;
-            const barColor = isLimit && pct > 0.8 ? colors.error : colors.brand.primary;
+            const pct2 = value / goal;
+            const barColor = isLimit && pct2 > 0.8 ? colors.error : colors.brand.primary;
             return (
               <View key={label} style={styles.nutrientRow}>
                 <Text style={styles.nutrientEmoji}>{emoji}</Text>
@@ -166,7 +222,6 @@ export default function MacroSummaryCard({ logs, profile }: Props) {
               </View>
             );
           })}
-
           {!hasNutrientData && (
             <Text style={styles.noDataNote}>Data only shown for foods with nutrient info.</Text>
           )}
@@ -177,27 +232,40 @@ export default function MacroSummaryCard({ logs, profile }: Props) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.bg.secondary, borderRadius: 16, padding: spacing.md, marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border },
+  card: {
+    backgroundColor: colors.bg.secondary,
+    borderRadius: 16,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   tabRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   tab: { flex: 1, paddingVertical: 6, borderRadius: 8, alignItems: 'center', backgroundColor: colors.bg.elevated },
   tabActive: { backgroundColor: colors.brand.primary },
-  tabText: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600' },
-  tabTextActive: { color: '#fff' },
-  calRemaining: { fontSize: typography['2xl'], fontWeight: '700', textAlign: 'center', marginBottom: spacing.md },
-  macroRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
-  macroLabel: { color: colors.text.secondary, fontSize: typography.sm, width: 52 },
-  macroMeta: { color: colors.text.muted, fontSize: typography.xs, width: 72, textAlign: 'right' },
-  subRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
-  subText: { color: colors.text.muted, fontSize: typography.xs },
-  netCarbsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.xs },
-  netCarbsValue: { color: colors.brand.primary, fontSize: typography.xs, fontWeight: '600' },
+  tabText: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.medium },
+  tabTextActive: { color: '#fff', fontFamily: fonts.bold },
+  macrosLayout: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  arcWrap: { alignItems: 'center', justifyContent: 'center' },
+  arcCenter: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
+  arcKcal: { fontSize: typography.lg, fontFamily: fonts.bold },
+  arcLabel: { color: colors.text.muted, fontSize: 9 },
+  macroList: { flex: 1 },
+  netCarbs: { color: colors.brand.primary, fontSize: typography.xs, fontFamily: fonts.semibold, marginTop: 4 },
   nutrientRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
   nutrientEmoji: { fontSize: 18, width: 24 },
   nutrientBody: { flex: 1 },
   nutrientHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   nutrientLabel: { color: colors.text.secondary, fontSize: typography.xs },
   nutrientValue: { color: colors.text.muted, fontSize: typography.xs },
-  warningChip: { backgroundColor: '#EF444420', borderRadius: 8, padding: spacing.sm, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.error },
+  warningChip: {
+    backgroundColor: '#EF444420',
+    borderRadius: 8,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.error,
+  },
   warningText: { color: colors.error, fontSize: typography.xs, textAlign: 'center' },
   noDataNote: { color: colors.text.muted, fontSize: typography.xs, textAlign: 'center', marginTop: spacing.sm },
 });

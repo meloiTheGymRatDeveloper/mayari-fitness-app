@@ -5,8 +5,7 @@ import { useAuthStore } from '../../../stores/authStore';
 import { useFoodLogs, useWaterLogs, useAddWater, useRemoveWater } from '../../../hooks/useNutrition';
 import MacroSummaryCard from '../../../components/nutrition/MacroSummaryCard';
 import MealSection from '../../../components/nutrition/MealSection';
-import WaterBar from '../../../components/nutrition/WaterBar';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, labelStyle, fonts } from '../../../constants/theme';
 import { useLatestTipByType } from '../../../hooks/useCoachTips';
 import Skeleton from '../../../components/ui/Skeleton';
 import { useActiveFast } from '../../../hooks/useFasting';
@@ -218,11 +217,21 @@ export default function NutritionScreen() {
             );
           })}
 
-          <WaterBar
-            logs={waterLogs}
-            onAdd={() => addWater.mutate(date)}
-            onRemove={(lastId) => removeWater.mutate({ date, lastId })}
-          />
+          <View style={styles.waterSection}>
+            <Text style={labelStyle}>Water</Text>
+            <View style={styles.waterBlocks}>
+              {Array.from({ length: 8 }, (_, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[styles.waterBlock, i < waterLogs.length && styles.waterBlockFilled]}
+                  onPress={i < waterLogs.length
+                    ? () => removeWater.mutate({ date, lastId: waterLogs[waterLogs.length - 1].id })
+                    : () => addWater.mutate(date)}
+                />
+              ))}
+            </View>
+            <Text style={styles.waterCount}>{waterLogs.length}/8 glasses</Text>
+          </View>
         </>
       )}
     </ScrollView>
@@ -258,9 +267,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: colors.bg.secondary,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.brand.gold,
   },
-  chipText: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600' },
+  chipText: { color: colors.brand.gold, fontSize: typography.sm, fontFamily: fonts.semibold },
   tipBanner: {
     backgroundColor: '#6366F120',
     borderWidth: 1,
@@ -310,4 +319,14 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabIcon: { fontSize: 24 },
+  waterSection: { marginBottom: spacing.md },
+  waterBlocks: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.xs, marginBottom: 4 },
+  waterBlock: {
+    flex: 1, height: 24, borderRadius: 4,
+    backgroundColor: colors.bg.elevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  waterBlockFilled: { backgroundColor: colors.brand.primary, borderColor: colors.brand.primary },
+  waterCount: { color: colors.text.muted, fontSize: typography.xs },
 });
