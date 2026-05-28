@@ -6,8 +6,8 @@ export const colors = {
     tabBar:    '#0C0C22',
   },
   brand: {
-    indigo:    '#6366F1',
-    primary:   '#6366F1',
+    indigo:    '#6366F1',   // semantic name for new code
+    primary:   '#6366F1',   // alias kept for 74+ existing call sites
     secondary: '#A78BFA',
     accent:    '#F59E0B',
     gold:      '#C4A55A',
@@ -37,6 +37,7 @@ export const fonts = {
   extrabold: 'PlusJakartaSans_800ExtraBold',
 } as const;
 
+// tightened 1-2pt for denser UI — see redesign plan 2026-05-28
 export const typography = {
   xs:    11,
   sm:    13,
