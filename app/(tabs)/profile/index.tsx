@@ -9,39 +9,38 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 
 interface Stats {
   workoutStreak: number;
   nutritionStreak: number;
   buddyCount: number;
+  totalWorkouts: number;
+  totalXp: number;
 }
 
-const NAV_SECTIONS = [
+type NavItem = { label: string; route: string; emoji: string; badge?: string };
+type NavSection = { label: string; items: NavItem[] };
+
+const NAV_SECTIONS: NavSection[] = [
   {
-    label: 'PROGRESS',
+    label: 'Body',
     items: [
-      { label: 'Body Measurements', route: '/(tabs)/profile/measurements', emoji: '📊' },
+      { label: 'Measurements', route: '/(tabs)/profile/measurements', emoji: '📊' },
       { label: 'Progress Charts', route: '/(tabs)/profile/progress', emoji: '📈' },
     ],
   },
   {
-    label: 'NUTRITION',
+    label: 'Social',
     items: [
-      { label: 'Calorie & Macro Goals', route: '/(tabs)/profile/goals', emoji: '🎯' },
-    ],
-  },
-  {
-    label: 'SOCIAL',
-    items: [
-      { label: 'Gym Buddy Finder', route: '/(tabs)/profile/buddies/find', emoji: '🤝' },
+      { label: 'Find Gym Buddies', route: '/(tabs)/profile/buddies/find', emoji: '🤝' },
       { label: 'My Buddies', route: '/(tabs)/profile/buddies/list', emoji: '💬' },
     ],
   },
   {
-    label: 'ACCOUNT',
+    label: 'Account',
     items: [
-      { label: 'Referrals', route: '/(tabs)/profile/referral', emoji: '🎁' },
+      { label: 'Referrals', route: '/(tabs)/profile/referral', emoji: '🎁', badge: '₱20 off' },
       { label: 'Subscription', route: '/(tabs)/profile/subscription', emoji: '💳' },
       { label: 'Settings', route: '/(tabs)/profile/settings', emoji: '⚙️' },
     ],
@@ -51,7 +50,7 @@ const NAV_SECTIONS = [
 export default function MoreScreen() {
   const router = useRouter();
   const { profile, clear, updateAvatar } = useAuthStore();
-  const [stats, setStats] = useState<Stats>({ workoutStreak: 0, nutritionStreak: 0, buddyCount: 0 });
+  const [stats, setStats] = useState<Stats>({ workoutStreak: 0, nutritionStreak: 0, buddyCount: 0, totalWorkouts: 0, totalXp: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
   const [uploading, setUploading] = useState(false);
 
@@ -63,14 +62,18 @@ export default function MoreScreen() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setLoadingStats(true);
-    const [streakRes, buddyRes] = await Promise.all([
+    const [streakRes, buddyRes, sessionRes] = await Promise.all([
       supabase.from('streaks').select('workout_current, nutrition_current').eq('user_id', user.id).maybeSingle(),
       supabase.from('buddy_connections').select('id', { count: 'exact', head: true }).or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`),
+      supabase.from('workout_sessions').select('xp_earned').eq('user_id', user.id),
     ]);
+    const sessions = sessionRes.data ?? [];
     setStats({
       workoutStreak: streakRes.data?.workout_current ?? 0,
       nutritionStreak: streakRes.data?.nutrition_current ?? 0,
       buddyCount: buddyRes.count ?? 0,
+      totalWorkouts: sessions.length,
+      totalXp: sessions.reduce((acc, s) => acc + (s.xp_earned ?? 0), 0),
     });
     setLoadingStats(false);
   }
@@ -124,8 +127,6 @@ export default function MoreScreen() {
   const initials = (profile?.display_name ?? profile?.username ?? '?')
     .split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
 
-  const workoutStreak = stats.workoutStreak;
-
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       {/* Header row */}
@@ -144,29 +145,50 @@ export default function MoreScreen() {
               : <Ionicons name="camera" size={12} color="#fff" />}
           </View>
         </TouchableOpacity>
-        <View style={styles.headerText}>
+        <View style={styles.headerRight}>
           <Text style={styles.displayName}>{profile?.display_name ?? profile?.username ?? ''}</Text>
-          <Text style={styles.username}>@{profile?.username ?? ''} · {profile?.subscription_status ?? 'free'}</Text>
+          <View style={styles.tierRow}>
+            <Text style={styles.usernameText}>@{profile?.username ?? ''}</Text>
+            <View style={[
+              styles.tierBadge,
+              profile?.subscription_status === 'active' ? styles.tierPro : styles.tierFree,
+            ]}>
+              <Text style={styles.tierText}>
+                {profile?.subscription_status === 'active' ? 'Pro' : 'Free'}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
 
-      {/* Streak banner */}
+      {/* Stats chips */}
       {loadingStats ? (
         <ActivityIndicator color={colors.brand.primary} style={{ marginBottom: spacing.md }} />
-      ) : workoutStreak > 0 ? (
-        <TouchableOpacity style={styles.streakBanner} onPress={() => router.push('/(tabs)/profile/streaks' as never)}>
-          <Text style={styles.streakEmoji}>🔥</Text>
-          <View>
-            <Text style={styles.streakText}>{workoutStreak} days na! Tuloy lang!</Text>
-            <Text style={styles.streakSub}>Workout streak · tap to see details</Text>
-          </View>
-        </TouchableOpacity>
-      ) : null}
+      ) : (
+        <View style={styles.statsRow}>
+          {[
+            { label: `${stats.workoutStreak} day streak`, emoji: '🔥', onPress: () => router.push('/(tabs)/profile/streaks' as never) },
+            { label: `${stats.totalWorkouts} workouts`, emoji: '💪', onPress: undefined as (() => void) | undefined },
+            { label: `${stats.totalXp} XP`, emoji: '⭐', onPress: undefined as (() => void) | undefined },
+          ].map(({ label, emoji, onPress }) => (
+            <TouchableOpacity
+              key={label}
+              style={styles.statChip}
+              onPress={onPress}
+              disabled={!onPress}
+              activeOpacity={onPress ? 0.7 : 1}
+            >
+              <Text style={styles.statEmoji}>{emoji}</Text>
+              <Text style={styles.statLabel}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {/* Nav sections */}
       {NAV_SECTIONS.map((section) => (
         <View key={section.label} style={styles.section}>
-          <Text style={styles.sectionLabel}>{section.label}</Text>
+          <Text style={labelStyle}>{section.label}</Text>
           <View style={styles.sectionCard}>
             {section.items.map((item, idx) => (
               <TouchableOpacity
@@ -176,6 +198,11 @@ export default function MoreScreen() {
               >
                 <Text style={styles.navEmoji}>{item.emoji}</Text>
                 <Text style={styles.navLabel}>{item.label}</Text>
+                {item.badge && (
+                  <View style={styles.navBadge}>
+                    <Text style={styles.navBadgeText}>{item.badge}</Text>
+                  </View>
+                )}
                 <Text style={styles.navChevron}>›</Text>
               </TouchableOpacity>
             ))}
@@ -202,29 +229,44 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1.5, borderColor: colors.bg.primary,
   },
-  avatar: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: colors.brand.primary },
+  avatar: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: colors.brand.gold },
   avatarPlaceholder: {
-    width: 52, height: 52, borderRadius: 26,
-    backgroundColor: colors.bg.elevated, borderWidth: 2, borderColor: colors.brand.primary,
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: colors.bg.elevated,
+    borderWidth: 2,
+    borderColor: colors.brand.gold,
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarInitials: { color: colors.brand.primary, fontSize: typography.xl, fontWeight: '700' },
-  headerText: { flex: 1 },
-  displayName: { color: colors.text.primary, fontSize: typography.lg, fontWeight: '700' },
-  username: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
-  streakBanner: {
-    backgroundColor: colors.bg.elevated, borderRadius: 12,
-    padding: spacing.md, borderWidth: 1, borderColor: colors.warning,
-    flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md,
+  avatarInitials: { color: colors.brand.gold, fontSize: typography.xl, fontFamily: fonts.bold },
+  headerRight: { flex: 1 },
+  displayName: { color: colors.text.primary, fontSize: typography.lg, fontFamily: fonts.bold },
+  tierRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
+  usernameText: { color: colors.text.muted, fontSize: typography.xs },
+  tierBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  tierPro: { backgroundColor: colors.brand.secondary + '30', borderWidth: 1, borderColor: colors.brand.secondary },
+  tierFree: { backgroundColor: colors.bg.elevated, borderWidth: 1, borderColor: colors.border },
+  tierText: { fontSize: 9, fontFamily: fonts.bold, color: colors.text.secondary },
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
-  streakEmoji: { fontSize: 24 },
-  streakText: { color: colors.warning, fontSize: typography.sm, fontWeight: '700' },
-  streakSub: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
+  statChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.brand.gold,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+  },
+  statEmoji: { fontSize: 14 },
+  statLabel: { color: colors.text.secondary, fontSize: 10, fontFamily: fonts.medium },
   section: { marginBottom: spacing.md },
-  sectionLabel: {
-    color: colors.text.muted, fontSize: 10, fontWeight: '700', letterSpacing: 1,
-    textTransform: 'uppercase', marginBottom: spacing.xs,
-  },
   sectionCard: {
     backgroundColor: colors.bg.secondary, borderRadius: 12,
     borderWidth: 1, borderColor: colors.border, overflow: 'hidden',
@@ -233,13 +275,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
   },
-  navRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  navRowBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
   navEmoji: { fontSize: 18 },
   navLabel: { flex: 1, color: colors.text.primary, fontSize: typography.base },
+  navBadge: {
+    backgroundColor: colors.brand.gold + '25',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginRight: spacing.xs,
+  },
+  navBadgeText: { color: colors.brand.gold, fontSize: 9, fontFamily: fonts.bold },
   navChevron: { color: colors.text.muted, fontSize: typography.xl },
   signOutBtn: {
     borderRadius: 12, paddingVertical: spacing.md, alignItems: 'center',
     borderWidth: 1, borderColor: colors.border, marginTop: spacing.sm,
   },
-  signOutText: { color: colors.error, fontSize: typography.base, fontWeight: '600' },
+  signOutText: { color: colors.error, fontSize: typography.base, fontFamily: fonts.semibold },
 });
