@@ -7,6 +7,14 @@ import * as Device from 'expo-device';
 import * as SplashScreen from 'expo-splash-screen';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
+import { useFonts } from 'expo-font';
 import { queryClient } from '../lib/queryClient';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
@@ -39,6 +47,13 @@ async function registerForPushNotifications(): Promise<string | null> {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+  });
   const { setSession, setLoading, fetchProfile } = useAuthStore();
   const router = useRouter();
 
@@ -79,6 +94,8 @@ export default function RootLayout() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  if (!fontsLoaded) return null;
 
   return (
     <QueryClientProvider client={queryClient}>
