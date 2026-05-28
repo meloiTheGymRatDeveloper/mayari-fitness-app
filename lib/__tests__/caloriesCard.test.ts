@@ -1,13 +1,4 @@
-// Tests the pure calculation functions used by CaloriesCard
-
-function calcArcProgress(consumed: number, goal: number): number {
-  if (goal <= 0) return 0;
-  return Math.min(consumed / goal, 1);
-}
-
-function calcNetCarbs(carbs: number, fiber: number): number {
-  return Math.max(0, carbs - fiber);
-}
+import { calcArcProgress, calcNetCarbs } from '../../components/home/CaloriesCard';
 
 describe('CaloriesCard calculations', () => {
   describe('calcArcProgress', () => {

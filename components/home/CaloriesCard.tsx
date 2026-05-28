@@ -12,6 +12,15 @@ const STROKE = 6;
 const SIZE = (R + STROKE) * 2;
 const CIRC = 2 * Math.PI * R;
 
+export function calcArcProgress(consumed: number, goal: number): number {
+  if (goal <= 0) return 0;
+  return Math.min(consumed / goal, 1);
+}
+
+export function calcNetCarbs(carbs: number, fiber: number): number {
+  return Math.max(0, carbs - fiber);
+}
+
 function MacroBar({
   label, consumed, goal, color,
 }: { label: string; consumed: number; goal: number; color: string }) {
@@ -55,9 +64,9 @@ export default function CaloriesCard({
   consumed, goal, caloriesBurned, protein, carbs, fat, showNetCarbs, fiber,
 }: Props) {
   const progress = useSharedValue(0);
-  const pct = goal > 0 ? Math.min(consumed / goal, 1) : 0;
+  const pct = calcArcProgress(consumed, goal);
   const carbsLabel = showNetCarbs ? 'Net Carbs' : 'Carbs';
-  const carbsConsumed = showNetCarbs ? Math.max(0, carbs.consumed - (fiber ?? 0)) : carbs.consumed;
+  const carbsConsumed = showNetCarbs ? calcNetCarbs(carbs.consumed, fiber ?? 0) : carbs.consumed;
 
   useEffect(() => {
     progress.value = withTiming(pct, { duration: 600 });
