@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { colors, typography, spacing } from '../../../constants/theme';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import { useAllPlans, useRecentSessions } from '../../../hooks/useWorkout';
 import { useLatestTipByType } from '../../../hooks/useCoachTips';
 import { useAuthStore } from '../../../stores/authStore';
@@ -16,6 +16,15 @@ import EmptyState from '../../../components/ui/EmptyState';
 import type { WorkoutPlan, WorkoutSession } from '../../../types/database';
 
 const PLAN_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+const PLAN_BADGE_COLORS = [
+  colors.brand.primary,    // A = indigo
+  colors.brand.secondary,  // B = violet
+  '#2DD4BF',               // C = teal
+];
+function planBadgeColor(idx: number): string {
+  return PLAN_BADGE_COLORS[idx % PLAN_BADGE_COLORS.length];
+}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -71,38 +80,35 @@ function SessionCard({ session, onPress }: { session: WorkoutSession; onPress?: 
 function PlanCard({
   plan,
   letter,
+  idx,
   onPress,
-  onDelete,
-  deleting,
+  onLongPress,
 }: {
   plan: WorkoutPlan;
   letter: string;
+  idx: number;
   onPress: () => void;
-  onDelete: () => void;
-  deleting: boolean;
+  onLongPress: () => void;
 }) {
+  const badgeColor = planBadgeColor(idx);
   return (
-    <TouchableOpacity style={styles.planCard} onPress={onPress} activeOpacity={0.75}>
-      <View style={styles.planLetterBadge}>
-        <Text style={styles.planLetter}>{letter}</Text>
+    <TouchableOpacity
+      style={styles.planCard}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      activeOpacity={0.75}
+    >
+      <View style={[styles.planLetterBadge, { borderColor: badgeColor, backgroundColor: badgeColor + '25' }]}>
+        <Text style={[styles.planLetter, { color: badgeColor }]}>{letter}</Text>
       </View>
       <View style={styles.planInfo}>
         <Text style={styles.planName}>Workout {letter}</Text>
-        <Text style={styles.planMeta}>
-          {getSplitShortLabel(plan.split_type)} · {plan.plan_data.days.length} days
+        <Text style={[styles.planMeta, { color: colors.brand.gold }]}>
+          {getSplitShortLabel(plan.split_type)}
         </Text>
-        <Text style={styles.planDate}>Generated {formatDate(plan.created_at)}</Text>
+        <Text style={styles.planDate}>{plan.plan_data.days.length} days · Generated {formatDate(plan.created_at)}</Text>
       </View>
-      <TouchableOpacity
-        style={styles.deleteBtn}
-        onPress={onDelete}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        {deleting
-          ? <ActivityIndicator size="small" color={colors.error} />
-          : <Text style={styles.deleteBtnText}>🗑</Text>
-        }
-      </TouchableOpacity>
+      <Text style={styles.planChevron}>›</Text>
     </TouchableOpacity>
   );
 }
@@ -114,7 +120,6 @@ export default function WorkoutScreen() {
   const { data: plans = [], isLoading: plansLoading, isError: plansError, refetch } = useAllPlans();
   const { data: recentSessions = [] } = useRecentSessions(3);
   const userId = useAuthStore(s => s.session?.user.id);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const workoutTip = useLatestTipByType('workout');
 
   const handleDelete = useCallback((plan: WorkoutPlan, letter: string) => {
@@ -128,15 +133,12 @@ export default function WorkoutScreen() {
           style: 'destructive',
           onPress: async () => {
             if (!userId) return;
-            setDeletingId(plan.id);
             try {
               await deleteWorkoutPlan(supabase, userId, plan.id);
               await queryClient.invalidateQueries({ queryKey: ['workout_plans'] });
               await queryClient.invalidateQueries({ queryKey: ['workout_plan'] });
             } catch {
               Alert.alert('Error', 'Could not delete plan.');
-            } finally {
-              setDeletingId(null);
             }
           },
         },
@@ -196,30 +198,38 @@ export default function WorkoutScreen() {
                 key={plan.id}
                 plan={plan}
                 letter={letter}
+                idx={idx}
                 onPress={() => router.push(`/(tabs)/workout/${plan.id}` as never)}
-                onDelete={() => handleDelete(plan, letter)}
-                deleting={deletingId === plan.id}
+                onLongPress={() => handleDelete(plan, letter)}
               />
             );
           })}
         </View>
       )}
 
-      <View style={styles.linksRow}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/workout/records')}>
-          <Text style={styles.link}>Personal Records</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/workout/exercise/index')}>
-          <Text style={styles.link}>Exercise Library</Text>
-        </TouchableOpacity>
+      <View style={styles.tilesRow}>
+        {[
+          { emoji: '🏆', label: 'Records', route: '/(tabs)/workout/records', color: colors.brand.accent },
+          { emoji: '📚', label: 'Exercises', route: '/(tabs)/workout/exercise/index', color: colors.brand.secondary },
+          { emoji: '📋', label: 'History', route: '/(tabs)/workout/history', color: '#2DD4BF' },
+        ].map(({ emoji, label, route, color }) => (
+          <TouchableOpacity
+            key={label}
+            style={[styles.tile, { backgroundColor: color + '18' }]}
+            onPress={() => router.push(route as never)}
+          >
+            <Text style={styles.tileEmoji}>{emoji}</Text>
+            <Text style={[styles.tileLabel, { color }]}>{label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {recentSessions.length > 0 && (
         <View>
           <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>Recent Sessions</Text>
+            <Text style={labelStyle}>Recent Sessions</Text>
             <TouchableOpacity onPress={() => router.push('/(tabs)/workout/history' as never)}>
-              <Text style={styles.link}>View all →</Text>
+              <Text style={styles.viewAllLink}>View all →</Text>
             </TouchableOpacity>
           </View>
           {recentSessions.map(s => (
@@ -246,8 +256,14 @@ const styles = StyleSheet.create({
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg },
-  browseBtn: { backgroundColor: colors.brand.primary, borderRadius: 10, paddingHorizontal: spacing.md, paddingVertical: 8 },
-  browseBtnText: { color: colors.white, fontSize: typography.sm, fontWeight: '700' },
+  browseBtn: {
+    borderRadius: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.brand.primary,
+  },
+  browseBtnText: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '700', fontFamily: fonts.bold },
   heading: { color: colors.text.primary, fontSize: typography['2xl'], fontWeight: '700' },
   planList: { marginBottom: spacing.lg, gap: spacing.sm },
   planCard: {
@@ -264,29 +280,38 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.brand.primary + '25',
-    borderWidth: 1.5,
-    borderColor: colors.brand.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
   },
-  planLetter: { color: colors.brand.primary, fontSize: typography.xl, fontWeight: '800' },
+  planLetter: { fontSize: typography.xl, fontWeight: '800' },
   planInfo: { flex: 1 },
   planName: { color: colors.text.primary, fontSize: typography.base, fontWeight: '700' },
-  planMeta: { color: colors.brand.secondary, fontSize: typography.sm, marginTop: 2 },
+  planMeta: { fontSize: typography.sm, marginTop: 2 },
   planDate: { color: colors.text.muted, fontSize: typography.xs, marginTop: 2 },
-  deleteBtn: { padding: 4 },
-  deleteBtnText: { fontSize: 18 },
-  linksRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.lg },
-  link: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
+  planChevron: { color: colors.text.muted, fontSize: typography.xl },
+  tilesRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  tile: {
+    flex: 1,
+    borderRadius: 8,
+    padding: spacing.sm,
+    alignItems: 'center',
+    gap: 4,
+  },
+  tileEmoji: { fontSize: 20 },
+  tileLabel: { fontSize: typography.xs, fontWeight: '700', fontFamily: fonts.bold },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
-  sectionTitle: { color: colors.text.secondary, fontSize: typography.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  viewAllLink: { color: colors.brand.primary, fontSize: typography.sm, fontWeight: '600' },
   sessionCard: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: colors.bg.secondary, borderRadius: 12, padding: spacing.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border },
   sessionDate: { color: colors.text.primary, fontSize: typography.sm, fontWeight: '600' },
   sessionVol: { color: colors.text.secondary, fontSize: typography.xs, marginTop: 2 },
   sessionRight: { alignItems: 'flex-end' },
   sessionDur: { color: colors.text.muted, fontSize: typography.xs },
-  sessionXp: { color: colors.brand.accent, fontSize: typography.xs, fontWeight: '600' },
+  sessionXp: { color: colors.brand.gold, fontSize: typography.xs, fontWeight: '600', fontFamily: fonts.semibold },
   sessionChevron: { color: colors.text.muted, fontSize: typography.lg, lineHeight: typography.lg + 2 },
   errorText: { color: colors.text.secondary, fontSize: typography.base, marginBottom: spacing.md },
   retryBtn: { backgroundColor: colors.brand.primary, borderRadius: 12, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },
