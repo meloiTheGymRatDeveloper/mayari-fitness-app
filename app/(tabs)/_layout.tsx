@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { Tabs, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { House, Barbell, ForkKnife, User } from 'phosphor-react-native';
 import { useAuthStore } from '../../stores/authStore';
 import { useUnreadTipCount } from '../../hooks/useCoachTips';
-import { colors } from '../../constants/theme';
+import { colors, fonts } from '../../constants/theme';
 import TabBarPlusButton from '../../components/ui/TabBarPlusButton';
 import LogModal from '../../components/ui/LogModal';
 
@@ -25,58 +25,66 @@ export default function TabsLayout() {
           tabBarStyle: {
             backgroundColor: colors.bg.tabBar,
             borderTopColor: colors.border,
-            height: 72,
+            height: 64,
             paddingBottom: 8,
           },
-          tabBarActiveTintColor: colors.brand.primary,
-          tabBarInactiveTintColor: colors.text.muted,
+          tabBarActiveTintColor: colors.icon.active,
+          tabBarInactiveTintColor: colors.icon.inactive,
+          tabBarLabelStyle: {
+            fontFamily: fonts.bold,
+            fontSize: 9,
+            letterSpacing: 0.3,
+          },
         }}
       >
         <Tabs.Screen
           name="index"
           options={{
             title: 'Home',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
-            ),
+            tabBarIcon: ({ color, focused }) =>
+              focused
+                ? <House size={24} color={color} weight="duotone" />
+                : <House size={24} color={color} />,
           }}
         />
         <Tabs.Screen
           name="workout"
           options={{
             title: 'Workout',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'barbell' : 'barbell-outline'} size={24} color={color} />
-            ),
+            tabBarIcon: ({ color, focused }) =>
+              focused
+                ? <Barbell size={24} color={color} weight="duotone" />
+                : <Barbell size={24} color={color} />,
           }}
         />
         <Tabs.Screen
-          name="log"
+          name="coach"
           options={{
             title: '',
             tabBarButton: (props) => <TabBarPlusButton {...props} />,
           }}
         />
         <Tabs.Screen
-          name="coach"
+          name="nutrition"
           options={{
-            title: 'Mayari',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'moon' : 'moon-outline'} size={24} color={color} />
-            ),
-            tabBarBadge: unreadTips > 0 ? unreadTips : undefined,
+            title: 'Nutrition',
+            tabBarIcon: ({ color, focused }) =>
+              focused
+                ? <ForkKnife size={24} color={color} weight="duotone" />
+                : <ForkKnife size={24} color={color} />,
           }}
         />
         <Tabs.Screen
           name="profile"
           options={{
-            title: 'More',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'grid' : 'grid-outline'} size={24} color={color} />
-            ),
+            title: 'Profile',
+            tabBarIcon: ({ color, focused }) =>
+              focused
+                ? <User size={24} color={color} weight="duotone" />
+                : <User size={24} color={color} />,
           }}
         />
-        <Tabs.Screen name="nutrition" options={{ href: null }} />
+        <Tabs.Screen name="log" options={{ href: null }} />
       </Tabs>
       <LogModal />
     </>
