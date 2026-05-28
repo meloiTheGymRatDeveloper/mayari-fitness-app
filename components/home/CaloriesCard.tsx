@@ -1,25 +1,44 @@
+import { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, typography, spacing } from '../../constants/theme';
+import Svg, { Circle } from 'react-native-svg';
+import Animated, {
+  useSharedValue, useAnimatedProps, withTiming, createAnimatedComponent,
+} from 'react-native-reanimated';
+import { colors, typography, spacing, fonts, labelStyle } from '../../constants/theme';
 
-interface MacroProps {
-  label: string;
-  consumed: number;
-  goal: number;
-  color: string;
-}
+const AnimatedCircle = createAnimatedComponent(Circle);
+const R = 28;
+const STROKE = 6;
+const SIZE = (R + STROKE) * 2;
+const CIRC = 2 * Math.PI * R;
 
-function MacroBar({ label, consumed, goal, color }: MacroProps) {
+function MacroBar({
+  label, consumed, goal, color,
+}: { label: string; consumed: number; goal: number; color: string }) {
   const pct = goal > 0 ? Math.min(consumed / goal, 1) : 0;
   return (
-    <View style={styles.macro}>
-      <Text style={[styles.macroValue, { color }]}>{Math.round(consumed)}g</Text>
-      <Text style={styles.macroLabel}>{label}</Text>
-      <View style={styles.macroTrack}>
-        <View style={[styles.macroFill, { width: `${pct * 100}%` as `${number}%`, backgroundColor: color }]} />
+    <View style={mb.row}>
+      <View style={mb.labelRow}>
+        <Text style={mb.label}>{label}</Text>
+        <Text style={[mb.value, { color }]}>
+          {Math.round(consumed)}/{goal}g
+        </Text>
+      </View>
+      <View style={mb.track}>
+        <View style={[mb.fill, { width: `${pct * 100}%` as `${number}%`, backgroundColor: color }]} />
       </View>
     </View>
   );
 }
+
+const mb = StyleSheet.create({
+  row: { marginBottom: 8 },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
+  label: { color: colors.text.muted, fontSize: typography.xs },
+  value: { fontSize: typography.xs, fontFamily: fonts.semibold },
+  track: { height: 4, backgroundColor: colors.bg.elevated, borderRadius: 2, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 2 },
+});
 
 interface Props {
   consumed: number;
@@ -32,33 +51,62 @@ interface Props {
   fiber?: number;
 }
 
-export default function CaloriesCard({ consumed, goal, caloriesBurned, protein, carbs, fat, showNetCarbs, fiber }: Props) {
+export default function CaloriesCard({
+  consumed, goal, caloriesBurned, protein, carbs, fat, showNetCarbs, fiber,
+}: Props) {
+  const progress = useSharedValue(0);
   const pct = goal > 0 ? Math.min(consumed / goal, 1) : 0;
   const carbsLabel = showNetCarbs ? 'Net Carbs' : 'Carbs';
   const carbsConsumed = showNetCarbs ? Math.max(0, carbs.consumed - (fiber ?? 0)) : carbs.consumed;
+
+  useEffect(() => {
+    progress.value = withTiming(pct, { duration: 600 });
+  }, [pct, progress]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: CIRC * (1 - progress.value),
+  }));
+
   return (
     <View style={styles.card}>
-      <View style={styles.titleRow}>
-        <Text style={styles.label}>Calories</Text>
-        <Text style={styles.count}>{Math.round(consumed)} / {goal} kcal</Text>
-      </View>
-      <View style={styles.track}>
-        <View style={[styles.fill, { width: `${pct * 100}%` as `${number}%` }]} />
-      </View>
-      {caloriesBurned > 0 && (
-        <View style={styles.burnedRow}>
-          <View style={styles.burnedLine}>
-            <View style={styles.burnedDot} />
-            <Text style={styles.burnedText}>−{caloriesBurned} kcal burned from workout</Text>
+      <Text style={labelStyle}>Today's Balance</Text>
+      <View style={styles.body}>
+        <View style={styles.arcWrap}>
+          <Svg width={SIZE} height={SIZE}>
+            <Circle
+              cx={SIZE / 2} cy={SIZE / 2} r={R}
+              stroke={colors.bg.elevated}
+              strokeWidth={STROKE}
+              fill="none"
+            />
+            <AnimatedCircle
+              cx={SIZE / 2} cy={SIZE / 2} r={R}
+              stroke={colors.brand.gold}
+              strokeWidth={STROKE}
+              fill="none"
+              strokeDasharray={CIRC}
+              strokeLinecap="round"
+              rotation={-90}
+              origin={`${SIZE / 2}, ${SIZE / 2}`}
+              animatedProps={animatedProps}
+            />
+          </Svg>
+          <View style={styles.arcCenter}>
+            <Text style={styles.arcKcal}>{Math.round(consumed)}</Text>
+            <Text style={styles.arcGoal}>/{goal}</Text>
           </View>
-          <Text style={styles.netText}>Net: {Math.max(0, Math.round(consumed - caloriesBurned))} kcal (after workout)</Text>
         </View>
-      )}
-      <View style={styles.macroRow}>
-        <MacroBar label="Protein" consumed={protein.consumed} goal={protein.goal} color={colors.brand.primary} />
-        <MacroBar label={carbsLabel} consumed={carbsConsumed} goal={carbs.goal} color={colors.warning} />
-        <MacroBar label="Fat" consumed={fat.consumed} goal={fat.goal} color={colors.success} />
+
+        <View style={styles.macros}>
+          <MacroBar label="Protein" consumed={protein.consumed} goal={protein.goal} color="#A78BFA" />
+          <MacroBar label={carbsLabel} consumed={carbsConsumed} goal={carbs.goal} color="#6366F1" />
+          <MacroBar label="Fat" consumed={fat.consumed} goal={fat.goal} color={colors.brand.gold} />
+        </View>
       </View>
+
+      {caloriesBurned > 0 && (
+        <Text style={styles.burnText}>🔥 −{caloriesBurned} kcal burned today</Text>
+      )}
     </View>
   );
 }
@@ -66,93 +114,30 @@ export default function CaloriesCard({ consumed, goal, caloriesBurned, protein, 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bg.secondary,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(196,165,90,0.15)',
     marginHorizontal: spacing.lg,
     marginBottom: spacing.sm,
   },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginBottom: spacing.sm,
+  body: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.sm },
+  arcWrap: { alignItems: 'center', justifyContent: 'center' },
+  arcCenter: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  label: {
+  arcKcal: {
     color: colors.text.primary,
     fontSize: typography.sm,
-    fontWeight: '600',
+    fontFamily: fonts.bold,
   },
-  count: {
-    color: colors.text.secondary,
-    fontSize: typography.xs,
-  },
-  track: {
-    backgroundColor: colors.border,
-    borderRadius: 6,
-    height: 10,
-    overflow: 'hidden',
-    marginBottom: spacing.sm,
-  },
-  fill: {
-    height: '100%',
-    borderRadius: 6,
-    backgroundColor: colors.brand.primary,
-  },
-  burnedRow: {
-    marginBottom: spacing.sm,
-    gap: 2,
-  },
-  burnedLine: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  burnedDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 2,
-    backgroundColor: colors.error,
-    flexShrink: 0,
-  },
-  burnedText: {
-    color: colors.text.secondary,
-    fontSize: typography.xs,
-    flexShrink: 1,
-  },
-  netText: {
-    color: colors.warning,
-    fontSize: typography.xs,
-    fontWeight: '600',
-    paddingLeft: 14,
-  },
-  macroRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  macro: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  macroValue: {
-    fontSize: typography.sm,
-    fontWeight: '700',
-  },
-  macroLabel: {
+  arcGoal: { color: colors.text.muted, fontSize: 9 },
+  macros: { flex: 1 },
+  burnText: {
     color: colors.text.muted,
     fontSize: typography.xs,
-  },
-  macroTrack: {
-    width: '100%',
-    height: 4,
-    backgroundColor: colors.border,
-    borderRadius: 2,
-    marginTop: 3,
-    overflow: 'hidden',
-  },
-  macroFill: {
-    height: '100%',
-    borderRadius: 2,
+    marginTop: spacing.sm,
   },
 });

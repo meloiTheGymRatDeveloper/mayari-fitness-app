@@ -58,8 +58,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border,
     alignItems: 'center',
   },
-  pillActive: { backgroundColor: colors.brand.primary, borderColor: colors.brand.primary },
+  pillActive: { backgroundColor: colors.brand.gold, borderColor: colors.brand.gold },
   abbr: { color: colors.text.muted, fontSize: typography.xs - 1 },
   num: { color: colors.text.muted, fontSize: typography.sm, fontWeight: '600' },
-  textActive: { color: colors.white },
+  textActive: { color: colors.bg.primary },
 });

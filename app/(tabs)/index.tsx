@@ -4,6 +4,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withRepeat, withTiming,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'react-native-linear-gradient';
 import { useAuthStore } from '../../stores/authStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useDailyNutrition } from '../../hooks/useDailyNutrition';
@@ -16,7 +20,7 @@ import DayStrip from '../../components/home/DayStrip';
 import CaloriesCard from '../../components/home/CaloriesCard';
 import MealSlotCard from '../../components/home/MealSlotCard';
 import StreakMilestoneToast from '../../components/shared/StreakMilestoneToast';
-import { colors, typography, spacing } from '../../constants/theme';
+import { colors, typography, spacing, labelStyle, fonts } from '../../constants/theme';
 import type { MealSlot } from '../../types/database';
 
 const MEAL_SLOTS: MealSlot[] = ['almusal', 'tanghalian', 'merienda', 'hapunan'];
@@ -61,6 +65,14 @@ export default function HomeScreen() {
   const { data: streaks } = useStreaks();
   const [activeMilestone, setActiveMilestone] = useState<number | null>(null);
 
+  const moonY = useSharedValue(0);
+  useEffect(() => {
+    moonY.value = withRepeat(withTiming(4, { duration: 2000 }), -1, true);
+  }, [moonY]);
+  const moonAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: moonY.value }],
+  }));
+
   useEffect(() => {
     let cancelled = false;
     const current = streaks?.workout_current ?? 0;
@@ -77,10 +89,21 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.screenWrapper}>
+      <Animated.View style={[styles.moonOrb, moonAnimStyle]} pointerEvents="none">
+        <LinearGradient
+          colors={['#C4A55A', '#F5E680']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.moonOrbInner}
+        />
+      </Animated.View>
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
         <View style={styles.greetRow}>
           <View>
-            <Text style={styles.greeting}>Kumusta, {name}! 💪</Text>
+            <Text style={styles.greeting}>
+              Kumusta, {name}! 💪
+              {(streaks?.workout_current ?? 0) > 0 ? `  ·  ${streaks!.workout_current} day streak 🔥` : ''}
+            </Text>
             <Text style={styles.dateText}>
               {new Date(date + 'T12:00:00Z').toLocaleDateString('en-PH', {
                 weekday: 'long', month: 'long', day: 'numeric',
@@ -114,7 +137,7 @@ export default function HomeScreen() {
           fiber={daily.totals.fiber}
         />
 
-        <Text style={styles.sectionLabel}>Meals</Text>
+        <Text style={[labelStyle, { paddingHorizontal: spacing.lg, marginBottom: spacing.xs, marginTop: spacing.xs }]}>Meals</Text>
         {MEAL_SLOTS.map((slot) => (
           <SlotRow key={slot} slot={slot} date={date} daily={daily} />
         ))}
@@ -158,15 +181,29 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: spacing.md,
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.brand.primary,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.brand.gold,
   },
-  tipCardLabel: { color: colors.brand.secondary, fontSize: typography.sm, fontWeight: '600', marginBottom: 4 },
+  tipCardLabel: {
+    color: colors.brand.gold,
+    fontSize: typography.xs,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    fontFamily: fonts.bold,
+    marginBottom: 4,
+  },
   tipCardContent: { color: colors.text.primary, fontSize: typography.base, lineHeight: 22 },
-  sectionLabel: {
-    color: colors.text.muted, fontSize: 10, fontWeight: '700',
-    letterSpacing: 1, textTransform: 'uppercase',
-    paddingHorizontal: spacing.lg, marginBottom: spacing.xs, marginTop: spacing.xs,
+  moonOrb: {
+    position: 'absolute',
+    top: 0,
+    right: spacing.lg,
+    zIndex: 10,
+  },
+  moonOrbInner: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    opacity: 0.35,
   },
   coachCard: {
     marginHorizontal: spacing.lg, marginTop: spacing.sm,

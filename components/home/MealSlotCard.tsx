@@ -107,7 +107,7 @@ export default function MealSlotCard({ slot, calories, itemCount, logs, date, ha
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bg.secondary, borderRadius: 12,
-    padding: spacing.md, borderWidth: 1, borderColor: colors.border,
+    padding: spacing.md, borderWidth: 1, borderColor: 'rgba(196,165,90,0.12)',
     marginHorizontal: spacing.lg, marginBottom: spacing.sm,
   },
   cardEmpty: { borderStyle: 'dashed' },
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   },
   copyText: { color: colors.brand.secondary, fontSize: 10 },
   addBtn: {
-    width: 28, height: 28, backgroundColor: colors.brand.primary,
+    width: 28, height: 28, backgroundColor: colors.brand.gold,
     borderRadius: 8, alignItems: 'center', justifyContent: 'center',
   },
   addText: { color: '#fff', fontSize: 18, lineHeight: 20 },
