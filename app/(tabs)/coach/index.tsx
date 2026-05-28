@@ -1,8 +1,12 @@
-﻿// app/(tabs)/coach/index.tsx
+// app/(tabs)/coach/index.tsx
 import { useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, typography, spacing } from '../../../constants/theme';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withRepeat, withTiming,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'react-native-linear-gradient';
+import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import {
   useCoachTips, useMarkAllTipsRead, useRequestTip,
 } from '../../../hooks/useCoachTips';
@@ -23,17 +27,20 @@ const TIP_ICONS: Record<string, string> = {
   achievement: '⭐',
 };
 
-// ── Border color mapping ──────────────────────────────────────────────────────
-const TIP_BORDER: Record<string, string> = {
-  nutrition: colors.brand.primary,
-  workout: colors.brand.primary,
-  streak: colors.brand.accent,
-  pr: colors.brand.accent,
-  general: colors.brand.primary,
-  insight: colors.brand.secondary,
-  risk: '#F59E0B',
-  achievement: colors.brand.accent,
+// ── Tip colour mapping ────────────────────────────────────────────────────────
+const TIP_COLOR: Record<string, string> = {
+  streak:      '#EDD280',
+  pr:          '#F59E0B',
+  achievement: '#F59E0B',
+  workout:     '#A78BFA',
+  nutrition:   '#22C55E',
+  insight:     '#A78BFA',
+  risk:        '#EF4444',
+  general:     '#C4A55A',
 };
+function tipColor(tipType: string): string {
+  return TIP_COLOR[tipType] ?? '#C4A55A';
+}
 
 // ── Relative time helper ──────────────────────────────────────────────────────
 function relativeTime(isoString: string): string {
@@ -48,12 +55,18 @@ function relativeTime(isoString: string): string {
 
 // ── TipCard ───────────────────────────────────────────────────────────────────
 function TipCard({ tip }: { tip: CoachTip }) {
+  const color = tipColor(tip.tip_type);
+  const typeLabel = tip.tip_type.toUpperCase();
   return (
-    <View style={[styles.tipCard, { borderLeftWidth: 3, borderLeftColor: TIP_BORDER[tip.tip_type] ?? colors.brand.primary }]}>
-      <Text style={styles.tipIcon}>{TIP_ICONS[tip.tip_type] ?? '🌙'}</Text>
-      <View style={styles.tipBody}>
-        <Text style={styles.tipContent}>{tip.content}</Text>
+    <View style={[styles.tipCard, { borderLeftColor: color }]}>
+      <View style={styles.tipHeader}>
+        <Text style={[styles.tipType, { color }]}>{typeLabel}</Text>
+        <Text style={styles.tipDot}> · </Text>
         <Text style={styles.tipTime}>{relativeTime(tip.created_at)}</Text>
+      </View>
+      <View style={styles.tipBody}>
+        <Text style={styles.tipIcon}>{TIP_ICONS[tip.tip_type] ?? '🌙'}</Text>
+        <Text style={styles.tipContent}>{tip.content}</Text>
       </View>
     </View>
   );
@@ -67,10 +80,15 @@ export default function CoachScreen() {
   const markRead = useMarkAllTipsRead();
   const requestTip = useRequestTip();
 
+  const moonY = useSharedValue(0);
   useEffect(() => {
+    moonY.value = withRepeat(withTiming(4, { duration: 2000 }), -1, true);
     markRead.mutate();
     requestTip.mutate();
-  }, []);
+  }, [moonY]);
+  const moonAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: moonY.value }],
+  }));
 
   if (!canUse('coachTips')) {
     return (
@@ -83,7 +101,15 @@ export default function CoachScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
-      <Text style={styles.header}>Mayari Tips</Text>
+      <Animated.View style={[styles.moonOrb, moonAnimStyle]} pointerEvents="none">
+        <LinearGradient
+          colors={['#C4A55A', '#F5E680']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.moonOrbInner}
+        />
+      </Animated.View>
+      <Text style={styles.header}>Coach Mayari</Text>
 
       {isLoading ? (
         <View style={styles.skeletons}>
@@ -109,10 +135,13 @@ export default function CoachScreen() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg.primary, padding: spacing.lg },
+  moonOrb: { position: 'absolute', top: 0, right: spacing.lg, zIndex: 10 },
+  moonOrbInner: { width: 52, height: 52, borderRadius: 26, opacity: 0.35 },
   header: {
     color: colors.text.primary,
     fontSize: typography['2xl'],
     fontWeight: '700',
+    fontFamily: fonts.bold,
     marginBottom: spacing.lg,
   },
   skeletons: { gap: 8 },
@@ -125,20 +154,27 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   tipCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
     backgroundColor: colors.bg.secondary,
     borderRadius: 12,
     padding: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.brand.gold,
   },
-  tipIcon: { fontSize: 28 },
-  tipBody: { flex: 1 },
+  tipHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  tipType: {
+    fontSize: typography.xs,
+    fontFamily: fonts.bold,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  tipDot: { color: colors.text.muted, fontSize: typography.xs },
+  tipTime: { color: colors.text.muted, fontSize: typography.xs },
+  tipBody: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  tipIcon: { fontSize: 22 },
   tipContent: {
+    flex: 1,
     color: colors.text.primary,
     fontSize: typography.base,
     lineHeight: 22,
-    marginBottom: 4,
   },
-  tipTime: { color: colors.text.muted, fontSize: typography.sm },
 });
