@@ -17,10 +17,11 @@ import type { WorkoutPlan, WorkoutSession } from '../../../types/database';
 
 const PLAN_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+const TEAL = '#2DD4BF';
 const PLAN_BADGE_COLORS = [
   colors.brand.primary,    // A = indigo
   colors.brand.secondary,  // B = violet
-  '#2DD4BF',               // C = teal
+  TEAL,                    // C = teal
 ];
 function planBadgeColor(idx: number): string {
   return PLAN_BADGE_COLORS[idx % PLAN_BADGE_COLORS.length];
@@ -211,7 +212,7 @@ export default function WorkoutScreen() {
         {[
           { emoji: '🏆', label: 'Records', route: '/(tabs)/workout/records', color: colors.brand.accent },
           { emoji: '📚', label: 'Exercises', route: '/(tabs)/workout/exercise/index', color: colors.brand.secondary },
-          { emoji: '📋', label: 'History', route: '/(tabs)/workout/history', color: '#2DD4BF' },
+          { emoji: '📋', label: 'History', route: '/(tabs)/workout/history', color: TEAL },
         ].map(({ emoji, label, route, color }) => (
           <TouchableOpacity
             key={label}
