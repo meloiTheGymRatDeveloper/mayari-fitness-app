@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { House, Barbell, Sparkle, User } from 'phosphor-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, fonts } from '../../constants/theme';
 import { useUnreadTipCount } from '../../hooks/useCoachTips';
@@ -11,6 +12,7 @@ export default function TabsLayout() {
   const router = useRouter();
   const { session, isLoading } = useAuthStore();
   const unreadTips = useUnreadTipCount();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (isLoading) return;
@@ -25,8 +27,8 @@ export default function TabsLayout() {
           tabBarStyle: {
             backgroundColor: colors.bg.tabBar,
             borderTopColor: colors.border,
-            height: 64,
-            paddingBottom: 8,
+            height: 64 + insets.bottom,
+            paddingBottom: 8 + insets.bottom,
           },
           tabBarActiveTintColor: colors.icon.active,
           tabBarInactiveTintColor: colors.icon.inactive,
@@ -85,7 +87,7 @@ export default function TabsLayout() {
                 : <User size={24} color={color} />,
           }}
         />
-        <Tabs.Screen name="nutrition" options={{ href: null, tabBarButton: () => null }} />
+        <Tabs.Screen name="nutrition" options={{ href: null }} />
       </Tabs>
       <LogModal />
     </>

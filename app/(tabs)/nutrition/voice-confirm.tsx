@@ -15,6 +15,10 @@ interface ParsedFood {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  calories_low?: number;
+  calories_high?: number;
+  confidence?: 'low' | 'medium' | 'high';
+  db_grounded?: boolean;
   // Internal per-100g base values (recalculation reference)
   _cal_per100?: number;
   _prot_per100?: number;
@@ -29,6 +33,25 @@ const FIELDS: Array<{ key: keyof ParsedFood; label: string }> = [
   { key: 'carbs_g', label: 'carbs' },
   { key: 'fat_g', label: 'fat' },
 ];
+
+function confidenceColor(c: 'low' | 'medium' | 'high') {
+  if (c === 'high') return colors.success;
+  if (c === 'medium') return colors.warning;
+  return colors.error;
+}
+
+function ItemBadge({ food }: { food: ParsedFood }) {
+  if (food.db_grounded) {
+    return <Text style={[styles.badge, { color: colors.success }]}>✓ PH database</Text>;
+  }
+  if (!food.confidence) return null;
+  const color = confidenceColor(food.confidence);
+  const range =
+    food.calories_low != null && food.calories_high != null
+      ? ` · est. ${food.calories_low}–${food.calories_high} kcal`
+      : '';
+  return <Text style={[styles.badge, { color }]}>{food.confidence} confidence{range}</Text>;
+}
 
 export default function VoiceConfirmScreen() {
   const router = useRouter();
@@ -140,6 +163,7 @@ export default function VoiceConfirmScreen() {
               onChangeText={(v) => updateField(i, 'name', v)}
               placeholderTextColor={colors.text.muted}
             />
+            <ItemBadge food={food} />
             <View style={styles.fieldRow}>
               {FIELDS.map(({ key, label }) => (
                 <View key={key} style={styles.field}>
@@ -185,6 +209,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.semibold,
     borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: spacing.xs, marginBottom: spacing.sm,
   },
+  badge: { fontSize: 11, fontFamily: fonts.semibold, marginBottom: spacing.sm },
   fieldRow: { flexDirection: 'row', gap: spacing.xs },
   field: { flex: 1, alignItems: 'center' },
   fieldLabel: { color: colors.text.muted, fontSize: 10, marginBottom: 2 },

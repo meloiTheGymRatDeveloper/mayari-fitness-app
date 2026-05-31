@@ -25,6 +25,10 @@ interface ParsedFood {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  calories_low?: number;
+  calories_high?: number;
+  confidence?: 'low' | 'medium' | 'high';
+  db_grounded?: boolean;
 }
 
 export default function PhotoScreen() {
@@ -174,7 +178,10 @@ export default function PhotoScreen() {
           <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
             <Text style={styles.closeBtnText}>✕</Text>
           </TouchableOpacity>
-          <Text style={styles.hint}>Point at your food</Text>
+          <View style={styles.hintGroup}>
+            <Text style={styles.hint}>Point at your food</Text>
+            <Text style={styles.refHint}>Place a fork beside it for better accuracy</Text>
+          </View>
           <View style={styles.bottomRow}>
             <TouchableOpacity style={styles.galleryPill} onPress={handleGallery}>
               <Text style={styles.galleryPillText}>📁 Gallery</Text>
@@ -198,6 +205,8 @@ const styles = StyleSheet.create({
   closeBtn: { alignSelf: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 18, width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
   closeBtnText: { color: '#fff', fontSize: 16, fontFamily: fonts.bold },
   hint: { color: '#fff', fontSize: typography.sm, fontFamily: fonts.regular, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+  hintGroup: { alignItems: 'center', gap: 4 },
+  refHint: { color: 'rgba(255,255,255,0.65)', fontSize: typography.xs, fontFamily: fonts.regular, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xl },
   galleryPill: { backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, width: 80, alignItems: 'center' },
   galleryPillText: { color: '#fff', fontSize: typography.xs, fontFamily: fonts.semibold },
