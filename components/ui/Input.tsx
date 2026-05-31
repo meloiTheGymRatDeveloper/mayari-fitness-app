@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
-import { colors, typography, spacing } from '../../constants/theme';
+import { colors, typography, spacing, fonts } from '../../constants/theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 4,
     color: colors.text.primary,
     fontSize: typography.base,
+    fontFamily: fonts.regular,
     minHeight: 52,
   },
   inputError: {

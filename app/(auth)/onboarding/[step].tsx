@@ -1117,7 +1117,7 @@ const styles = StyleSheet.create({
   adjustHintText: { color: colors.text.secondary, fontSize: typography.sm },
   adjustHintSub: { color: colors.text.muted, fontSize: typography.xs },
 
-  gradientBtn: { borderRadius: 12, padding: spacing.md, alignItems: 'center', marginBottom: spacing.md },
+  gradientBtn: { borderRadius: 12, paddingVertical: 12, paddingHorizontal: spacing.md, alignItems: 'center', marginBottom: spacing.md },
   gradientBtnLabel: { color: colors.white, fontFamily: fonts.extrabold, fontSize: typography.lg },
   gradientBtnSub: { color: 'rgba(255,255,255,0.75)', fontSize: typography.xs, marginTop: 2 },
 
