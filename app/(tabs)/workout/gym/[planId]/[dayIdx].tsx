@@ -5,13 +5,13 @@ import {
   KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuthStore } from '../../../../stores/authStore';
-import { useWorkoutStore } from '../../../../stores/workoutStore';
-import { supabase } from '../../../../lib/supabase';
-import { updatePlanDayExercises } from '../../../../lib/workoutGenerator';
-import { EXERCISE_ALTERNATIVES } from '../../../../constants/exerciseAlternatives';
-import { colors, typography, spacing, fonts } from '../../../../constants/theme';
-import type { WorkoutPlan, DayPlan, PlannedExercise } from '../../../../types/database';
+import { useAuthStore } from '../../../../../stores/authStore';
+import { useWorkoutStore } from '../../../../../stores/workoutStore';
+import { supabase } from '../../../../../lib/supabase';
+import { updatePlanDayExercises } from '../../../../../lib/workoutGenerator';
+import { EXERCISE_ALTERNATIVES } from '../../../../../constants/exerciseAlternatives';
+import { colors, typography, spacing, fonts } from '../../../../../constants/theme';
+import type { WorkoutPlan, DayPlan, PlannedExercise } from '../../../../../types/database';
 
 export default function DayExercisesScreen() {
   const { planId, dayIdx: dayIdxParam } = useLocalSearchParams<{ planId: string; dayIdx: string }>();
@@ -152,7 +152,7 @@ export default function DayExercisesScreen() {
         .single();
       if (error || !data) throw new Error(error?.message ?? 'Session create failed');
       startSession(data.id, plan.id, dayPlan);
-      router.push('/(tabs)/workout/active');
+      router.push('/(tabs)/workout/gym/active');
     } catch (e: unknown) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Could not start workout');
     } finally {

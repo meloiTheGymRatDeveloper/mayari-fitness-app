@@ -1,9 +1,9 @@
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
-import { useSessionHistory } from '../../../hooks/useWorkout';
-import EmptyState from '../../../components/ui/EmptyState';
-import type { WorkoutSession } from '../../../types/database';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../../constants/theme';
+import { useSessionHistory } from '../../../../hooks/useWorkout';
+import EmptyState from '../../../../components/ui/EmptyState';
+import type { WorkoutSession } from '../../../../types/database';
 
 function formatDuration(startedAt: string, endedAt: string): string {
   const mins = Math.round(
@@ -69,7 +69,7 @@ export default function WorkoutHistoryScreen() {
               <TouchableOpacity
                 key={s.id}
                 style={styles.sessionRow}
-                onPress={() => router.push(`/(tabs)/workout/session/${s.id}` as never)}
+                onPress={() => router.push(`/(tabs)/workout/gym/session/${s.id}` as never)}
                 activeOpacity={0.7}
               >
                 <View>

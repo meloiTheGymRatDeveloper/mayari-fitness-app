@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuthStore } from '../../../../stores/authStore';
-import { supabase } from '../../../../lib/supabase';
-import { colors, typography, spacing, fonts } from '../../../../constants/theme';
-import type { WorkoutPlan, DayPlan } from '../../../../types/database';
+import { useAuthStore } from '../../../../../stores/authStore';
+import { supabase } from '../../../../../lib/supabase';
+import { colors, typography, spacing, fonts } from '../../../../../constants/theme';
+import type { WorkoutPlan, DayPlan } from '../../../../../types/database';
 
 function getPlanLetter(plans: WorkoutPlan[], planId: string): string {
   const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -73,7 +73,7 @@ export default function PlanDayListScreen() {
           <TouchableOpacity
             key={idx}
             style={styles.dayCard}
-            onPress={() => router.push(`/(tabs)/workout/${planId}/${idx}` as never)}
+            onPress={() => router.push(`/(tabs)/workout/gym/${planId}/${idx}` as never)}
             activeOpacity={0.75}
           >
             <View style={styles.dayInfo}>

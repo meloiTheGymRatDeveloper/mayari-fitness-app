@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useExerciseById } from '../../../../hooks/useWorkout';
-import { colors, typography, spacing, fonts } from '../../../../constants/theme';
+import { useExerciseById } from '../../../../../hooks/useWorkout';
+import { colors, typography, spacing, fonts } from '../../../../../constants/theme';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

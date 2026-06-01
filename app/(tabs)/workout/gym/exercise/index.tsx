@@ -3,9 +3,9 @@ import {
   View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useExercises } from '../../../../hooks/useWorkout';
-import { colors, typography, spacing, fonts } from '../../../../constants/theme';
-import type { Exercise } from '../../../../types/database';
+import { useExercises } from '../../../../../hooks/useWorkout';
+import { colors, typography, spacing, fonts } from '../../../../../constants/theme';
+import type { Exercise } from '../../../../../types/database';
 
 type Filter = 'all' | 'push' | 'pull' | 'legs' | 'core';
 const FILTERS: Filter[] = ['all', 'push', 'pull', 'legs', 'core'];
@@ -36,7 +36,7 @@ export default function ExerciseLibraryScreen() {
     return (
       <TouchableOpacity
         style={styles.item}
-        onPress={() => router.push({ pathname: '/(tabs)/workout/exercise/[id]', params: { id: item.id } })}
+        onPress={() => router.push({ pathname: '/(tabs)/workout/gym/exercise/[id]', params: { id: item.id } })}
       >
         <View style={styles.itemLeft}>
           <Text style={styles.itemName}>{item.name}</Text>

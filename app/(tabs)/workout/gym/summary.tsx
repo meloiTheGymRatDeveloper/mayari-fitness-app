@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../../lib/supabase';
-import { useAuthStore } from '../../../stores/authStore';
-import { fallbackExercises } from '../../../constants/exercises';
-import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
-import type { WorkoutSession, WorkoutSet, PersonalRecord, Exercise } from '../../../types/database';
-import { useMayariTriggers } from '../../../hooks/useMayariTriggers';
+import { supabase } from '../../../../lib/supabase';
+import { useAuthStore } from '../../../../stores/authStore';
+import { fallbackExercises } from '../../../../constants/exercises';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../../constants/theme';
+import type { WorkoutSession, WorkoutSet, PersonalRecord, Exercise } from '../../../../types/database';
+import { useMayariTriggers } from '../../../../hooks/useMayariTriggers';
 
 interface NewPR { exercise_name: string; weight_kg: number; reps: number; }
 
@@ -232,7 +232,7 @@ export default function SummaryScreen() {
           const today = new Date().toISOString().split('T')[0];
           queryClient.invalidateQueries({ queryKey: ['workout_sessions'] });
           queryClient.invalidateQueries({ queryKey: ['calories_burned', userId, today] });
-          router.replace('/(tabs)/workout');
+          router.replace('/(tabs)/workout/gym');
         }}
       >
         <Text style={styles.doneBtnText}>Done</Text>

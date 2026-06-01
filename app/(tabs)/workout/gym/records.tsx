@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
-import { usePersonalRecords } from '../../../hooks/useWorkout';
-import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
-import type { PersonalRecord } from '../../../types/database';
+import { usePersonalRecords } from '../../../../hooks/useWorkout';
+import { colors, typography, spacing, fonts, labelStyle } from '../../../../constants/theme';
+import type { PersonalRecord } from '../../../../types/database';
 
 type MuscleGroup = PersonalRecord['muscle_group'];
 

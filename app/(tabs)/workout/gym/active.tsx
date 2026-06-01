@@ -6,13 +6,13 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useWorkoutStore } from '../../../stores/workoutStore';
-import { useAuthStore } from '../../../stores/authStore';
-import { supabase } from '../../../lib/supabase';
-import SetLogger from '../../../components/workout/SetLogger';
-import RestTimer from '../../../components/workout/RestTimer';
-import { colors, typography, spacing, fonts } from '../../../constants/theme';
-import type { PlannedExercise } from '../../../types/database';
+import { useWorkoutStore } from '../../../../stores/workoutStore';
+import { useAuthStore } from '../../../../stores/authStore';
+import { supabase } from '../../../../lib/supabase';
+import SetLogger from '../../../../components/workout/SetLogger';
+import RestTimer from '../../../../components/workout/RestTimer';
+import { colors, typography, spacing, fonts } from '../../../../constants/theme';
+import type { PlannedExercise } from '../../../../types/database';
 
 function formatElapsed(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -49,7 +49,7 @@ export default function ActiveWorkoutScreen() {
 
   useEffect(() => {
     if (!sessionId || !todayPlan) {
-      router.replace('/(tabs)/workout');
+      router.replace('/(tabs)/workout/gym');
     }
   }, [sessionId, todayPlan, router]);
 
@@ -196,7 +196,7 @@ export default function ActiveWorkoutScreen() {
       const sid = sessionId;
       endSession();
       router.replace({
-        pathname: '/(tabs)/workout/summary',
+        pathname: '/(tabs)/workout/gym/summary',
         params: { sessionId: sid, caloriesBurned: String(caloriesBurned) },
       });
     } catch (e: unknown) {

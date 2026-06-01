@@ -2,9 +2,9 @@ import {
   View, Text, ScrollView, ActivityIndicator, StyleSheet,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { colors, typography, spacing, fonts } from '../../../../constants/theme';
-import { useSessionDetail } from '../../../../hooks/useWorkout';
-import type { WorkoutSet } from '../../../../types/database';
+import { colors, typography, spacing, fonts } from '../../../../../constants/theme';
+import { useSessionDetail } from '../../../../../hooks/useWorkout';
+import type { WorkoutSet } from '../../../../../types/database';
 
 function formatDuration(startedAt: string, endedAt: string): string {
   const mins = Math.round(
