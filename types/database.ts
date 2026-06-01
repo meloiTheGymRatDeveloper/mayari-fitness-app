@@ -13,6 +13,11 @@ export type ReferralStatus = 'pending' | 'active' | 'expired';
 export type Gender = 'male' | 'female' | 'prefer_not_to_say';
 export type ActivityLevel = 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extremely_active';
 export type TipType = 'nutrition' | 'workout' | 'streak' | 'pr' | 'general' | 'insight' | 'risk' | 'achievement';
+export type WorkoutType = 'gym' | 'home' | 'running' | 'cycling';
+export type HomeEquipmentTier = 'bodyweight' | 'minimal' | 'home_gym';
+export type RunSessionType = 'easy' | 'tempo' | 'interval' | 'long' | 'rest';
+export type CycleSessionType = 'easy' | 'endurance' | 'interval' | 'tempo' | 'recovery';
+export type CardioSessionSubtype = 'outdoor' | 'indoor';
 
 export type TriggerEvent =
   | 'post_workout'
@@ -93,6 +98,7 @@ export interface UserProfile {
   notif_workout_time: string;
   notif_weekly_summary: boolean;
   notif_streak_alert: boolean;
+  home_equipment_tier: HomeEquipmentTier;
   created_at: string;
   updated_at: string;
 }
@@ -105,6 +111,7 @@ export interface WorkoutPlan {
   plan_data: PlanData;
   is_active: boolean;
   generated_by: string;
+  workout_type: WorkoutType;
   created_at: string;
 }
 
@@ -118,6 +125,8 @@ export interface WorkoutSession {
   notes: string | null;
   xp_earned: number;
   calories_burned: number | null;
+  workout_type: WorkoutType;
+  circuit_mode: boolean;
   created_at: string;
 }
 
@@ -127,7 +136,7 @@ export interface WorkoutSet {
   exercise_id: string;
   exercise_name: string;
   set_number: number;
-  weight_kg: number;
+  weight_kg: number | null;
   reps: number;
   is_warmup: boolean;
   completed_at: string;
@@ -471,4 +480,50 @@ export interface ReferralWithUser {
   activated_at: string | null;
   created_at: string;
   referred_user: { display_name: string | null; username: string | null } | null;
+}
+
+// ─── Cardio ───────────────────────────────────────────────────────────────────
+
+export interface CardioMetrics {
+  id: string;
+  session_id: string;
+  distance_km: number | null;
+  duration_seconds: number | null;
+  avg_pace_min_per_km: number | null;
+  avg_speed_kmh: number | null;
+  elevation_gain_m: number | null;
+  calories_burned: number | null;
+  avg_heart_rate: number | null;
+  strava_activity_id: string | null;
+  strava_synced_at: string | null;
+  session_subtype: CardioSessionSubtype | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CardioMetricsWithSession extends CardioMetrics {
+  session: WorkoutSession;
+}
+
+export interface CardioEnrollment {
+  id: string;
+  user_id: string;
+  plan_template_id: string;
+  workout_type: 'running' | 'cycling';
+  started_at: string;
+  current_week: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StravaConnection {
+  id: string;
+  user_id: string;
+  strava_athlete_id: number | null;
+  access_token: string | null;
+  refresh_token: string | null;
+  token_expires_at: string | null;
+  connected_at: string;
+  updated_at: string;
 }
