@@ -7,15 +7,23 @@ interface Props {
   defaultWeight?: number;
   defaultReps?: number;
   disabled?: boolean;
-  onDone: (weight: number, reps: number) => void;
+  isBodyweight?: boolean;
+  onDone: (weight: number | null, reps: number) => void;
 }
 
-export default function SetLogger({ setNumber, defaultWeight = 0, defaultReps, disabled = false, onDone }: Props) {
+export default function SetLogger({
+  setNumber,
+  defaultWeight = 0,
+  defaultReps,
+  disabled = false,
+  isBodyweight = false,
+  onDone,
+}: Props) {
   const [weight, setWeight] = useState(String(defaultWeight || ''));
   const [reps, setReps] = useState(defaultReps ? String(defaultReps) : '');
 
   function handleDone() {
-    const w = parseFloat(weight) || 0;
+    const w = isBodyweight ? null : (parseFloat(weight) || 0);
     const r = parseInt(reps, 10) || 0;
     if (r === 0) return;
     onDone(w, r);
@@ -26,15 +34,21 @@ export default function SetLogger({ setNumber, defaultWeight = 0, defaultReps, d
     <View style={styles.row}>
       <Text style={styles.setNum}>Set {setNumber}</Text>
       <View style={styles.inputs}>
-        <TextInput
-          style={styles.input}
-          value={weight}
-          onChangeText={setWeight}
-          keyboardType="decimal-pad"
-          placeholder="kg"
-          placeholderTextColor={colors.text.muted}
-          editable={!disabled}
-        />
+        {isBodyweight ? (
+          <View style={[styles.input, styles.bodyweightTag]}>
+            <Text style={styles.bodyweightText}>BW</Text>
+          </View>
+        ) : (
+          <TextInput
+            style={styles.input}
+            value={weight}
+            onChangeText={setWeight}
+            keyboardType="decimal-pad"
+            placeholder="kg"
+            placeholderTextColor={colors.text.muted}
+            editable={!disabled}
+          />
+        )}
         <Text style={styles.times}>×</Text>
         <TextInput
           style={styles.input}
@@ -73,6 +87,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     textAlign: 'center',
   },
+  bodyweightTag: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bodyweightText: { color: colors.text.secondary, fontSize: typography.sm },
   times: { color: colors.text.muted, fontSize: typography.base },
   doneBtn: {
     backgroundColor: colors.success,

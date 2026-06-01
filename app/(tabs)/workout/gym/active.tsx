@@ -89,7 +89,7 @@ export default function ActiveWorkoutScreen() {
     loadPrevSets();
   }, [sessionId, todayPlan, userId]);
 
-  const totalVolume = sets.reduce((sum, s) => sum + s.weight_kg * s.reps, 0);
+  const totalVolume = sets.reduce((sum, s) => sum + (s.weight_kg ?? 0) * s.reps, 0);
 
   async function showForm(exerciseId: string, exerciseName: string) {
     setFormExerciseId(exerciseId);
@@ -115,7 +115,7 @@ export default function ActiveWorkoutScreen() {
   }
 
   const handleSetDone = useCallback(
-    async (exercise: PlannedExercise, weight: number, reps: number) => {
+    async (exercise: PlannedExercise, weight: number | null, reps: number) => {
       if (!sessionId) return;
       const setNum = (completedSets[exercise.exercise_id] ?? 0) + 1;
 
@@ -124,7 +124,7 @@ export default function ActiveWorkoutScreen() {
         exercise_id: exercise.exercise_id,
         exercise_name: exercise.exercise_name,
         set_number: setNum,
-        weight_kg: weight,
+        weight_kg: weight ?? 0,
         reps,
         is_warmup: false,
         completed_at: new Date().toISOString(),
@@ -137,7 +137,7 @@ export default function ActiveWorkoutScreen() {
         exercise_id: exercise.exercise_id,
         exercise_name: exercise.exercise_name,
         set_number: setNum,
-        weight_kg: weight,
+        weight_kg: weight ?? 0,
         reps,
         is_warmup: false,
       });
@@ -146,7 +146,7 @@ export default function ActiveWorkoutScreen() {
       const prevBest = sets
         .filter(s => s.exercise_id === exercise.exercise_id)
         .reduce((max, s) => Math.max(max, s.weight_kg), 0);
-      if (weight > prevBest) {
+      if ((weight ?? 0) > prevBest) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -154,7 +154,7 @@ export default function ActiveWorkoutScreen() {
             user_id: user.id,
             exercise_id: exercise.exercise_id,
             exercise_name: exercise.exercise_name,
-            weight_kg: weight,
+            weight_kg: weight ?? 0,
             reps,
             achieved_at: new Date().toISOString(),
             muscle_group: exercise.muscle_group,
@@ -180,7 +180,7 @@ export default function ActiveWorkoutScreen() {
       const durationHours = elapsedSeconds / 3600;
       const caloriesBurned = Math.round(met * weightKg * durationHours);
 
-      const totalVol = sets.reduce((sum, s) => sum + s.weight_kg * s.reps, 0);
+      const totalVol = sets.reduce((sum, s) => sum + (s.weight_kg ?? 0) * s.reps, 0);
       const xp = sets.length * 10;
       const { error } = await supabase
         .from('workout_sessions')
