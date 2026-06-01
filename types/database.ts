@@ -18,6 +18,7 @@ export type HomeEquipmentTier = 'bodyweight' | 'minimal' | 'home_gym';
 export type RunSessionType = 'easy' | 'tempo' | 'interval' | 'long' | 'rest';
 export type CycleSessionType = 'easy' | 'endurance' | 'interval' | 'tempo' | 'recovery';
 export type CardioSessionSubtype = 'outdoor' | 'indoor';
+export type CardioWorkoutType = 'running' | 'cycling';
 
 export type TriggerEvent =
   | 'post_workout'
@@ -509,7 +510,7 @@ export interface CardioEnrollment {
   id: string;
   user_id: string;
   plan_template_id: string;
-  workout_type: 'running' | 'cycling';
+  workout_type: CardioWorkoutType;
   started_at: string;
   current_week: number;
   is_active: boolean;
