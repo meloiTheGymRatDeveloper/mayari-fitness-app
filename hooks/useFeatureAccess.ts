@@ -8,7 +8,13 @@ export type ProFeature =
   | 'aiFoodLookup'
   | 'intermittentFasting'
   | 'advancedAnalytics'
-  | 'unlimitedBuddies';
+  | 'unlimitedBuddies'
+  | 'stravaSync'
+  | 'cardioPlans'
+  | 'audioKmCues'
+  | 'homeVariantSwaps'
+  | 'homeProgressNudge'
+  | 'circuitMode';
 
 export const PRO_STATUSES: SubscriptionStatus[] = ['beta', 'active', 'achiever'];
 
