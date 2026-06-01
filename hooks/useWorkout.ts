@@ -186,3 +186,23 @@ export function useTodayCaloriesBurned(date: string) {
     },
   });
 }
+
+export function useHomePlans() {
+  const userId = useAuthStore(s => s.session?.user.id);
+  return useQuery({
+    queryKey: ['workout_plans', 'home', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data, error } = await supabase
+        .from('workout_plans')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .eq('workout_type', 'home')
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as WorkoutPlan[];
+    },
+    enabled: !!userId,
+  });
+}
