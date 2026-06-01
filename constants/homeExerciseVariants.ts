@@ -26,7 +26,7 @@ export const homeExerciseVariants: Record<string, ExerciseVariantChain> = {
   'bulgarian_split_squat': { easier: 'squat_bodyweight', harder: 'pistol_squat' },
   'pistol_squat': { easier: 'bulgarian_split_squat', harder: 'shrimp_squat' },
   'lunge': { easier: 'reverse_lunge', harder: 'walking_lunge' },
-  'glute_bridge': { easier: 'glute_bridge', harder: 'single_leg_glute_bridge' },
+  'glute_bridge': { easier: 'supine_hip_lift', harder: 'single_leg_glute_bridge' },
   'nordic_hamstring': { easier: 'glute_bridge', harder: 'single_leg_nordic' },
 
   // Core variants
