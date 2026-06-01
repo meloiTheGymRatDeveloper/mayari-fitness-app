@@ -11,12 +11,16 @@ interface WorkoutState {
   isResting: boolean;
   restSecondsLeft: number;
   elapsedSeconds: number;
+  circuitMode: boolean;
+  circuitRound: number;
   startSession: (sessionId: string, planId: string | null, plan: DayPlan) => void;
   addSet: (set: ActiveSet) => void;
   setRest: (seconds: number) => void;
   skipRest: () => void;
   tickRest: () => void;
   tickElapsed: () => void;
+  setCircuitMode: (enabled: boolean) => void;
+  nextCircuitRound: () => void;
   endSession: () => void;
 }
 
@@ -28,6 +32,8 @@ export const useWorkoutStore = create<WorkoutState>((set) => ({
   isResting: false,
   restSecondsLeft: 0,
   elapsedSeconds: 0,
+  circuitMode: false,
+  circuitRound: 1,
   startSession: (sessionId, planId, plan) =>
     set({ sessionId, planId, todayPlan: plan, sets: [], elapsedSeconds: 0 }),
   addSet: (newSet) => set(s => ({ sets: [...s.sets, newSet] })),
@@ -39,6 +45,8 @@ export const useWorkoutStore = create<WorkoutState>((set) => ({
       isResting: s.restSecondsLeft > 1,
     })),
   tickElapsed: () => set(s => ({ elapsedSeconds: s.elapsedSeconds + 1 })),
+  setCircuitMode: (enabled) => set({ circuitMode: enabled, circuitRound: 1 }),
+  nextCircuitRound: () => set(s => ({ circuitRound: s.circuitRound + 1 })),
   endSession: () =>
-    set({ sessionId: null, planId: null, todayPlan: null, sets: [], isResting: false, restSecondsLeft: 0, elapsedSeconds: 0 }),
+    set({ sessionId: null, planId: null, todayPlan: null, sets: [], isResting: false, restSecondsLeft: 0, elapsedSeconds: 0, circuitMode: false, circuitRound: 1 }),
 }));
