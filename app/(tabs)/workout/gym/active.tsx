@@ -145,7 +145,7 @@ export default function ActiveWorkoutScreen() {
 
       const prevBest = sets
         .filter(s => s.exercise_id === exercise.exercise_id)
-        .reduce((max, s) => Math.max(max, s.weight_kg), 0);
+        .reduce((max, s) => Math.max(max, s.weight_kg ?? 0), 0);
       if ((weight ?? 0) > prevBest) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         const { data: { user } } = await supabase.auth.getUser();
