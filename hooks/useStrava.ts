@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import type { StravaConnection } from '../types/database';
 
-const STRAVA_CLIENT_ID = ''; // Fill in from Strava API application settings
+const STRAVA_CLIENT_ID = '254812';
 
 export function useStravaConnection() {
   const userId = useAuthStore(s => s.session?.user.id);
