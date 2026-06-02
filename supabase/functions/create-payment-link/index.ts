@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PRICES = { monthly: 89, yearly: 799 } as const;
+const PRICES = { beta: 50, monthly: 89, yearly: 799 } as const;
 const REFERRAL_DISCOUNT_PESOS = 20;
 const CONSISTENCY_DISCOUNT_PCT = 0.1;
 
@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const plan: "monthly" | "yearly" = body.plan === "yearly" ? "yearly" : "monthly";
+    const plan: "beta" | "monthly" | "yearly" = ["beta", "yearly"].includes(body.plan) ? body.plan : "monthly";
 
     const anonClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     const basePrice = PRICES[plan];
     let finalPrice = basePrice;
 
-    // Discounts only apply to monthly billing — yearly rate is already discounted
+    // Discounts only apply to full monthly billing — beta and yearly rates are already discounted
     if (plan === "monthly") {
       const [{ data: isConsistent }, { data: referralDiscount }] = await Promise.all([
         supabase.rpc("evaluate_consistency", { uid: userId }),
@@ -65,6 +65,8 @@ Deno.serve(async (req) => {
 
     const description = plan === "yearly"
       ? "Mayari Pro — 1 year"
+      : plan === "beta"
+      ? "Mayari Beta — 1 month"
       : "Mayari Pro — 1 month";
 
     const paymongoRes = await fetch("https://api.paymongo.com/v1/links", {

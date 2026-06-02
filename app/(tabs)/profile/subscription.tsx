@@ -10,6 +10,7 @@ import { colors, typography, spacing, fonts, labelStyle } from '../../../constan
 import { useSubscription, useCreatePaymentLink, useCancelSubscription } from '../../../hooks/useSubscription';
 import { useMyReferrals, calcReferralDiscount } from '../../../hooks/useReferrals';
 
+const BETA_PRICE = 50;
 const MONTHLY_PRICE = 89;
 const YEARLY_PRICE = 799;
 const CONSISTENCY_DISCOUNT_PCT = 0.1;
@@ -39,7 +40,7 @@ export default function SubscriptionScreen() {
   const { data: referrals } = useMyReferrals();
   const createPaymentLink = useCreatePaymentLink();
   const cancelSub = useCancelSubscription();
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
+  const [selectedPlan, setSelectedPlan] = useState<'beta' | 'monthly' | 'yearly'>('beta');
   const [opening, setOpening] = useState(false);
 
   const isActive = sub?.tier === 'beta' || sub?.tier === 'active' || sub?.tier === 'achiever';
@@ -54,7 +55,7 @@ export default function SubscriptionScreen() {
     : 0;
 
   const monthlyFinal = Math.max(1, MONTHLY_PRICE - consistencyDiscount - referralDiscount);
-  const displayedPrice = selectedPlan === 'yearly' ? YEARLY_PRICE : monthlyFinal;
+  const displayedPrice = selectedPlan === 'yearly' ? YEARLY_PRICE : selectedPlan === 'beta' ? BETA_PRICE : monthlyFinal;
   const yearlySaving = MONTHLY_PRICE * 12 - YEARLY_PRICE;
 
   async function handleSubscribe() {
@@ -149,6 +150,14 @@ export default function SubscriptionScreen() {
               {/* Plan toggle */}
               <View style={styles.planToggle}>
                 <TouchableOpacity
+                  style={[styles.toggleBtn, selectedPlan === 'beta' && styles.toggleBtnActive]}
+                  onPress={() => setSelectedPlan('beta')}
+                >
+                  <Text style={[styles.toggleBtnText, selectedPlan === 'beta' && styles.toggleBtnTextActive]}>
+                    Early Access
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={[styles.toggleBtn, selectedPlan === 'monthly' && styles.toggleBtnActive]}
                   onPress={() => setSelectedPlan('monthly')}
                 >
@@ -168,6 +177,15 @@ export default function SubscriptionScreen() {
                   )}
                 </TouchableOpacity>
               </View>
+
+              {/* Beta banner */}
+              {selectedPlan === 'beta' && (
+                <View style={styles.betaBanner}>
+                  <Text style={styles.betaBannerText}>
+                    💜 Early Access rate — renews at ₱{MONTHLY_PRICE}/month after launch
+                  </Text>
+                </View>
+              )}
 
               {/* Price display */}
               <View style={styles.offerPriceRow}>
@@ -202,7 +220,8 @@ export default function SubscriptionScreen() {
                 <Text style={styles.subscribeBtnText}>
                   {opening || createPaymentLink.isPending
                     ? 'Opening...'
-                    : `Subscribe · ₱${displayedPrice}${selectedPlan === 'yearly' ? '/year' : '/month'}`}
+                    : `Subscribe · ₱${displayedPrice}${selectedPlan === 'yearly' ? '/year' : '/month'}`
+                  }
                 </Text>
               </TouchableOpacity>
             </View>
@@ -313,6 +332,15 @@ const styles = StyleSheet.create({
   offerPriceRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginTop: spacing.xs },
   offerPrice: { color: colors.brand.gold, fontSize: 28, fontFamily: fonts.extrabold },
   offerPriceSub: { color: colors.text.secondary, fontSize: typography.sm, fontFamily: fonts.regular, marginBottom: 4 },
+  betaBanner: {
+    backgroundColor: `${colors.brand.secondary}22`,
+    borderRadius: 8, padding: spacing.sm,
+    borderWidth: 1, borderColor: colors.brand.secondary,
+  },
+  betaBannerText: {
+    color: colors.brand.secondary, fontSize: typography.xs, fontFamily: fonts.regular,
+    textAlign: 'center',
+  },
   discountBreakdown: {
     backgroundColor: colors.bg.secondary, borderRadius: 8,
     padding: spacing.sm, gap: 2, marginBottom: spacing.xs,
