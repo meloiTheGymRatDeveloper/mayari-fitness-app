@@ -29,7 +29,6 @@ const PRO_FEATURES = [
   'AI food lookup',
   'Intermittent fasting timer',
   'Advanced analytics dashboard',
-  'Unlimited buddy connections + chat',
   'Push notifications',
 ];
 

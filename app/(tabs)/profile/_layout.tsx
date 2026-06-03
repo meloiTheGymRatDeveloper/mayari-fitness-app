@@ -20,9 +20,6 @@ export default function ProfileLayout() {
       <Stack.Screen name="subscription" options={{ title: 'Subscription', headerBackTitle: 'Back' }} />
       <Stack.Screen name="settings" options={{ title: 'Settings', headerBackTitle: 'Back' }} />
       <Stack.Screen name="streaks" options={{ title: 'Streaks', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="buddies/find" options={{ title: 'Find Gym Buddies', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="buddies/list" options={{ title: 'My Buddies', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="buddies/chat/[id]" options={{ title: 'Chat', headerBackTitle: 'Back' }} />
     </Stack>
   );
 }

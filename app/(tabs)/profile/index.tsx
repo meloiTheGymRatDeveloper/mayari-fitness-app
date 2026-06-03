@@ -16,7 +16,6 @@ import GearSection from '../../../components/profile/GearSection';
 interface Stats {
   workoutStreak: number;
   nutritionStreak: number;
-  buddyCount: number;
   totalWorkouts: number;
   totalXp: number;
 }
@@ -33,13 +32,6 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: 'Social',
-    items: [
-      { label: 'Find Gym Buddies', route: '/(tabs)/profile/buddies/find', emoji: '🤝' },
-      { label: 'My Buddies', route: '/(tabs)/profile/buddies/list', emoji: '💬' },
-    ],
-  },
-  {
     label: 'Account',
     items: [
       { label: 'Referrals', route: '/(tabs)/profile/referral', emoji: '🎁', badge: '₱20 off' },
@@ -53,7 +45,7 @@ export default function MoreScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { profile, clear, updateAvatar } = useAuthStore();
-  const [stats, setStats] = useState<Stats>({ workoutStreak: 0, nutritionStreak: 0, buddyCount: 0, totalWorkouts: 0, totalXp: 0 });
+  const [stats, setStats] = useState<Stats>({ workoutStreak: 0, nutritionStreak: 0, totalWorkouts: 0, totalXp: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
   const [uploading, setUploading] = useState(false);
 
@@ -66,16 +58,14 @@ export default function MoreScreen() {
     if (!user) return;
     setLoadingStats(true);
     try {
-      const [streakRes, buddyRes, sessionRes] = await Promise.all([
+      const [streakRes, sessionRes] = await Promise.all([
         supabase.from('streaks').select('workout_current, nutrition_current').eq('user_id', user.id).maybeSingle(),
-        supabase.from('buddy_connections').select('id', { count: 'exact', head: true }).or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`),
         supabase.from('workout_sessions').select('xp_earned').eq('user_id', user.id).limit(500),
       ]);
       const sessions = sessionRes.data ?? [];
       setStats({
         workoutStreak: streakRes.data?.workout_current ?? 0,
         nutritionStreak: streakRes.data?.nutrition_current ?? 0,
-        buddyCount: buddyRes.count ?? 0,
         totalWorkouts: sessions.length,
         totalXp: sessions.reduce((acc, s) => acc + (s.xp_earned ?? 0), 0),
       });
@@ -221,7 +211,7 @@ export default function MoreScreen() {
               ))}
             </View>
           </View>
-          {section.label === 'Social' && <GearSection />}
+          {section.label === 'Body' && <GearSection />}
         </View>
       ))}
 

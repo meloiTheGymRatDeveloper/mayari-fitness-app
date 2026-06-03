@@ -6,7 +6,6 @@ export type LocationPrecision = 'exact' | 'approx' | 'hidden';
 export type MealSlot = 'almusal' | 'tanghalian' | 'merienda' | 'hapunan';
 export type MessageRole = 'user' | 'assistant';
 export type MessageType = 'chat' | 'plan_generation' | 'photo_analysis';
-export type BuddyRequestStatus = 'pending' | 'accepted' | 'rejected' | 'blocked';
 export type FastingStatus = 'active' | 'completed' | 'cancelled';
 export type UnitsPref = 'metric' | 'imperial';
 export type ReferralStatus = 'pending' | 'active' | 'expired';
@@ -287,49 +286,6 @@ export interface Streak {
   last_nutrition_date: string | null;
 }
 
-export interface BuddyRequest {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  status: BuddyRequestStatus;
-  message: string | null;
-  created_at: string;
-}
-
-export interface BuddyConnection {
-  id: string;
-  user_a_id: string;
-  user_b_id: string;
-  connected_at: string;
-}
-
-export interface BuddyMessage {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  read_at: string | null;
-  created_at: string;
-}
-
-export interface NearbyUser {
-  id: string;
-  display_name: string;
-  avatar_url: string | null;
-  primary_goal: PrimaryGoal;
-  experience_level: ExperienceLevel;
-  workout_days: number[];
-  location_precision: LocationPrecision;
-  distance_m: number;
-}
-
-export interface BuddyRequestWithSender extends BuddyRequest {
-  sender: Pick<UserProfile, 'id' | 'display_name' | 'avatar_url' | 'primary_goal'>;
-}
-
-export interface BuddyConnectionWithUser extends BuddyConnection {
-  other_user: Pick<UserProfile, 'id' | 'display_name' | 'avatar_url' | 'primary_goal'>;
-}
 
 // ─── Meal Planning ────────────────────────────────────────────────────────────
 
