@@ -60,7 +60,7 @@ export default function GearSection() {
             </View>
             <TouchableOpacity
               style={[styles.btn, hasLink ? styles.btnActive : styles.btnDisabled]}
-              onPress={() => hasLink && Linking.openURL(product.url)}
+              onPress={() => hasLink && Linking.openURL(product.url).catch(() => {})}
               disabled={!hasLink}
               activeOpacity={0.75}
             >
@@ -120,6 +120,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: typography.xs - 1,
+    fontFamily: fonts.regular,
   },
   btn: {
     borderRadius: 6,
