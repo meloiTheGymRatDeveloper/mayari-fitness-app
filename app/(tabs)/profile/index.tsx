@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
+import GearSection from '../../../components/profile/GearSection';
 
 interface Stats {
   workoutStreak: number;
@@ -198,26 +199,29 @@ export default function MoreScreen() {
 
       {/* Nav sections */}
       {NAV_SECTIONS.map((section) => (
-        <View key={section.label} style={styles.section}>
-          <Text style={labelStyle}>{section.label}</Text>
-          <View style={styles.sectionCard}>
-            {section.items.map((item, idx) => (
-              <TouchableOpacity
-                key={item.label}
-                style={[styles.navRow, idx < section.items.length - 1 && styles.navRowBorder]}
-                onPress={() => router.push(item.route as never)}
-              >
-                <Text style={styles.navEmoji}>{item.emoji}</Text>
-                <Text style={styles.navLabel}>{item.label}</Text>
-                {item.badge && (
-                  <View style={styles.navBadge}>
-                    <Text style={styles.navBadgeText}>{item.badge}</Text>
-                  </View>
-                )}
-                <Text style={styles.navChevron}>›</Text>
-              </TouchableOpacity>
-            ))}
+        <View key={section.label}>
+          <View style={styles.section}>
+            <Text style={labelStyle}>{section.label}</Text>
+            <View style={styles.sectionCard}>
+              {section.items.map((item, idx) => (
+                <TouchableOpacity
+                  key={item.label}
+                  style={[styles.navRow, idx < section.items.length - 1 && styles.navRowBorder]}
+                  onPress={() => router.push(item.route as never)}
+                >
+                  <Text style={styles.navEmoji}>{item.emoji}</Text>
+                  <Text style={styles.navLabel}>{item.label}</Text>
+                  {item.badge && (
+                    <View style={styles.navBadge}>
+                      <Text style={styles.navBadgeText}>{item.badge}</Text>
+                    </View>
+                  )}
+                  <Text style={styles.navChevron}>›</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
+          {section.label === 'Social' && <GearSection />}
         </View>
       ))}
 
