@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
-  Modal,
+  Modal, Keyboard,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -223,7 +223,7 @@ export default function ActiveWorkoutScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" onScrollBeginDrag={Keyboard.dismiss}>
         {todayPlan.exercises.map(exercise => {
           const done = completedSets[exercise.exercise_id] ?? 0;
           const remaining = exercise.sets - done;

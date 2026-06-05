@@ -103,6 +103,10 @@ export default function HomeWorkoutHub() {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <Text style={styles.backArrow}>‹</Text>
+        <Text style={styles.backText}>Back</Text>
+      </TouchableOpacity>
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.heading}>Home Workout</Text>
@@ -156,6 +160,9 @@ export default function HomeWorkoutHub() {
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
+  backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md, gap: 4 },
+  backArrow: { color: colors.brand.primary, fontSize: 28, lineHeight: 28 },
+  backText: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.semibold },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.lg },
   heading: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.bold },
   sub: { color: colors.text.secondary, fontSize: typography.sm, marginTop: 2 },

@@ -117,6 +117,10 @@ export default function RunningHub() {
       style={styles.scroll}
       contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}
     >
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <Text style={styles.backArrow}>‹</Text>
+        <Text style={styles.backText}>Back</Text>
+      </TouchableOpacity>
       <Text style={styles.heading}>Running</Text>
       <Text style={styles.sub}>
         {stravaConnection ? 'Strava connected ✓' : 'Log your runs, track your progress'}
@@ -307,6 +311,9 @@ export default function RunningHub() {
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { padding: spacing.lg, gap: spacing.sm },
+  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  backArrow: { color: colors.brand.primary, fontSize: 28, lineHeight: 28 },
+  backText: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.semibold },
   heading: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.bold },
   sub: { color: colors.text.secondary, fontSize: typography.sm },
   stravaBanner: {

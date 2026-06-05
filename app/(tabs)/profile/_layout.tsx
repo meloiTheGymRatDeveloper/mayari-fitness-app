@@ -17,7 +17,7 @@ export default function ProfileLayout() {
       <Stack.Screen name="measurements" options={{ title: 'Measurements', headerBackTitle: 'Back' }} />
       <Stack.Screen name="progress" options={{ title: 'Progress & Analytics', headerBackTitle: 'Back' }} />
       <Stack.Screen name="referral" options={{ title: 'Referrals', headerBackTitle: 'Back' }} />
-      <Stack.Screen name="subscription" options={{ title: 'Subscription', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="subscription" options={{ headerShown: false }} />
       <Stack.Screen name="settings" options={{ title: 'Settings', headerBackTitle: 'Back' }} />
       <Stack.Screen name="streaks" options={{ title: 'Streaks', headerBackTitle: 'Back' }} />
     </Stack>

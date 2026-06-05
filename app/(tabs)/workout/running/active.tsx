@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import * as Speech from 'expo-speech';
+function getSpeech() {
+  try { return require('expo-speech') as typeof import('expo-speech'); } catch { return null; }
+}
 import { colors, typography, spacing, fonts } from '../../../../constants/theme';
 import { useFeatureAccess } from '../../../../hooks/useFeatureAccess';
 
@@ -54,7 +56,7 @@ export default function RunningActiveSession() {
       const pace = targetPaceNum;
       const paceMin = Math.floor(pace);
       const paceSec = Math.round((pace - paceMin) * 60);
-      Speech.speak(
+      getSpeech()?.speak(
         `${currentKm} kilometer. Estimated pace: ${paceMin} minutes ${paceSec} seconds per kilometer.`,
         { language: 'en-PH', rate: 0.9 },
       );
@@ -63,7 +65,7 @@ export default function RunningActiveSession() {
 
   const handleEnd = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    Speech.stop();
+    getSpeech()?.stop();
     router.replace({
       pathname: '/(tabs)/workout/running/summary' as never,
       params: { elapsed: String(elapsed), targetDistKm: distanceKm },

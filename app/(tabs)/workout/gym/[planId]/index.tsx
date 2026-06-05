@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../../../stores/authStore';
 import { supabase } from '../../../../../lib/supabase';
 import { colors, typography, spacing, fonts } from '../../../../../constants/theme';
@@ -15,6 +16,7 @@ function getPlanLetter(plans: WorkoutPlan[], planId: string): string {
 export default function PlanDayListScreen() {
   const { planId } = useLocalSearchParams<{ planId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const userId = useAuthStore(s => s.session?.user.id);
 
   const [plan, setPlan] = useState<WorkoutPlan | null>(null);
@@ -63,7 +65,11 @@ export default function PlanDayListScreen() {
   };
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <Text style={styles.backArrow}>‹</Text>
+        <Text style={styles.backText}>Back</Text>
+      </TouchableOpacity>
       <Text style={styles.planMeta}>{SPLIT_LABELS[plan.split_type] ?? plan.split_type}</Text>
       <Text style={styles.heading}>Workout {planLetter}</Text>
       <Text style={styles.subheading}>Choose a session to do today</Text>
@@ -91,6 +97,9 @@ export default function PlanDayListScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
+  backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md, gap: 4 },
+  backArrow: { color: colors.brand.primary, fontSize: 28, lineHeight: 28 },
+  backText: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.semibold },
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center' },
   planMeta: { color: colors.brand.secondary, fontSize: typography.sm, fontFamily: fonts.semibold, marginBottom: 4 },
   heading: { color: colors.text.primary, fontSize: typography['2xl'], fontFamily: fonts.bold, marginBottom: 4 },

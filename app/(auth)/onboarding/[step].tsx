@@ -220,17 +220,17 @@ function StepBirthdate({ value, onChange }: { value: string; onChange: (v: strin
         <Input
           label="Day" value={day}
           onChangeText={(v) => { setDay(v); update(v, month, year); if (v.length === 2) monthRef.current?.focus(); }}
-          keyboardType="number-pad" maxLength={2} placeholder="DD" style={styles.flex1}
+          keyboardType="number-pad" maxLength={2} placeholder="DD" style={styles.flex1} textAlign="center"
         />
         <Input
           ref={monthRef} label="Month" value={month}
           onChangeText={(v) => { setMonth(v); update(day, v, year); if (v.length === 2) yearRef.current?.focus(); }}
-          keyboardType="number-pad" maxLength={2} placeholder="MM" style={styles.flex1}
+          keyboardType="number-pad" maxLength={2} placeholder="MM" style={styles.flex1} textAlign="center"
         />
         <Input
           ref={yearRef} label="Year" value={year}
           onChangeText={(v) => { setYear(v); update(day, month, v); }}
-          keyboardType="number-pad" maxLength={4} placeholder="YYYY" style={[styles.flex1, { flex: 1.5 }]}
+          keyboardType="number-pad" maxLength={4} placeholder="YYYY" style={[styles.flex1, { flex: 1.5 }]} textAlign="center"
         />
       </View>
       <Text style={styles.fieldHelper}>Format: DD / MM / YYYY — e.g. 15 / 06 / 1998</Text>
@@ -412,11 +412,11 @@ function StepGoal({ value, onChange }: { value: PrimaryGoal | ''; onChange: (v: 
 // ─── Step 6: Activity Level ───────────────────────────────────────────────────
 
 const ACTIVITY_LEVELS: { key: ActivityLevel; emoji: string; label: string; sub: string; pal: string }[] = [
-  { key: 'sedentary', emoji: '🛋️', label: 'Sedentary', sub: 'Desk job · little or no exercise', pal: '×1.2' },
-  { key: 'lightly_active', emoji: '🚶', label: 'Lightly Active', sub: 'Light exercise 1–3 days/week', pal: '×1.375' },
-  { key: 'moderately_active', emoji: '🏋️', label: 'Moderately Active', sub: 'Moderate exercise 3–5 days/week', pal: '×1.55' },
-  { key: 'very_active', emoji: '⚡', label: 'Very Active', sub: 'Hard exercise 6–7 days/week', pal: '×1.725' },
-  { key: 'extremely_active', emoji: '🔥', label: 'Extremely Active', sub: 'Hard training + physical job', pal: '×1.9' },
+  { key: 'sedentary', emoji: '🛋️', label: 'Sedentary', sub: 'Desk job · little or no exercise', pal: 'Rarely' },
+  { key: 'lightly_active', emoji: '🚶', label: 'Lightly Active', sub: 'Light exercise 1–3 days/week', pal: '1–3×/week' },
+  { key: 'moderately_active', emoji: '🏋️', label: 'Moderately Active', sub: 'Moderate exercise 3–5 days/week', pal: '3–5×/week' },
+  { key: 'very_active', emoji: '⚡', label: 'Very Active', sub: 'Hard exercise 6–7 days/week', pal: '6–7×/week' },
+  { key: 'extremely_active', emoji: '🔥', label: 'Extremely Active', sub: 'Hard training + physical job', pal: 'Daily+' },
 ];
 
 function StepActivityLevel({
@@ -559,11 +559,11 @@ const GOAL_ADJUSTMENTS: Record<string, string> = {
 };
 
 const PAL_LABELS: Record<string, string> = {
-  sedentary: '×1.2',
-  lightly_active: '×1.375',
-  moderately_active: '×1.55',
-  very_active: '×1.725',
-  extremely_active: '×1.9',
+  sedentary: 'Sedentary',
+  lightly_active: 'Lightly Active',
+  moderately_active: 'Moderately Active',
+  very_active: 'Very Active',
+  extremely_active: 'Extremely Active',
 };
 
 function StepResults({

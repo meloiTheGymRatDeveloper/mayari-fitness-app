@@ -7,13 +7,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withTiming,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'react-native-linear-gradient';
 import { useAuthStore } from '../../stores/authStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useDailyNutrition } from '../../hooks/useDailyNutrition';
 import { useTodayCaloriesBurned } from '../../hooks/useWorkout';
 import { useDailyTip } from '../../hooks/useCoach';
-import { useLatestTip } from '../../hooks/useCoachTips';
 import { useSmartCopy, useYesterdaySlotHasData } from '../../hooks/useSmartCopy';
 import { useStreaks } from '../../hooks/useStreaks';
 import DayStrip from '../../components/home/DayStrip';
@@ -61,7 +59,6 @@ export default function HomeScreen() {
   const name = profile?.display_name ?? 'Ka-tropa';
 
   const { data: dailyTip, isLoading: tipLoading } = useDailyTip();
-  const latestTip = useLatestTip();
   const { data: streaks } = useStreaks();
   const [activeMilestone, setActiveMilestone] = useState<number | null>(null);
 
@@ -90,12 +87,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.screenWrapper}>
       <Animated.View style={[styles.moonOrb, moonAnimStyle]} pointerEvents="none">
-        <LinearGradient
-          colors={['#C4A55A', '#F5E680']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.moonOrbInner}
-        />
+        <View style={styles.moonOrbInner} />
       </Animated.View>
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
         <View style={styles.greetRow}>
@@ -118,13 +110,6 @@ export default function HomeScreen() {
         <DayStrip selectedDate={date} onSelectDate={setDate} />
 
         <View style={{ height: spacing.sm }} />
-
-        {latestTip && (
-          <View style={styles.tipCard}>
-            <Text style={styles.tipCardLabel}>🌙 Mayari says</Text>
-            <Text style={styles.tipCardContent}>{latestTip.content}</Text>
-          </View>
-        )}
 
         <CaloriesCard
           consumed={daily.totals.calories}
@@ -175,17 +160,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.secondary, borderRadius: 10,
     padding: spacing.sm, borderWidth: 1, borderColor: colors.border,
   },
-  tipCard: {
-    marginHorizontal: spacing.lg,
-    backgroundColor: colors.bg.secondary,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.brand.gold,
-  },
-  tipCardLabel: { ...labelStyle, marginBottom: 4 },
-  tipCardContent: { color: colors.text.primary, fontSize: typography.base, lineHeight: 22 },
   moonOrb: {
     position: 'absolute',
     top: 0,
@@ -197,6 +171,7 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     opacity: 0.35,
+    backgroundColor: '#C4A55A',
   },
   coachCard: {
     marginHorizontal: spacing.lg, marginTop: spacing.sm,

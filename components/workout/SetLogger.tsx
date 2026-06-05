@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Keyboard } from 'react-native';
 import { colors, typography, spacing } from '../../constants/theme';
 
 interface Props {
@@ -21,8 +21,10 @@ export default function SetLogger({
 }: Props) {
   const [weight, setWeight] = useState(String(defaultWeight || ''));
   const [reps, setReps] = useState(defaultReps ? String(defaultReps) : '');
+  const repsRef = useRef<TextInput>(null);
 
   function handleDone() {
+    Keyboard.dismiss();
     const w = isBodyweight ? null : (parseFloat(weight) || 0);
     const r = parseInt(reps, 10) || 0;
     if (r === 0) return;
@@ -47,10 +49,14 @@ export default function SetLogger({
             placeholder="kg"
             placeholderTextColor={colors.text.muted}
             editable={!disabled}
+            returnKeyType="next"
+            onSubmitEditing={() => repsRef.current?.focus()}
+            blurOnSubmit={false}
           />
         )}
         <Text style={styles.times}>×</Text>
         <TextInput
+          ref={repsRef}
           style={styles.input}
           value={reps}
           onChangeText={setReps}
@@ -58,6 +64,8 @@ export default function SetLogger({
           placeholder="reps"
           placeholderTextColor={colors.text.muted}
           editable={!disabled}
+          returnKeyType="done"
+          onSubmitEditing={Keyboard.dismiss}
         />
       </View>
       <TouchableOpacity

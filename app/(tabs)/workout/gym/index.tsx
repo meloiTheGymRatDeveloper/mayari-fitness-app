@@ -170,6 +170,10 @@ export default function WorkoutScreen() {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <Text style={styles.backArrow}>‹</Text>
+        <Text style={styles.backText}>Back</Text>
+      </TouchableOpacity>
       <View style={styles.headerRow}>
         <Text style={styles.heading}>Workout</Text>
         {plans.length > 0 && (
@@ -256,6 +260,9 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.bg.primary },
   container: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
   centered: { flex: 1, backgroundColor: colors.bg.primary, justifyContent: 'center', alignItems: 'center' },
+  backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md, gap: 4 },
+  backArrow: { color: colors.brand.primary, fontSize: 28, lineHeight: 28 },
+  backText: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.semibold },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg },
   browseBtn: {
     borderRadius: 10,

@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withTiming,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'react-native-linear-gradient';
 import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import {
   useCoachTips, useMarkAllTipsRead, useRequestTip,
@@ -102,12 +101,7 @@ export default function CoachScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <Animated.View style={[styles.moonOrb, moonAnimStyle]} pointerEvents="none">
-        <LinearGradient
-          colors={['#C4A55A', '#F5E680']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.moonOrbInner}
-        />
+        <View style={styles.moonOrbInner} />
       </Animated.View>
       <Text style={styles.header}>Coach Mayari</Text>
 
@@ -136,7 +130,7 @@ export default function CoachScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg.primary, padding: spacing.lg },
   moonOrb: { position: 'absolute', top: 0, right: spacing.lg, zIndex: 10 },
-  moonOrbInner: { width: 52, height: 52, borderRadius: 26, opacity: 0.35 },
+  moonOrbInner: { width: 52, height: 52, borderRadius: 26, opacity: 0.35, backgroundColor: '#C4A55A' },
   header: {
     color: colors.text.primary,
     fontSize: typography['2xl'],
