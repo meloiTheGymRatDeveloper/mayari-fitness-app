@@ -762,7 +762,7 @@ async function fireAndForgetJuanInvoice(opts: {
 - [ ] **Terms of Service** page — subscription terms, refund policy, acceptable use
 - [ ] Add Privacy Policy URL to `app.json` → `expo.ios.privacyManifest` and App Store Connect
 - [ ] BIR registration if not already done (required for issuing receipts via JuanTax)
-- [ ] **Delete Account** — in-app flow required by Google Play (2024 policy). Confirmation modal in `app/(tabs)/profile/settings.tsx` → calls `delete-account` Supabase Edge Function → deletes user data + auth account. Also satisfies Apple App Store requirement.
+- [x] **Delete Account** — in-app flow: confirmation modal in `app/(tabs)/profile/settings.tsx` → `delete-account` Edge Function. Web URL for Play Console: https://clever-antique-3e9.notion.site/Mayari-Account-Data-Deletion-Request-3799e0aa48848032af2add72428b5a0e
 
 ---
 
