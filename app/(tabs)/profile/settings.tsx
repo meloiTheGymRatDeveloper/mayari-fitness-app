@@ -41,6 +41,9 @@ export default function SettingsScreen() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [workoutTime, setWorkoutTime] = useState(profile?.notif_workout_time ?? '18:00');
   const [timePickerVisible, setTimePickerVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   function formatTime(t: string): string {
     const h = parseInt(t.split(':')[0], 10);
@@ -87,39 +90,37 @@ export default function SettingsScreen() {
     clear();
   }
 
-  async function handleDeleteAccount() {
+  function handleDeleteAccount() {
     Alert.alert(
       'Delete Account',
       'This will permanently delete your account and all data. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Continue',
           style: 'destructive',
-          onPress: () => {
-            Alert.prompt(
-              'Confirm Deletion',
-              'Type DELETE to confirm',
-              async (input) => {
-                if (input?.trim() !== 'DELETE') {
-                  Alert.alert('Cancelled', 'You must type DELETE exactly.');
-                  return;
-                }
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) return;
-                const { error } = await supabase.functions.invoke('delete-account', {
-                  headers: { Authorization: `Bearer ${session.access_token}` },
-                });
-                if (error) { Alert.alert('Error', 'Could not delete account. Please try again.'); return; }
-                await supabase.auth.signOut();
-                clear();
-              },
-              'plain-text'
-            );
-          },
+          onPress: () => { setDeleteConfirmText(''); setDeleteModalVisible(true); },
         },
       ]
     );
+  }
+
+  async function confirmDelete() {
+    if (deleteConfirmText.trim() !== 'DELETE') {
+      Alert.alert('Type DELETE exactly', 'Please type DELETE in all caps to confirm.');
+      return;
+    }
+    setDeleting(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setDeleting(false); return; }
+    const { error } = await supabase.functions.invoke('delete-account', {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    setDeleting(false);
+    if (error) { Alert.alert('Error', 'Could not delete account. Please try again.'); return; }
+    setDeleteModalVisible(false);
+    await supabase.auth.signOut();
+    clear();
   }
 
   // Suppress unused variable warning — router is available for future navigation needs
@@ -280,6 +281,50 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
       <Modal
+        visible={deleteModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, styles.deleteModalSheet]}>
+            <Text style={styles.deleteModalTitle}>Confirm Account Deletion</Text>
+            <Text style={styles.deleteModalBody}>
+              This will permanently delete your account and all data. Type{' '}
+              <Text style={{ color: colors.error, fontFamily: fonts.bold }}>DELETE</Text>
+              {' '}to confirm.
+            </Text>
+            <TextInput
+              style={[styles.inlineInput, styles.deleteModalInput]}
+              placeholder="Type DELETE here"
+              placeholderTextColor={colors.text.muted}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              value={deleteConfirmText}
+              onChangeText={setDeleteConfirmText}
+            />
+            <View style={styles.deleteModalActions}>
+              <Button
+                label="Cancel"
+                variant="outline"
+                onPress={() => setDeleteModalVisible(false)}
+                style={{ flex: 1 }}
+              />
+              <TouchableOpacity
+                style={[styles.deleteBtn, { flex: 1, marginTop: 0 }]}
+                onPress={confirmDelete}
+                disabled={deleting}
+              >
+                {deleting
+                  ? <ActivityIndicator size="small" color={colors.error} />
+                  : <Text style={styles.deleteBtnText}>Delete Forever</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={timePickerVisible}
         transparent
         animationType="fade"
@@ -399,4 +444,35 @@ const styles = StyleSheet.create({
   timeOptionText: { color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.regular },
   timeOptionTextSelected: { color: colors.brand.primary, fontFamily: fonts.semibold },
   timeOptionCheck: { color: colors.brand.primary, fontSize: typography.base, fontFamily: fonts.bold },
+  deleteModalSheet: {
+    marginHorizontal: spacing.lg,
+    borderRadius: 20,
+    paddingBottom: spacing.lg,
+  },
+  deleteModalTitle: {
+    color: colors.error,
+    fontSize: typography.lg,
+    fontFamily: fonts.bold,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  deleteModalBody: {
+    color: colors.text.secondary,
+    fontSize: typography.sm,
+    fontFamily: fonts.regular,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    lineHeight: 20,
+  },
+  deleteModalInput: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  deleteModalActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
 });

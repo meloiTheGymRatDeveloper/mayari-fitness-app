@@ -5,6 +5,25 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// FK-safe deletion order: children before parents
+const DELETION_ORDER = [
+  "workout_sets",
+  "workout_sessions",
+  "workout_plans",
+  "personal_records",
+  "food_logs",
+  "body_measurements",
+  "coach_messages",
+  "streaks",
+  "fasting_logs",
+  "cardio_metrics",
+  "cardio_plan_enrollments",
+  "strava_connections",
+  "referrals",
+  "subscriptions",
+  "users",
+];
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -21,7 +40,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify the caller's JWT to get their user ID
+    // Verify caller's JWT to get user ID
     const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -32,8 +51,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use admin client to delete the auth user — cascades to public.users via ON DELETE CASCADE
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    // Explicitly delete in FK-safe order before removing auth user
+    for (const table of DELETION_ORDER) {
+      const col = table === "referrals" ? undefined : "user_id";
+      if (col) {
+        const { error } = await adminClient.from(table).delete().eq(col, user.id);
+        if (error) console.error(`delete-account: failed to delete from ${table}:`, error.message);
+      } else {
+        // referrals: user may appear as referrer or referred_user
+        await adminClient.from("referrals").delete().eq("referrer_id", user.id);
+        await adminClient.from("referrals").delete().eq("referred_user_id", user.id);
+      }
+    }
+
+    // Delete auth user last
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id);
     if (deleteError) {
       return new Response(JSON.stringify({ error: deleteError.message }), {
