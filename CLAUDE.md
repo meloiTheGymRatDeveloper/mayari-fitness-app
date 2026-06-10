@@ -520,7 +520,12 @@ Set via: `supabase secrets set ANTHROPIC_API_KEY=sk-ant-...`
 | 8 | Money + Polish | Streaks (DB triggers), Referrals, PayMongo, Settings, Push notifications, Final polish |
 | ~~9~~ | ~~Meal Planning~~ | **Deferred to Phase 2** — Weekly meal planner, Grocery list, AI Meal Builder. Code exists but feature is hidden from navigation. |
 
-**Current phase: Post-Week 8 — polish, bug fixes, optimization**
+## 🔮 Phase 2 Roadmap (Post-Beta)
+
+- **Meal Planning** — Weekly meal planner, AI Meal Builder, Grocery list (code exists, hidden from nav)
+- **Adaptive Calorie Targets** — `mayari-analyze` edge function monitors weight trend vs predicted deficit/surplus. If weight isn't moving as expected over 2+ weeks, Coach Mayari suggests adjusting calorie targets. Uses existing `body_measurements` + `food_logs` data. Pro feature.
+
+**Current phase: Beta Launch**
 
 ---
 
