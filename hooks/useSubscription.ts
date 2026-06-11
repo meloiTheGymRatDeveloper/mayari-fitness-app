@@ -31,7 +31,7 @@ export function useCreatePaymentLink() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (plan: 'monthly' | 'yearly' = 'monthly'): Promise<PaymentLinkResult> => {
+    mutationFn: async (plan: 'beta' | 'monthly' | 'yearly' = 'monthly'): Promise<PaymentLinkResult> => {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) throw new Error('Not authenticated');

@@ -77,7 +77,8 @@
           "microphonePermission": "Allow Mayari to use your microphone to log food by voice.",
           "speechRecognitionPermission": "Allow Mayari to recognize your speech to identify food items."
         }
-      ]
+      ],
+      "react-native-iap"
     ],
     "experiments": {
       "typedRoutes": true
