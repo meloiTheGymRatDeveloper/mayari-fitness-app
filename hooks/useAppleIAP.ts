@@ -1,5 +1,5 @@
 import { Platform, Linking } from 'react-native';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import {
@@ -62,6 +62,14 @@ export function useAppleIAP() {
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const queryClient = useQueryClient();
+  const purchaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPurchaseTimeout = useCallback(() => {
+    if (purchaseTimeoutRef.current) {
+      clearTimeout(purchaseTimeoutRef.current);
+      purchaseTimeoutRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
@@ -103,6 +111,7 @@ export function useAppleIAP() {
     }
 
     purchaseListener = purchaseUpdatedListener(async (purchase: Purchase) => {
+      clearPurchaseTimeout();
       try {
         await verifyAndActivate(purchase, queryClient);
         setLastError(null);
@@ -114,6 +123,7 @@ export function useAppleIAP() {
     });
 
     errorListener = purchaseErrorListener((err: PurchaseError) => {
+      clearPurchaseTimeout();
       setPurchasing(false);
       if (err.code !== 'E_USER_CANCELLED' as never) {
         console.warn('IAP error:', err);
@@ -124,11 +134,12 @@ export function useAppleIAP() {
     init();
 
     return () => {
+      clearPurchaseTimeout();
       purchaseListener.remove();
       errorListener.remove();
       endConnection();
     };
-  }, [queryClient]);
+  }, [queryClient, clearPurchaseTimeout]);
 
   const purchase = useCallback(async (plan: AppleIAPPlan) => {
     setLastError(null);
@@ -138,14 +149,26 @@ export function useAppleIAP() {
       throw new Error(msg);
     }
     setPurchasing(true);
+    // Safety net: if StoreKit never resolves (modal fails to present, system
+    // race), unstick the button after 60s so the user is not trapped at
+    // "Processing…". The listeners normally clear this much sooner.
+    clearPurchaseTimeout();
+    purchaseTimeoutRef.current = setTimeout(() => {
+      purchaseTimeoutRef.current = null;
+      setPurchasing(false);
+      setLastError(
+        'The App Store did not respond. Please check your connection and try again.',
+      );
+    }, 60_000);
     try {
       await requestPurchase({
         request: { apple: { sku: APPLE_IAP_PRODUCTS[plan] } },
         type: 'subs',
       });
       // success/failure is delivered via purchaseUpdatedListener / purchaseErrorListener.
-      // The listeners clear `purchasing`.
+      // The listeners clear `purchasing` and the timeout.
     } catch (err: unknown) {
+      clearPurchaseTimeout();
       setPurchasing(false);
       const code = (err as { code?: string }).code;
       if (code === 'E_USER_CANCELLED') return;
@@ -153,7 +176,7 @@ export function useAppleIAP() {
       setLastError(msg);
       throw err;
     }
-  }, [status, initError]);
+  }, [status, initError, clearPurchaseTimeout]);
 
   const restore = useCallback(async () => {
     setRestoring(true);

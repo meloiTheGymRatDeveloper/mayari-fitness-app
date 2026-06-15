@@ -17,7 +17,9 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.mayari.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Mayari uses your camera to scan food barcodes for instant nutrition lookup and to take photos of your meals for AI-powered calorie and macro estimation (for example, snapping a plate of adobo to log its calories).",
+        "NSPhotoLibraryUsageDescription": "Mayari accesses your photo library so you can pick an existing meal photo for AI calorie estimation (for example, choosing a saved lunch photo to log it) and to set your profile picture."
       }
     },
     "android": {
