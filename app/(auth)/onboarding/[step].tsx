@@ -4,7 +4,8 @@ import {
   Pressable, TextInput, Modal, Image, BackHandler, Animated,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter, Stack } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { computeAllTargets } from '../../../lib/calories';
@@ -684,13 +685,71 @@ export default function OnboardingStep() {
   const [stepError, setStepError] = useState<string | null>(null);
   const [weightError, setWeightError] = useState<string | null>(null);
   const [heightError, setHeightError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
-  // Disable hardware back on results screen
+  const userId = session?.user?.id;
+  const storageKey = userId ? `onboarding:${userId}` : null;
+
+  // Restore in-progress onboarding state on mount.
   useEffect(() => {
-    if (currentStep !== 8) return;
+    if (!storageKey) return;
+    let cancelled = false;
+    AsyncStorage.getItem(storageKey).then((raw) => {
+      if (cancelled) return;
+      if (raw) {
+        try {
+          const s = JSON.parse(raw);
+          if (typeof s.currentStep === 'number') setCurrentStep(s.currentStep);
+          if (typeof s.displayName === 'string') setDisplayName(s.displayName);
+          if (s.gender) setGender(s.gender);
+          if (typeof s.birthdate === 'string') setBirthdate(s.birthdate);
+          if (typeof s.weight === 'string') setWeight(s.weight);
+          if (s.weightUnit === 'kg' || s.weightUnit === 'lbs') setWeightUnit(s.weightUnit);
+          if (typeof s.heightCm === 'string') setHeightCm(s.heightCm);
+          if (typeof s.heightFt === 'string') setHeightFt(s.heightFt);
+          if (typeof s.heightIn === 'string') setHeightIn(s.heightIn);
+          if (s.heightUnit === 'cm' || s.heightUnit === 'ft') setHeightUnit(s.heightUnit);
+          if (typeof s.bodyFat === 'string') setBodyFat(s.bodyFat);
+          if (s.goal) setGoal(s.goal);
+          if (s.activityLevel) setActivityLevel(s.activityLevel);
+          if (s.experience) setExperience(s.experience);
+          if (Array.isArray(s.workoutDays)) setWorkoutDays(s.workoutDays);
+          if (s.equipment) setEquipment(s.equipment);
+          if (s.targets) setTargets(s.targets);
+        } catch {
+          // Ignore corrupted storage and start fresh.
+        }
+      }
+      setHydrated(true);
+    }).catch(() => { if (!cancelled) setHydrated(true); });
+    return () => { cancelled = true; };
+  }, [storageKey]);
+
+  // Persist in-progress onboarding state on every change.
+  useEffect(() => {
+    if (!hydrated || !storageKey) return;
+    AsyncStorage.setItem(storageKey, JSON.stringify({
+      currentStep,
+      displayName, gender, birthdate,
+      weight, weightUnit, heightCm, heightFt, heightIn, heightUnit,
+      bodyFat, goal, activityLevel, experience, workoutDays, equipment,
+      targets,
+    })).catch(() => {});
+  }, [
+    hydrated, storageKey, currentStep,
+    displayName, gender, birthdate,
+    weight, weightUnit, heightCm, heightFt, heightIn, heightUnit,
+    bodyFat, goal, activityLevel, experience, workoutDays, equipment,
+    targets,
+  ]);
+
+  // Disable hardware back across the entire onboarding flow.
+  // Partial onboarding leaves the user with an auth account but no username,
+  // which strands them on auth screens; blocking back avoids that trap.
+  useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => sub.remove();
-  }, [currentStep]);
+  }, []);
 
   useEffect(() => { setStepError(null); setWeightError(null); setHeightError(null); }, [currentStep]);
 
@@ -808,6 +867,7 @@ export default function OnboardingStep() {
       );
 
       if (error) { setStepError(error.message); return; }
+      if (storageKey) AsyncStorage.removeItem(storageKey).catch(() => {});
       await fetchProfile(session.user.id);
       router.replace('/(tabs)');
     } finally {
@@ -918,12 +978,15 @@ export default function OnboardingStep() {
 
   const progress = (currentStep / TOTAL_STEPS) * 100;
 
+  if (!hydrated) return <View style={styles.scroll} />;
+
   return (
     <ScrollView
       style={styles.scroll}
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
+      <Stack.Screen options={{ gestureEnabled: false }} />
       {/* Progress */}
       <View style={styles.progressHeader}>
         <Text style={styles.progressLabel}>Step {currentStep} of {TOTAL_STEPS}</Text>

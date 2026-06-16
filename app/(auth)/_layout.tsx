@@ -8,8 +8,12 @@ export default function AuthLayout() {
 
   useEffect(() => {
     if (isLoading) return;
-    if (session && profile?.username) {
+    if (!session) return;
+    if (profile?.username) {
       router.replace('/(tabs)');
+    } else if (profile && !profile.username) {
+      // Signed in but onboarding incomplete — resume instead of stranding on auth screens.
+      router.replace('/(auth)/onboarding/1');
     }
   }, [session, profile, isLoading]);
 
