@@ -19,7 +19,10 @@ Deno.serve(async (req) => {
         })
       );
       const timestamp = parts["t"] ?? "";
-      const sigToVerify = parts["lv"] ?? parts["li"] ?? "";
+      // PayMongo signs with `te` in test mode and `li` in live mode. Accept
+      // either — which one is present is determined by the dashboard env, not
+      // by anything we control here. The HMAC still has to match our secret.
+      const sigToVerify = parts["li"] ?? parts["te"] ?? "";
 
       // Reject events older than 5 minutes (replay protection)
       const tsMs = parseInt(timestamp, 10) * 1000;

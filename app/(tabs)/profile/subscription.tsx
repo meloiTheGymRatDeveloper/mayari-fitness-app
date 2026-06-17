@@ -152,7 +152,31 @@ export default function SubscriptionScreen() {
       setOpening(true);
       const result = await createPaymentLink.mutateAsync(selectedPlan);
       await WebBrowser.openBrowserAsync(result.checkout_url);
-      await refetch();
+
+      // PayMongo's webhook is asynchronous — when the browser closes, the
+      // payment may have cleared on PayMongo's side but our DB row hasn't
+      // been written yet. Poll for up to ~20s so the user reliably sees
+      // Pro unlock without having to force-quit the app.
+      const POLL_ATTEMPTS = 10;
+      const POLL_INTERVAL_MS = 2000;
+      for (let i = 0; i < POLL_ATTEMPTS; i++) {
+        const { data } = await refetch();
+        if (
+          data?.tier === "beta" ||
+          data?.tier === "active" ||
+          data?.tier === "achiever"
+        ) {
+          return;
+        }
+        if (i < POLL_ATTEMPTS - 1) {
+          await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+        }
+      }
+
+      Alert.alert(
+        "Payment received",
+        "Your payment cleared but Pro is taking a moment to unlock. It should activate within a few minutes — pull down to refresh, or reopen this screen later.",
+      );
     } catch (err: unknown) {
       Alert.alert(
         "Payment Error",
