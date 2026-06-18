@@ -108,6 +108,10 @@ export default function VoiceConfirmScreen() {
     );
   }
 
+  function removeFood(index: number) {
+    setFoods((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function confirm() {
     if (!userId || !foods.length) return;
     setSaving(true);
@@ -157,12 +161,22 @@ export default function VoiceConfirmScreen() {
         <Text style={styles.subtitle}>Edit anything that looks wrong:</Text>
         {foods.map((food, i) => (
           <View key={i} style={styles.card}>
-            <TextInput
-              style={styles.nameInput}
-              value={food.name}
-              onChangeText={(v) => updateField(i, 'name', v)}
-              placeholderTextColor={colors.text.muted}
-            />
+            <View style={styles.cardHeader}>
+              <TextInput
+                style={[styles.nameInput, styles.nameInputFlex]}
+                value={food.name}
+                onChangeText={(v) => updateField(i, 'name', v)}
+                placeholderTextColor={colors.text.muted}
+              />
+              <TouchableOpacity
+                style={styles.deleteBtn}
+                onPress={() => removeFood(i)}
+                accessibilityLabel={`Remove ${food.name}`}
+                hitSlop={8}
+              >
+                <Text style={styles.deleteBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
             <ItemBadge food={food} />
             <View style={styles.fieldRow}>
               {FIELDS.map(({ key, label }) => (
@@ -205,9 +219,35 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, gap: spacing.md },
   subtitle: { color: colors.text.secondary, fontSize: typography.sm },
   card: { backgroundColor: colors.bg.secondary, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   nameInput: {
     color: colors.text.primary, fontSize: typography.base, fontFamily: fonts.semibold,
     borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: spacing.xs, marginBottom: spacing.sm,
+  },
+  nameInputFlex: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  deleteBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.bg.elevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteBtnText: {
+    color: colors.text.secondary,
+    fontSize: 14,
+    fontFamily: fonts.bold,
+    lineHeight: 14,
   },
   badge: { fontSize: 11, fontFamily: fonts.semibold, marginBottom: spacing.sm },
   fieldRow: { flexDirection: 'row', gap: spacing.xs },
