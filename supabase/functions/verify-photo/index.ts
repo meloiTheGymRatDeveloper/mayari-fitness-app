@@ -40,6 +40,8 @@ interface ClaudeItem {
   fat_g: number;
   confidence: "low" | "medium" | "high";
   uncertain_about?: string;
+  visible_evidence?: string;
+  is_clearly_visible?: boolean;
 }
 
 interface ClientItem {
@@ -173,16 +175,25 @@ Deno.serve(async (req) => {
             },
             {
               type: "text",
-              text: `You are analyzing a Filipino food photo for calorie estimation.
+              text: `You are analyzing a food photo for calorie estimation.
 
 A fork or spoon may be visible in the frame — if so, use it to estimate plate diameter and food volume for better portion accuracy.
 
-For each visible food component:
-1. Name the dish and note its likely main ingredients
-2. Estimate the portion in grams
-3. Give a LOW (conservative), MID (best guess), and HIGH (generous) calorie estimate for that portion
-4. Rate your confidence: low | medium | high
-5. Note what you are most uncertain about for that item
+OBSERVATION DISCIPLINE — read before listing items:
+- List ONLY items you can clearly see in the image. If something is ambiguous or you are uncertain it is present, OMIT it.
+- Do NOT infer typical meal components (rice, sides, sauces, drinks) unless they are directly visible in the image.
+- If you see only one food item, return exactly one item.
+- Better to miss an item the user will add manually than to invent one.
+
+For each food component you can actually see:
+1. Name the dish (use Filipino names like "adobong manok" when the dish is identifiable as such, otherwise plain English)
+2. Note its likely main ingredients
+3. Estimate the portion in grams
+4. Give a LOW (conservative), MID (best guess), and HIGH (generous) calorie estimate for that portion
+5. Rate your confidence in the portion size: low | medium | high
+6. Note what you are most uncertain about for that item
+7. Provide visible_evidence: a short concrete description tied to the image (e.g. "brown grilled pork cutlet, ~12cm long, center of plate")
+8. Set is_clearly_visible to true only if you can directly see this item in the image
 
 Return ONLY valid JSON, no markdown, no explanation:
 {
@@ -198,15 +209,17 @@ Return ONLY valid JSON, no markdown, no explanation:
       "carbs_g": number,
       "fat_g": number,
       "confidence": "low"|"medium"|"high",
-      "uncertain_about": string
+      "uncertain_about": string,
+      "visible_evidence": string,
+      "is_clearly_visible": boolean
     }
   ],
   "most_uncertain_item": string
 }
+
 Rules:
-- Separate every distinct component (rice, ulam, vegetables, sauce each get their own item)
+- Separate every distinct component you actually see (rice, ulam, vegetables, sauce each get their own item)
 - quantity_g and all macro values are for the actual portion visible — NOT per 100g
-- Default to Filipino serving sizes for common dishes
 - If the image is not food, return exactly: {"error": "not_food"}`,
             },
           ],
