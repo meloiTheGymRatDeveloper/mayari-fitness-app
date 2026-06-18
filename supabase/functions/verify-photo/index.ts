@@ -172,8 +172,8 @@ Return ONLY valid JSON, no markdown, no explanation:
     const text =
       response.content[0].type === "text" ? response.content[0].text.trim() : "{}";
     const jsonText = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-    const parsed = JSON.parse(jsonText) as { verdicts?: Verdict[] };
-    return parsed.verdicts ?? [];
+    const parsed = JSON.parse(jsonText) as { verdicts?: unknown };
+    return Array.isArray(parsed.verdicts) ? (parsed.verdicts as Verdict[]) : [];
   } catch (err) {
     console.warn("verify-photo: verification pass failed, returning unfiltered items:", err);
     return null;
