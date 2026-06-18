@@ -178,6 +178,9 @@ export default function VoiceConfirmScreen() {
               </TouchableOpacity>
             </View>
             <ItemBadge food={food} />
+            {food.confidence === 'low' && (
+              <Text style={styles.lowConfHint}>Not in your photo? Tap ✕ to remove.</Text>
+            )}
             <View style={styles.fieldRow}>
               {FIELDS.map(({ key, label }) => (
                 <View key={key} style={styles.field}>
@@ -250,6 +253,13 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   badge: { fontSize: 11, fontFamily: fonts.semibold, marginBottom: spacing.sm },
+  lowConfHint: {
+    color: colors.text.muted,
+    fontSize: 11,
+    fontFamily: fonts.regular,
+    fontStyle: 'italic',
+    marginBottom: spacing.sm,
+  },
   fieldRow: { flexDirection: 'row', gap: spacing.xs },
   field: { flex: 1, alignItems: 'center' },
   fieldLabel: { color: colors.text.muted, fontSize: 10, marginBottom: 2 },
