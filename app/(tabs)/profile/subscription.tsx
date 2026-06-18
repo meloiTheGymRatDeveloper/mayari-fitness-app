@@ -261,7 +261,17 @@ export default function SubscriptionScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() => {
+            // Always land on profile root. Subscription lives inside the
+            // profile tab stack — when reached via deep push from elsewhere
+            // (e.g. ProGate "Upgrade to Pro" from Home), router.back() unwinds
+            // across tabs and strands the profile tab on /subscription.
+            // Resetting to /profile keeps the tab consistent regardless of
+            // entry point.
+            router.replace("/(tabs)/profile");
+          }}
+        >
           <Text style={styles.back}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Subscription</Text>

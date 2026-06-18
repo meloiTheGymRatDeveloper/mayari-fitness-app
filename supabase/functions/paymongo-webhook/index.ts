@@ -68,15 +68,22 @@ Deno.serve(async (req) => {
     if (eventType === "payment.paid") {
       const paymentData = event?.data?.attributes?.data?.attributes;
       const remarks = (paymentData?.remarks as string) ?? "";
+      const description = (paymentData?.description as string) ?? "";
       const amountCents = (paymentData?.amount as number) ?? 0;
+      const origin = (paymentData?.origin as string) ?? "";
 
-      // payment.paid fires for both payment links and subscription renewals
-      // For subscription renewals, look up user by subscription ID on the payment source
+      // payment.paid fires for both Payment Links and PayMongo Subscriptions.
+      // For real Subscriptions (recurring), source.id is the subscription ID we
+      // stored at signup. For Payment Links, source.id is the payment source
+      // (qrph_/card_/gcash_...) and contains NO link reference. PayMongo does
+      // NOT propagate the link's `remarks` to the payment event, so the only
+      // way to recover user_id from a Link payment is the `description` field,
+      // which we encode at link creation in create-payment-link.
       const sourceSubId = paymentData?.source?.id as string | undefined;
       let userId: string | undefined;
 
-      if (sourceSubId) {
-        // Payment came from a subscription — look up by subscription ID
+      if (origin !== "links" && sourceSubId) {
+        // Payment came from a recurring subscription
         const { data } = await supabase
           .from("subscriptions")
           .select("user_id")
@@ -86,7 +93,13 @@ Deno.serve(async (req) => {
       }
 
       if (!userId) {
-        // Fall back to legacy payment link pattern (remarks field)
+        // Payment Link: parse user_id from description (primary path)
+        const descMatch = description.match(/ID: ([a-f0-9-]{36})/);
+        userId = descMatch?.[1];
+      }
+
+      if (!userId) {
+        // Legacy fallback: very old links used the `remarks` field
         const match = remarks.match(/user_id:([a-f0-9-]{36})/);
         userId = match?.[1];
       }

@@ -63,11 +63,17 @@ Deno.serve(async (req) => {
     const paymongoSecret = Deno.env.get("PAYMONGO_SECRET_KEY")!;
     const encoded = btoa(`${paymongoSecret}:`);
 
-    const description = plan === "yearly"
+    const planLabel = plan === "yearly"
       ? "Mayari Pro — 1 year"
       : plan === "beta"
       ? "Mayari Beta — 1 month"
       : "Mayari Pro — 1 month";
+
+    // Encode user_id in the description because it's the only attribute
+    // PayMongo's payment.paid webhook reliably propagates from the link.
+    // `remarks` is NOT propagated to the payment event, and the event payload
+    // contains no link_id we could otherwise use to look the user up.
+    const description = `${planLabel} (ID: ${userId})`;
 
     const paymongoRes = await fetch("https://api.paymongo.com/v1/links", {
       method: "POST",

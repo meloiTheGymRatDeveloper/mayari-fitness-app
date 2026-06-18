@@ -4,9 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withRepeat, withTiming,
-} from 'react-native-reanimated';
 import { useAuthStore } from '../../stores/authStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useDailyNutrition } from '../../hooks/useDailyNutrition';
@@ -62,14 +59,6 @@ export default function HomeScreen() {
   const { data: streaks } = useStreaks();
   const [activeMilestone, setActiveMilestone] = useState<number | null>(null);
 
-  const moonY = useSharedValue(0);
-  useEffect(() => {
-    moonY.value = withRepeat(withTiming(4, { duration: 2000 }), -1, true);
-  }, [moonY]);
-  const moonAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: moonY.value }],
-  }));
-
   useEffect(() => {
     let cancelled = false;
     const current = streaks?.workout_current ?? 0;
@@ -86,9 +75,6 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.screenWrapper}>
-      <Animated.View style={[styles.moonOrb, moonAnimStyle]} pointerEvents="none">
-        <View style={styles.moonOrbInner} />
-      </Animated.View>
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}>
         <View style={styles.greetRow}>
           <View>
@@ -159,19 +145,6 @@ const styles = StyleSheet.create({
   calBtn: {
     backgroundColor: colors.bg.secondary, borderRadius: 10,
     padding: spacing.sm, borderWidth: 1, borderColor: colors.border,
-  },
-  moonOrb: {
-    position: 'absolute',
-    top: 0,
-    right: spacing.lg,
-    zIndex: 10,
-  },
-  moonOrbInner: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    opacity: 0.35,
-    backgroundColor: '#C4A55A',
   },
   coachCard: {
     marginHorizontal: spacing.lg, marginTop: spacing.sm,
