@@ -28,6 +28,27 @@ const DISH_ALIASES: Record<string, string> = {
   "chicken inasal": "inihaw na manok",
 };
 
+// Duplicated from mayari/lib/photoVerify.ts — Deno edge functions cannot import
+// from outside supabase/functions/. Keep these in sync with the lib copy
+// (lib copy has Jest tests).
+interface Verdict {
+  name: string;
+  verdict: "keep" | "drop";
+  reason?: string;
+}
+
+function filterByVisibility<T extends { is_clearly_visible?: boolean }>(items: T[]): T[] {
+  return items.filter((item) => item.is_clearly_visible !== false);
+}
+
+function applyVerdicts<T extends { name: string }>(items: T[], verdicts: Verdict[]): T[] {
+  const lookup = new Map<string, "keep" | "drop">();
+  for (const v of verdicts) {
+    lookup.set(v.name.trim().toLowerCase(), v.verdict);
+  }
+  return items.filter((item) => lookup.get(item.name.trim().toLowerCase()) !== "drop");
+}
+
 interface ClaudeItem {
   name: string;
   ingredients?: string;
@@ -108,6 +129,55 @@ async function groundItem(
     confidence: item.confidence,
     db_grounded: false,
   };
+}
+
+async function verifyVisibility(
+  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+  base64: string,
+  candidateNames: string[],
+): Promise<Verdict[] | null> {
+  if (candidateNames.length === 0) return [];
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 600,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: { type: "base64", media_type: mediaType, data: base64 },
+            },
+            {
+              type: "text",
+              text: `A previous analyzer reported these items in this food image:
+${candidateNames.map((n, i) => `${i + 1}. ${n}`).join("\n")}
+
+Look at the image again. For each item, decide KEEP or DROP.
+KEEP only if you can clearly see that exact item in the image.
+DROP if you are uncertain, OR if the item might have been assumed from typical meal composition rather than directly observed.
+
+Return ONLY valid JSON, no markdown, no explanation:
+{
+  "verdicts": [
+    { "name": "exact name from the list above", "verdict": "keep" | "drop", "reason": "short reason" }
+  ]
+}`,
+            },
+          ],
+        },
+      ],
+    });
+    const text =
+      response.content[0].type === "text" ? response.content[0].text.trim() : "{}";
+    const jsonText = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+    const parsed = JSON.parse(jsonText) as { verdicts?: Verdict[] };
+    return parsed.verdicts ?? [];
+  } catch (err) {
+    console.warn("verify-photo: verification pass failed, returning unfiltered items:", err);
+    return null;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -249,7 +319,13 @@ Rules:
     }
 
     const rawItems = parsed.items ?? [];
-    const items = await Promise.all(rawItems.map((item) => groundItem(anonClient, item)));
+    const visibleItems = filterByVisibility(rawItems);
+    const verdicts = await verifyVisibility(mediaType, base64, visibleItems.map((i) => i.name));
+    const survivors = verdicts === null ? visibleItems : applyVerdicts(visibleItems, verdicts);
+    console.log(
+      `verify-photo: pass1=${rawItems.length} visible=${visibleItems.length} verified=${survivors.length}`,
+    );
+    const items = await Promise.all(survivors.map((item) => groundItem(anonClient, item)));
 
     return new Response(JSON.stringify({ items }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
