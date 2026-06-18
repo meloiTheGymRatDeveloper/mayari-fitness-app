@@ -1,0 +1,5 @@
+# PayMongo posts webhook events with its own `paymongo-signature` HMAC header
+# and never sends an Authorization Bearer token. Without this flag, Supabase's
+# Edge Function gateway 401s every call before our HMAC verification runs.
+[functions.paymongo-webhook]
+verify_jwt = false

@@ -5,8 +5,11 @@ Deno.serve(async (req) => {
     const rawBody = await req.text();
     const webhookSecret = Deno.env.get("PAYMONGO_WEBHOOK_SECRET");
     if (!webhookSecret) {
+      // Return 200 so PayMongo doesn't auto-disable the webhook while we fix
+      // the deploy. The misconfiguration must be caught by log alerting, not
+      // by webhook retries.
       console.error("PAYMONGO_WEBHOOK_SECRET not configured");
-      return new Response("Misconfigured", { status: 500 });
+      return new Response("ok", { status: 200 });
     }
 
     // Verify HMAC-SHA256 signature
@@ -252,7 +255,11 @@ Deno.serve(async (req) => {
     return new Response("ok", { status: 200 });
 
   } catch (err) {
+    // Swallow downstream errors (DB writes, push send, JSON parse) and return
+    // 200 so PayMongo doesn't auto-disable the webhook after a transient blip.
+    // Failed events are recoverable via manual replay from the dashboard;
+    // an auto-disabled webhook blocks every subsequent payment.
     console.error("paymongo-webhook error:", err);
-    return new Response("error", { status: 500 });
+    return new Response("ok", { status: 200 });
   }
 });

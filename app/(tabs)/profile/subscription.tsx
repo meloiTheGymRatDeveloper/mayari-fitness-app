@@ -29,6 +29,7 @@ import {
   calcReferralDiscount,
 } from "../../../hooks/useReferrals";
 import { useAppleIAP } from "../../../hooks/useAppleIAP";
+import { useAuthStore } from "../../../stores/authStore";
 
 const BETA_PRICE = 50;
 const MONTHLY_PRICE = 89;
@@ -166,6 +167,12 @@ export default function SubscriptionScreen() {
           data?.tier === "active" ||
           data?.tier === "achiever"
         ) {
+          // Refresh the cached users-row profile too. useFeatureAccess reads
+          // subscription_status from authStore.profile (users table), not from
+          // useSubscription (subscriptions table). Without this, Pro features
+          // stay locked until the app is restarted.
+          const userId = useAuthStore.getState().session?.user.id;
+          if (userId) await useAuthStore.getState().fetchProfile(userId);
           return;
         }
         if (i < POLL_ATTEMPTS - 1) {
@@ -192,6 +199,8 @@ export default function SubscriptionScreen() {
     try {
       await purchase(iosPlan);
       await refetch();
+      const userId = useAuthStore.getState().session?.user.id;
+      if (userId) await useAuthStore.getState().fetchProfile(userId);
     } catch {
       // Errors are surfaced through useAppleIAP's `lastError` state,
       // which the useEffect above turns into an Alert. Don't double-alert here.
@@ -202,6 +211,8 @@ export default function SubscriptionScreen() {
     try {
       await restore();
       await refetch();
+      const userId = useAuthStore.getState().session?.user.id;
+      if (userId) await useAuthStore.getState().fetchProfile(userId);
       Alert.alert("Restore Complete", "Your purchases have been restored.");
     } catch {
       Alert.alert("Restore Failed", "Could not restore purchases. Try again.");
