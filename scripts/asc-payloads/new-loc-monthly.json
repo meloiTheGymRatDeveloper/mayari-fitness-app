@@ -1,0 +1,15 @@
+{
+  "data": {
+    "type": "subscriptionLocalizations",
+    "attributes": {
+      "name": "Mayari Pro Monthly",
+      "locale": "en-US",
+      "description": "1-month Mayari Pro: AI coach + food log + analytics"
+    },
+    "relationships": {
+      "subscription": {
+        "data": { "type": "subscriptions", "id": "6778739919" }
+      }
+    }
+  }
+}
