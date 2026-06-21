@@ -28,6 +28,7 @@
         "backgroundColor": "#0A0A1E"
       },
       "package": "com.mayari.app",
+      "versionCode": 16,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [

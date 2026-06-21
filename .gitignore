@@ -18,6 +18,15 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# EAS credentials (downloaded keystore + passwords)
+credentials.json
+credentials/
+
+# Local build artifacts
+.cx/
+bundle-release.log
+supabase/.temp/
+
 # Metro
 .metro-health-check*
 
