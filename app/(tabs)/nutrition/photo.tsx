@@ -136,7 +136,7 @@ export default function PhotoScreen() {
       <View style={styles.centered}>
         <Text style={styles.permText}>Camera permission required to log food by photo.</Text>
         <TouchableOpacity style={styles.btn} onPress={requestPermission}>
-          <Text style={styles.btnText}>Grant Permission</Text>
+          <Text style={styles.btnText}>Continue</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.galleryBtn} onPress={handleGallery}>
           <Text style={styles.galleryBtnText}>Choose from Gallery Instead</Text>
