@@ -71,44 +71,48 @@ export function useAppleIAP() {
     }
   }, []);
 
+  // initConnection is idempotent in react-native-iap, so this is safe to
+  // call again from the retry button after a transient network failure.
+  const loadProducts = useCallback(async () => {
+    if (Platform.OS !== 'ios') return;
+    setStatus('initializing');
+    try {
+      await initConnection();
+      const subs = await fetchProducts({
+        skus: Object.values(APPLE_IAP_PRODUCTS),
+        type: 'subs',
+      });
+      const list = (subs ?? [])
+        .filter((s): s is ProductSubscriptionIOS => 'platform' in s && s.platform === 'ios')
+        .map((s) => ({ productId: s.id, displayPrice: s.displayPrice }));
+
+      setProducts(list);
+
+      if (list.length === 0) {
+        setStatus('unavailable');
+        setInitError(
+          'Subscriptions are not available right now. Please check your connection and try again.',
+        );
+      } else {
+        setStatus('ready');
+        setInitError(null);
+      }
+    } catch (err) {
+      console.warn('IAP init:', err);
+      setStatus('unavailable');
+      setInitError(
+        err instanceof Error
+          ? `Could not load subscriptions: ${err.message}`
+          : 'Could not load subscriptions from the App Store.',
+      );
+    }
+  }, []);
+
   useEffect(() => {
     if (Platform.OS !== 'ios') return;
 
     let purchaseListener: ReturnType<typeof purchaseUpdatedListener>;
     let errorListener: ReturnType<typeof purchaseErrorListener>;
-
-    async function init() {
-      try {
-        await initConnection();
-        const subs = await fetchProducts({
-          skus: Object.values(APPLE_IAP_PRODUCTS),
-          type: 'subs',
-        });
-        const list = (subs ?? [])
-          .filter((s): s is ProductSubscriptionIOS => 'platform' in s && s.platform === 'ios')
-          .map((s) => ({ productId: s.id, displayPrice: s.displayPrice }));
-
-        setProducts(list);
-
-        if (list.length === 0) {
-          setStatus('unavailable');
-          setInitError(
-            'Subscriptions are not available right now. Please check your connection and try again.',
-          );
-        } else {
-          setStatus('ready');
-          setInitError(null);
-        }
-      } catch (err) {
-        console.warn('IAP init:', err);
-        setStatus('unavailable');
-        setInitError(
-          err instanceof Error
-            ? `Could not load subscriptions: ${err.message}`
-            : 'Could not load subscriptions from the App Store.',
-        );
-      }
-    }
 
     purchaseListener = purchaseUpdatedListener(async (purchase: Purchase) => {
       clearPurchaseTimeout();
@@ -131,7 +135,7 @@ export function useAppleIAP() {
       }
     });
 
-    init();
+    loadProducts();
 
     return () => {
       clearPurchaseTimeout();
@@ -139,7 +143,7 @@ export function useAppleIAP() {
       errorListener.remove();
       endConnection();
     };
-  }, [queryClient, clearPurchaseTimeout]);
+  }, [queryClient, clearPurchaseTimeout, loadProducts]);
 
   const purchase = useCallback(async (plan: AppleIAPPlan) => {
     setLastError(null);
@@ -212,5 +216,6 @@ export function useAppleIAP() {
     restoring,
     purchasing,
     openManageSubscriptions,
+    retry: loadProducts,
   };
 }

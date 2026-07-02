@@ -91,6 +91,7 @@ export default function SubscriptionScreen() {
     purchasing,
     restoring,
     openManageSubscriptions,
+    retry: retryIap,
   } = useAppleIAP();
 
   // Surface IAP errors as alerts so the user (and App Review) sees them
@@ -440,7 +441,12 @@ export default function SubscriptionScreen() {
               </View>
 
               {IS_IOS && iapStatus === "unavailable" && iapInitError && (
-                <Text style={styles.iapErrorHint}>{iapInitError}</Text>
+                <>
+                  <Text style={styles.iapErrorHint}>{iapInitError}</Text>
+                  <TouchableOpacity onPress={() => retryIap()}>
+                    <Text style={styles.iapRetryLink}>Try Again</Text>
+                  </TouchableOpacity>
+                </>
               )}
 
               {/* Discount breakdown (Android monthly only) */}
@@ -784,6 +790,13 @@ const styles = StyleSheet.create({
     fontSize: typography.xs,
     fontFamily: fonts.regular,
     marginTop: spacing.xs,
+  },
+  iapRetryLink: {
+    color: colors.brand.primary,
+    fontSize: typography.sm,
+    fontFamily: fonts.semibold,
+    marginTop: spacing.xs,
+    paddingVertical: spacing.xs,
   },
   betaBanner: {
     backgroundColor: `${colors.brand.secondary}22`,

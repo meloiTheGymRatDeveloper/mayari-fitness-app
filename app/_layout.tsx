@@ -6,7 +6,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import * as SplashScreen from 'expo-splash-screen';
 import Constants from 'expo-constants';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import {
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
@@ -58,24 +58,37 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
+    let startupDone = false;
+    const finishStartup = () => {
+      if (startupDone) return;
+      startupDone = true;
+      clearTimeout(splashTimeout);
+      setLoading(false);
+      SplashScreen.hideAsync();
+    };
+
+    // Safety net: never strand the user on the splash screen. If session
+    // restore hangs (dead sockets or pending token refresh after iOS killed
+    // the backgrounded app), proceed — index.tsx re-routes reactively once
+    // the session eventually lands in the store.
+    const splashTimeout = setTimeout(finishStartup, 10_000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
         fetchProfile(session.user.id).then(async () => {
-          setLoading(false);
-          SplashScreen.hideAsync();
+          finishStartup();
           const token = await registerForPushNotifications();
           if (token) {
             useAuthStore.getState().updatePushToken(token);
           }
-        }).catch(() => { setLoading(false); SplashScreen.hideAsync(); });
+        }).catch(finishStartup);
       } else {
-        setLoading(false);
-        SplashScreen.hideAsync();
+        finishStartup();
       }
-    }).catch(() => { setLoading(false); SplashScreen.hideAsync(); });
+    }).catch(finishStartup);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         // User clicked the reset link in their email — navigate to reset screen
         // without setting session so auth layout doesn't redirect them away
@@ -84,15 +97,37 @@ export default function RootLayout() {
         return;
       }
       setSession(session);
-      if (session) {
-        await fetchProfile(session.user.id);
-      } else {
-        useAuthStore.getState().clear();
-      }
-      setLoading(false);
+      // This callback runs while supabase-js holds its internal auth lock.
+      // Calling back into the client here (fetchProfile) deadlocks the token
+      // refresh that fires on cold start with an expired session — the cause
+      // of the app freezing on the splash screen after a background kill.
+      // Defer to the next tick so the lock is released first.
+      setTimeout(() => {
+        if (session) {
+          fetchProfile(session.user.id).finally(() => setLoading(false));
+        } else {
+          useAuthStore.getState().clear();
+          setLoading(false);
+        }
+      }, 0);
     });
 
-    return () => subscription.unsubscribe();
+    // Supabase's token auto-refresh timers freeze while the app is
+    // backgrounded; restart them on foreground so the session is refreshed
+    // proactively instead of stalling the next request after resume.
+    const appStateSub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        supabase.auth.startAutoRefresh();
+      } else {
+        supabase.auth.stopAutoRefresh();
+      }
+    });
+
+    return () => {
+      clearTimeout(splashTimeout);
+      subscription.unsubscribe();
+      appStateSub.remove();
+    };
   }, []);
 
   if (!fontsLoaded) return null;
