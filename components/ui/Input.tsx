@@ -1,15 +1,16 @@
 import { forwardRef } from 'react';
-import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TextInputProps, StyleProp, ViewStyle } from 'react-native';
 import { colors, typography, spacing, fonts } from '../../constants/theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
-const Input = forwardRef<TextInput, InputProps>(({ label, error, style, ...props }, ref) => {
+const Input = forwardRef<TextInput, InputProps>(({ label, error, style, containerStyle, ...props }, ref) => {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
       <TextInput
         ref={ref}

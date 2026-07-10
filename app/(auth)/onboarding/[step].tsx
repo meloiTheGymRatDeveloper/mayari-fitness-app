@@ -9,6 +9,7 @@ import { useRouter, Stack } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { computeAllTargets } from '../../../lib/calories';
+import { isValidBirthdate } from '../../../lib/birthdate';
 import type { CalorieTargets } from '../../../lib/calories';
 import { colors, typography, spacing, fonts } from '../../../constants/theme';
 import Button from '../../../components/ui/Button';
@@ -200,15 +201,27 @@ function StepIdentity({
 // ─── Step 2: Birthday ─────────────────────────────────────────────────────────
 
 function StepBirthdate({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [day, setDay] = useState(value ? value.split('-')[2] : '');
   const [month, setMonth] = useState(value ? value.split('-')[1] : '');
+  const [day, setDay] = useState(value ? value.split('-')[2] : '');
   const [year, setYear] = useState(value ? value.split('-')[0] : '');
-  const monthRef = useRef<TextInput>(null);
+  const dayRef = useRef<TextInput>(null);
   const yearRef = useRef<TextInput>(null);
 
+  const complete = !!(month && day && year.length === 4);
+  const dateError = complete && !isValidBirthdate(toIsoDate(day, month, year))
+    ? 'That date doesn’t exist — check the month and day.'
+    : null;
+
+  function toIsoDate(d: string, m: string, y: string) {
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+
   function update(d: string, m: string, y: string) {
-    if (d && m && y && d.length <= 2 && m.length <= 2 && y.length === 4) {
-      onChange(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`);
+    if (d && m && y.length === 4) {
+      const iso = toIsoDate(d, m, y);
+      onChange(isValidBirthdate(iso) ? iso : '');
+    } else {
+      onChange('');
     }
   }
 
@@ -219,22 +232,28 @@ function StepBirthdate({ value, onChange }: { value: string; onChange: (v: strin
       <Text style={styles.stepBody}>We use this to personalize your fitness plan. You must be 18+.</Text>
       <View style={styles.row}>
         <Input
-          label="Day" value={day}
-          onChangeText={(v) => { setDay(v); update(v, month, year); if (v.length === 2) monthRef.current?.focus(); }}
-          keyboardType="number-pad" maxLength={2} placeholder="DD" style={styles.flex1} textAlign="center"
+          label="Month" value={month}
+          onChangeText={(v) => { setMonth(v); update(day, v, year); if (v.length === 2) dayRef.current?.focus(); }}
+          keyboardType="number-pad" maxLength={2} placeholder="MM" containerStyle={styles.flex1} textAlign="center"
         />
         <Input
-          ref={monthRef} label="Month" value={month}
-          onChangeText={(v) => { setMonth(v); update(day, v, year); if (v.length === 2) yearRef.current?.focus(); }}
-          keyboardType="number-pad" maxLength={2} placeholder="MM" style={styles.flex1} textAlign="center"
+          ref={dayRef} label="Day" value={day}
+          onChangeText={(v) => { setDay(v); update(v, month, year); if (v.length === 2) yearRef.current?.focus(); }}
+          keyboardType="number-pad" maxLength={2} placeholder="DD" containerStyle={styles.flex1} textAlign="center"
         />
         <Input
           ref={yearRef} label="Year" value={year}
           onChangeText={(v) => { setYear(v); update(day, month, v); }}
-          keyboardType="number-pad" maxLength={4} placeholder="YYYY" style={[styles.flex1, { flex: 1.5 }]} textAlign="center"
+          keyboardType="number-pad" maxLength={4} placeholder="YYYY" containerStyle={{ flex: 1.5 }} textAlign="center"
         />
       </View>
-      <Text style={styles.fieldHelper}>Format: DD / MM / YYYY — e.g. 15 / 06 / 1998</Text>
+      {dateError ? (
+        <View style={styles.errorChip}>
+          <Text style={styles.errorChipText}>⚠️ {dateError}</Text>
+        </View>
+      ) : (
+        <Text style={styles.fieldHelper}>Format: MM / DD / YYYY — e.g. 06 / 15 / 1998</Text>
+      )}
     </View>
   );
 }
@@ -699,10 +718,18 @@ export default function OnboardingStep() {
       if (raw) {
         try {
           const s = JSON.parse(raw);
-          if (typeof s.currentStep === 'number') setCurrentStep(s.currentStep);
+          // A previous build allowed impossible dates (e.g. "1995-28-02") through
+          // to step 8, where the save fails and the user is stuck. Drop the bad
+          // date and send them back to the birthdate step instead of restoring
+          // the dead end.
+          const badBirthdate =
+            typeof s.birthdate === 'string' && s.birthdate !== '' && !isValidBirthdate(s.birthdate);
+          if (typeof s.currentStep === 'number') {
+            setCurrentStep(badBirthdate ? Math.min(s.currentStep, 2) : s.currentStep);
+          }
           if (typeof s.displayName === 'string') setDisplayName(s.displayName);
           if (s.gender) setGender(s.gender);
-          if (typeof s.birthdate === 'string') setBirthdate(s.birthdate);
+          if (typeof s.birthdate === 'string' && !badBirthdate) setBirthdate(s.birthdate);
           if (typeof s.weight === 'string') setWeight(s.weight);
           if (s.weightUnit === 'kg' || s.weightUnit === 'lbs') setWeightUnit(s.weightUnit);
           if (typeof s.heightCm === 'string') setHeightCm(s.heightCm);
@@ -773,9 +800,10 @@ export default function OnboardingStep() {
         if (!gender) return 'Please select your gender';
         return null;
       case 2: {
-        if (!birthdate) return 'Please enter your birthdate';
+        if (!birthdate) return 'Please enter your complete birthdate';
+        if (!isValidBirthdate(birthdate)) return 'That date doesn’t exist — check the month and day.';
         const age = (Date.now() - new Date(birthdate).getTime()) / (1000 * 60 * 60 * 24 * 365.25);
-        if (age < 18) return 'Kailangan mo munang maging 18 taong gulang para gamitin ang Mayari 🙏';
+        if (!(age >= 18)) return 'Kailangan mo munang maging 18 taong gulang para gamitin ang Mayari 🙏';
         return null;
       }
       case 3: {
@@ -906,7 +934,7 @@ export default function OnboardingStep() {
   }
 
   function handleBack() {
-    if (currentStep > 1 && currentStep < 8) setCurrentStep(currentStep - 1);
+    if (currentStep > 1 && !saving) setCurrentStep(currentStep - 1);
   }
 
   function renderStep() {
@@ -1007,20 +1035,26 @@ export default function OnboardingStep() {
 
       {stepError && <Text style={styles.stepError}>{stepError}</Text>}
 
-      {/* Navigation — hidden on step 8 (Results has its own CTA) */}
-      {currentStep < 8 && (
-        <View style={styles.nav}>
-          {currentStep > 1 && (
-            <Button label="Back" variant="outline" onPress={handleBack} style={styles.backBtn} />
-          )}
+      {/* Navigation — step 8 shows only Back (Results has its own CTA) */}
+      <View style={styles.nav}>
+        {currentStep > 1 && (
+          <Button
+            label="Back"
+            variant="outline"
+            onPress={handleBack}
+            disabled={saving}
+            style={currentStep === 8 ? styles.fullWidth : styles.backBtn}
+          />
+        )}
+        {currentStep < 8 && (
           <Button
             label={currentStep === 7 ? 'See My Results 🎉' : 'Next'}
             onPress={handleNext}
             loading={saving}
             style={currentStep === 1 ? styles.fullWidth : styles.nextBtn}
           />
-        </View>
-      )}
+        )}
+      </View>
     </ScrollView>
   );
 }
