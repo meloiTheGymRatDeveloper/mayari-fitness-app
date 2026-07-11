@@ -98,6 +98,9 @@ export interface UserProfile {
   notif_workout_time: string;
   notif_weekly_summary: boolean;
   notif_streak_alert: boolean;
+  notif_nutrition_enabled: boolean;
+  notif_winback_enabled: boolean;
+  notif_weighin: 'off' | 'weekly' | 'monthly';
   home_equipment_tier: HomeEquipmentTier;
   created_at: string;
   updated_at: string;
