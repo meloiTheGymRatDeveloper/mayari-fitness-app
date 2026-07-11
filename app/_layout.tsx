@@ -97,10 +97,17 @@ export default function RootLayout() {
       }
     });
 
+    // Deep link when the user taps a push notification (data.url set by notify-* functions)
+    const notifSub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const url = response.notification.request.content.data?.url as string | undefined;
+      if (url) router.push(url as never);
+    });
+
     return () => {
       clearTimeout(splashTimeout);
       subscription.unsubscribe();
       appStateSub.remove();
+      notifSub.remove();
     };
   }, []);
 
