@@ -68,6 +68,18 @@ Deno.serve(async () => {
         const streakRow = Array.isArray(u.streaks) ? u.streaks[0] : u.streaks;
         const streak = streakRow?.workout_current ?? 0;
 
+        const summaryText = `Weekly recap, ${u.display_name}! 📊 This week: ${workoutCount} workout${workoutCount === 1 ? "" : "s"}, avg ${avgCal} kcal/day, ${streak}-day streak.`;
+
+        // Land the recap in the Coach Mayari chat thread too (renders as an insight tip)
+        const { error: tipErr } = await supabase.from("coach_tips").insert({
+          user_id: u.id,
+          tip_type: "insight",
+          content: `${summaryText}\n\nReply here kung may tanong ka sa week mo! 💬`,
+        });
+        if (tipErr) {
+          console.error(`notify-weekly-summary: tip insert failed for user ${u.id}:`, tipErr.message);
+        }
+
         return fetch("https://exp.host/--/api/v2/push/send", {
           method: "POST",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
