@@ -287,6 +287,8 @@ export interface Streak {
   nutrition_longest: number;
   last_workout_date: string | null;
   last_nutrition_date: string | null;
+  workout_freeze_used_on: string | null;
+  nutrition_freeze_used_on: string | null;
 }
 
 
