@@ -82,6 +82,33 @@ Format: [{"name":"food name","quantity_g":100,"calories":200,"protein_g":15,"car
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Daily chat limit (Manila day boundary) — enforced server-side
+    const DAILY_CHAT_LIMIT = 5;
+    const manilaDate = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Manila" });
+    const dayStartUtc = new Date(`${manilaDate}T00:00:00+08:00`).toISOString();
+
+    let remaining = DAILY_CHAT_LIMIT;
+    if (messageType === "chat") {
+      const { count } = await supabase
+        .from("coach_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("role", "user")
+        .eq("message_type", "chat")
+        .gte("created_at", dayStartUtc);
+      const used = count ?? 0;
+      if (used >= DAILY_CHAT_LIMIT) {
+        return new Response(
+          JSON.stringify({
+            error: "daily_limit", remaining: 0,
+            message: "Ubos na ang messages mo for today! Balik bukas — resets at midnight. 🌙",
+          }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      remaining = DAILY_CHAT_LIMIT - used - 1; // after this message
+    }
+
     // 1. Fetch user profile
     const { data: profile } = await supabase
       .from("users")
@@ -138,6 +165,32 @@ Format: [{"name":"food name","quantity_g":100,"calories":200,"protein_g":15,"car
       .eq("user_id", userId)
       .single();
 
+    // 5. Conversation memory (last 10 chat turns), today's intake, recent tips
+    const [{ data: history }, { data: todayLogs }, { data: recentTips }] = await Promise.all([
+      supabase.from("coach_messages")
+        .select("role, content")
+        .eq("user_id", userId).eq("message_type", "chat")
+        .order("created_at", { ascending: false }).limit(10),
+      supabase.from("food_logs")
+        .select("quantity_g, food_item:food_items(calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g)")
+        .eq("user_id", userId).gte("logged_at", dayStartUtc),
+      supabase.from("coach_tips")
+        .select("content").eq("user_id", userId)
+        .order("created_at", { ascending: false }).limit(3),
+    ]);
+
+    let todayCal = 0, todayProtein = 0, todayCarbs = 0, todayFat = 0;
+    for (const log of (todayLogs ?? []) as Array<{
+      quantity_g: number;
+      food_item: { calories_per_100g: number | null; protein_per_100g: number | null; carbs_per_100g: number | null; fat_per_100g: number | null } | null;
+    }>) {
+      const q = log.quantity_g / 100;
+      todayCal += (log.food_item?.calories_per_100g ?? 0) * q;
+      todayProtein += (log.food_item?.protein_per_100g ?? 0) * q;
+      todayCarbs += (log.food_item?.carbs_per_100g ?? 0) * q;
+      todayFat += (log.food_item?.fat_per_100g ?? 0) * q;
+    }
+
     const systemPrompt = `You are Coach Mayari, a science-based fitness and nutrition coach for Filipino users.
 You are warm, encouraging, and knowledgeable — like a gym buddy who studied exercise science.
 
@@ -159,6 +212,14 @@ RECENT ACTIVITY (last 7 days):
 STREAKS:
 - Workout streak: ${streak?.workout_current ?? 0} days
 - Nutrition streak: ${streak?.nutrition_current ?? 0} days
+
+TODAY SO FAR (Manila time — use this to answer "what should I eat" questions precisely):
+- Calories: ${Math.round(todayCal)} / ${profile?.calorie_goal ?? "?"} kcal
+- Protein: ${Math.round(todayProtein)}g / ${profile?.protein_goal_g ?? "?"}g
+- Carbs: ${Math.round(todayCarbs)}g, Fat: ${Math.round(todayFat)}g
+
+RECENT TIPS YOU ALREADY GAVE (don't repeat these; build on them if relevant):
+${(recentTips ?? []).map((t: { content: string }) => `- ${t.content}`).join("\n") || "- none yet"}
 
 TRAINING PRINCIPLES YOU FOLLOW:
 - Progressive overload: always suggest increasing weight or reps when user completes all sets
@@ -187,11 +248,28 @@ RESPONSE RULES:
       ? "claude-sonnet-4-5"
       : "claude-haiku-4-5";
 
+    // Conversation memory: last 10 turns, oldest first, coerced to alternating
+    // roles starting with "user" (the API rejects same-role sequences, which can
+    // occur if an insert failed mid-pair)
+    const priorTurns = (history ?? [])
+      .reverse()
+      .map((h: { role: string; content: string }) => ({
+        role: h.role as "user" | "assistant",
+        content: h.content,
+      }));
+    if (priorTurns[0]?.role === "assistant") priorTurns.shift();
+    const alternating = priorTurns.filter(
+      (t: { role: string }, i: number, arr: Array<{ role: string }>) =>
+        i === 0 || t.role !== arr[i - 1].role
+    );
+    // Must end with assistant so the appended new user message alternates correctly
+    if (alternating[alternating.length - 1]?.role === "user") alternating.pop();
+
     const claudeResponse = await anthropic.messages.create({
       model,
       max_tokens: messageType === "plan_generation" ? 2048 : 512,
       system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
-      messages: [{ role: "user", content: message }],
+      messages: [...alternating, { role: "user", content: message }],
     });
 
     const responseText =
@@ -206,7 +284,7 @@ RESPONSE RULES:
       console.error("coach_messages insert failed:", insertError.message);
     }
 
-    return new Response(JSON.stringify({ response: responseText }), {
+    return new Response(JSON.stringify({ response: responseText, remaining }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
