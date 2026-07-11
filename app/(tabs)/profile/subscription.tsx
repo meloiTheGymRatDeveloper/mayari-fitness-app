@@ -27,6 +27,7 @@ import {
 import {
   useMyReferrals,
   calcReferralDiscount,
+  useMyWelcomeDiscount,
 } from "../../../hooks/useReferrals";
 import { useAppleIAP } from "../../../hooks/useAppleIAP";
 import { useAuthStore } from "../../../stores/authStore";
@@ -112,6 +113,8 @@ export default function SubscriptionScreen() {
 
   // Discounts only apply to Android/PayMongo
   const referralDiscount = IS_IOS ? 0 : calcReferralDiscount(referrals);
+  const { data: welcomeAvailable } = useMyWelcomeDiscount();
+  const welcomeDiscount = !IS_IOS && welcomeAvailable ? 20 : 0;
   const consistencyDiscount = IS_IOS
     ? 0
     : sub?.consistency_discount_pct
@@ -120,13 +123,13 @@ export default function SubscriptionScreen() {
 
   const monthlyFinal = Math.max(
     1,
-    MONTHLY_PRICE - consistencyDiscount - referralDiscount,
+    MONTHLY_PRICE - consistencyDiscount - referralDiscount - welcomeDiscount,
   );
   const displayedPrice =
     selectedPlan === "yearly"
       ? YEARLY_PRICE
       : selectedPlan === "beta"
-        ? BETA_PRICE
+        ? Math.max(1, BETA_PRICE - welcomeDiscount)
         : monthlyFinal;
   const yearlySaving = MONTHLY_PRICE * 12 - YEARLY_PRICE;
 
@@ -449,22 +452,31 @@ export default function SubscriptionScreen() {
                 </>
               )}
 
-              {/* Discount breakdown (Android monthly only) */}
+              {/* Discount breakdown (Android beta/monthly only) */}
               {!IS_IOS &&
-                selectedPlan === "monthly" &&
-                (consistencyDiscount > 0 || referralDiscount > 0) && (
+                selectedPlan !== "yearly" &&
+                (welcomeDiscount > 0 ||
+                  (selectedPlan === "monthly" &&
+                    (consistencyDiscount > 0 || referralDiscount > 0))) && (
                   <View style={styles.discountBreakdown}>
                     <Text style={styles.discountLine}>
-                      Regular price: ₱{MONTHLY_PRICE}/month
+                      Regular price: ₱
+                      {selectedPlan === "monthly" ? MONTHLY_PRICE : BETA_PRICE}
+                      /month
                     </Text>
-                    {consistencyDiscount > 0 && (
+                    {selectedPlan === "monthly" && consistencyDiscount > 0 && (
                       <Text style={styles.discountLine}>
                         Consistency discount: −₱{consistencyDiscount}
                       </Text>
                     )}
-                    {referralDiscount > 0 && (
+                    {selectedPlan === "monthly" && referralDiscount > 0 && (
                       <Text style={styles.discountLine}>
                         Referral discount: −₱{referralDiscount}
+                      </Text>
+                    )}
+                    {welcomeDiscount > 0 && (
+                      <Text style={styles.discountLine}>
+                        Welcome discount (first month): −₱{welcomeDiscount} 🎁
                       </Text>
                     )}
                   </View>

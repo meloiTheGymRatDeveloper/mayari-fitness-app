@@ -438,6 +438,7 @@ export interface ReferralWithUser {
   referred_user_id: string;
   status: ReferralStatus;
   activated_at: string | null;
+  welcome_discount_status: 'available' | 'redeemed';
   created_at: string;
   referred_user: { display_name: string | null; username: string | null } | null;
 }

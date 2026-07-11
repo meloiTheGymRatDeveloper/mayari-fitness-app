@@ -26,3 +26,23 @@ export function calcReferralDiscount(referrals: ReferralWithUser[] | undefined):
   const hasActive = (referrals ?? []).some(r => r.status === 'active');
   return hasActive ? 20 : 0;
 }
+
+// True while the signed-in user (as a referred friend) still has their
+// one-time ₱20 welcome discount for the first paid month
+export function useMyWelcomeDiscount() {
+  const userId = useAuthStore(s => s.session?.user.id);
+  return useQuery({
+    queryKey: ['referrals', 'welcome', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      if (!userId) return false;
+      const { data, error } = await supabase
+        .from('referrals')
+        .select('welcome_discount_status')
+        .eq('referred_user_id', userId)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.welcome_discount_status === 'available';
+    },
+  });
+}
