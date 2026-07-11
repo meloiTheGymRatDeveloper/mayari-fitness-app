@@ -3,10 +3,8 @@ import { Stack, useRouter } from 'expo-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import * as SplashScreen from 'expo-splash-screen';
-import Constants from 'expo-constants';
-import { AppState, Platform } from 'react-native';
+import { AppState } from 'react-native';
 import {
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
@@ -18,33 +16,9 @@ import { useFonts } from 'expo-font';
 import { queryClient } from '../lib/queryClient';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
+import { registerPushIfGranted } from '../lib/pushNotifications';
 
 SplashScreen.preventAutoHideAsync();
-
-async function registerForPushNotifications(): Promise<string | null> {
-  if (!Device.isDevice) return null;
-
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  let finalStatus = existing;
-  if (existing !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-  if (finalStatus !== 'granted') return null;
-
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-    });
-  }
-
-  const projectId =
-    Constants.expoConfig?.extra?.eas?.projectId ??
-    Constants.easConfig?.projectId;
-  const token = await Notifications.getExpoPushTokenAsync({ projectId });
-  return token.data;
-}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -78,7 +52,7 @@ export default function RootLayout() {
       if (session) {
         fetchProfile(session.user.id).then(async () => {
           finishStartup();
-          const token = await registerForPushNotifications();
+          const token = await registerPushIfGranted();
           if (token) {
             useAuthStore.getState().updatePushToken(token);
           }
