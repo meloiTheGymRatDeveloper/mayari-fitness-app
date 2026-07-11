@@ -45,8 +45,21 @@ Deno.serve(async (req) => {
 
     const basePrice = PRICES[plan];
     let finalPrice = basePrice;
+    let welcomeDiscount = 0;
 
-    // Discounts only apply to full monthly billing — beta and yearly rates are already discounted
+    // Referred-user welcome discount: ₱20 off the first paid month (beta + monthly, not yearly)
+    if (plan === "beta" || plan === "monthly") {
+      const { data: welcomeRow } = await supabase
+        .from("referrals")
+        .select("id")
+        .eq("referred_user_id", userId)
+        .eq("welcome_discount_status", "available")
+        .maybeSingle();
+      if (welcomeRow) welcomeDiscount = REFERRAL_DISCOUNT_PESOS;
+    }
+
+    // Referrer/consistency discounts only apply to full monthly billing —
+    // beta and yearly rates are already discounted
     if (plan === "monthly") {
       const [{ data: isConsistent }, { data: referralDiscount }] = await Promise.all([
         supabase.rpc("evaluate_consistency", { uid: userId }),
@@ -57,8 +70,9 @@ Deno.serve(async (req) => {
         ? Math.round(basePrice * CONSISTENCY_DISCOUNT_PCT)
         : 0;
       const refDiscount = (referralDiscount as number) > 0 ? REFERRAL_DISCOUNT_PESOS : 0;
-      finalPrice = Math.max(1, basePrice - consistencyDiscount - refDiscount);
+      finalPrice = basePrice - consistencyDiscount - refDiscount;
     }
+    finalPrice = Math.max(1, finalPrice - welcomeDiscount);
 
     const paymongoSecret = Deno.env.get("PAYMONGO_SECRET_KEY")!;
     const encoded = btoa(`${paymongoSecret}:`);
@@ -73,7 +87,7 @@ Deno.serve(async (req) => {
     // PayMongo's payment.paid webhook reliably propagates from the link.
     // `remarks` is NOT propagated to the payment event, and the event payload
     // contains no link_id we could otherwise use to look the user up.
-    const description = `${planLabel} (ID: ${userId})`;
+    const description = `${planLabel} (ID: ${userId})${welcomeDiscount > 0 ? " [W20]" : ""}`;
 
     const paymongoRes = await fetch("https://api.paymongo.com/v1/links", {
       method: "POST",
@@ -105,7 +119,7 @@ Deno.serve(async (req) => {
     const checkoutUrl = paymongoData?.data?.attributes?.checkout_url as string;
 
     return new Response(
-      JSON.stringify({ checkout_url: checkoutUrl, amount_pesos: finalPrice, plan }),
+      JSON.stringify({ checkout_url: checkoutUrl, amount_pesos: finalPrice, plan, welcome_discount_pesos: welcomeDiscount }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
