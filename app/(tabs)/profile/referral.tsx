@@ -1,10 +1,14 @@
+import { useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import { useAuthStore } from '../../../stores/authStore';
 import { useMyReferrals, calcReferralDiscount } from '../../../hooks/useReferrals';
+import ReferralShareCard from '../../../components/profile/ReferralShareCard';
 
 export default function ReferralScreen() {
   const insets = useSafeAreaInsets();
@@ -25,6 +29,18 @@ export default function ReferralScreen() {
     await Share.share({
       message: `Subukan mo ang Mayari — ang best fitness app para sa Pilipino! Gamitin ang code ko: ${referralCode} para sa ₱20 off your first month 🌙`,
     });
+  }
+
+  const cardRef = useRef<View>(null);
+  async function shareCard() {
+    try {
+      const uri = await captureRef(cardRef, { format: 'png', quality: 1 });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share your Mayari code' });
+      }
+    } catch {
+      // sharing cancelled or capture failed — no-op
+    }
   }
 
   return (
@@ -62,6 +78,9 @@ export default function ReferralScreen() {
           <TouchableOpacity style={styles.shareBtn} onPress={shareLink}>
             <Text style={styles.shareBtnText}>📤 Share Link</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.shareBtn} onPress={shareCard}>
+            <Text style={styles.shareBtnText}>🖼️ Share Card</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Stats row */}
@@ -89,6 +108,9 @@ export default function ReferralScreen() {
         </View>
 
       </ScrollView>
+
+      {/* Off-screen render target for the shareable card image */}
+      <ReferralShareCard ref={cardRef} code={referralCode} />
     </View>
   );
 }
