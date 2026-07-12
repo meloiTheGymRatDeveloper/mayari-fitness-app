@@ -578,6 +578,23 @@ All core features (Weeks 1–8) plus the Workout Types Expansion are complete. W
 - **Affiliate Gear section** — `GearSection` component in Profile (between Body and Account). Xiaomi HOTO (Premium) + Mijia (Budget) cards. "Soon" buttons activate when affiliate URLs are set in `components/profile/GearSection.tsx`.
 - **Buddy finder removed** — screens, hook, nav entries, and types deleted. DB tables retained for data safety.
 
+### ✅ Completed (Consistency & Coach Improvements — 2026-07-12)
+Spec: `docs/superpowers/specs/2026-07-12-mayari-improvements-design.md` (gitignored). Server side deployed to prod 2026-07-12 (migrations 049–051 + 7 edge functions).
+- **Nutrition logging reminder** — `notify-nutrition-reminder`, cron 11:00/19:00 Manila, only fires if no food log today (queries `food_logs` directly — `streaks.last_nutrition_date` needs 3 meal slots). Taglish copy, deep-links to nutrition tab. Toggle: `notif_nutrition_enabled`.
+- **Win-back push** — `notify-winback`, daily 12:00 Manila, fires when last activity (food or workout) was exactly 5 or exactly 14 days ago. Toggle: `notif_winback_enabled`.
+- **Weigh-in reminder** — `notify-weighin-reminder`, daily 08:00 Manila; weekly pref fires Sundays, monthly on the 1st, skips users with a recent `body_measurements` row. Pref: `notif_weighin` ('off'|'weekly'|'monthly').
+- **Notification deep links** — `data.url` in push payloads; response listener in `app/_layout.tsx` routes on tap.
+- **Push permission timing** — request moved from app start to a post-onboarding modal (`lib/pushNotifications.ts`: `registerPushIfGranted` at startup, `requestAndRegisterPush` from onboarding).
+- **Two-way referral** — referred users get ₱20 off their FIRST paid month (beta + monthly, not yearly). `referrals.welcome_discount_status` ('available'→'redeemed'); applied in `create-payment-link` (marks description with `[W20]`), redeemed in `paymongo-webhook` only on `payment.paid`. UI: signup hint, referral screen two-way copy, subscription discount breakdown.
+- **Coach Mayari chat** — Coach tab is now chat-first: merged thread (`coach_messages` chat bubbles + `coach_tips` inline tip cards, sorted by time via `lib/coachChat.ts` `mergeThread`). 5 user messages/day, enforced server-side in `coach-chat` (429 + `remaining` in every response, Manila midnight reset). Conversation memory (last 10 turns), today's calorie/macro totals + 3 recent tips in the system prompt. Context-aware suggestion chips built client-side (`buildSuggestionChips`). Hooks: `useCoachChat.ts`. Pro-only (same ProGate).
+- **Weekly recap in chat** — `notify-weekly-summary` also inserts an `insight` coach_tip so the recap appears in the thread.
+- **Streak freeze ("Pahinga Pass")** — automatic: one missed day is bridged if no freeze was used in the past 7 days (per streak type). Trigger update in migration 051; `streaks.workout_freeze_used_on` / `nutrition_freeze_used_on`; 🛡️ note on streaks screen.
+- **Referral share card** — `ReferralShareCard` captured via `react-native-view-shot`, shared via `expo-sharing` (NATIVE MODULES — requires new binary, not OTA).
+- **Onboarding polish** — "Let's Go" button full-width.
+- **Migration history reconciled** — remote timestamped orphan rows removed, local sequential files marked applied; `supabase db push` now works normally.
+- **Android v21 (1.1.0)** bumped in `android/app/build.gradle` + `app.json`.
+- **NOT yet done:** Apple Health / Health Connect sync (spec #10, deliberately post-beta — Play health declaration required), gear affiliate URLs (owner task via Involve Asia), on-device verification checklist in `docs/superpowers/plans/2026-07-12-mayari-improvements.md`.
+
 ### 🔧 Pending / In Progress
 - **Beta launch prep** — see checklist below
 
