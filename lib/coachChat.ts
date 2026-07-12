@@ -3,6 +3,12 @@
 // and building context-aware suggestion chips (computed client-side, zero API cost).
 import type { CoachMessage, CoachTip } from '../types/database';
 
+// Home screen's daily-tip request. The coach-chat edge function exempts this
+// exact string from the daily chat limit and does not persist it, and the chat
+// history query filters out historical rows — keep all three in sync.
+export const DAILY_TIP_PROMPT =
+  'Give me one short fitness or nutrition tip for today. Under 40 words. No greeting.';
+
 export type ThreadItem =
   | { kind: 'message'; item: CoachMessage }
   | { kind: 'tip'; item: CoachTip };

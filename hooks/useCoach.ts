@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
+import { DAILY_TIP_PROMPT } from '../lib/coachChat';
 import type { CoachMessage, MessageType } from '../types/database';
 
 export function useCoachMessages() {
@@ -71,7 +72,7 @@ export function useDailyTip() {
       if (!userId) return '';
       const { data, error } = await supabase.functions.invoke('coach-chat', {
         body: {
-          message: 'Give me one short fitness or nutrition tip for today. Under 40 words. No greeting.',
+          message: DAILY_TIP_PROMPT,
           messageType: 'chat',
         },
       });

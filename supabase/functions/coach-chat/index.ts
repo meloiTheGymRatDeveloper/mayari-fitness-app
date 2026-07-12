@@ -82,13 +82,20 @@ Format: [{"name":"food name","quantity_g":100,"calories":200,"protein_g":15,"car
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Home screen's daily-tip request: exempt from the chat limit and from
+    // persistence (it would pollute the chat thread and burn the allowance).
+    // Must match DAILY_TIP_PROMPT in lib/coachChat.ts exactly.
+    const DAILY_TIP_PROMPT =
+      "Give me one short fitness or nutrition tip for today. Under 40 words. No greeting.";
+    const isDailyTip = messageType === "chat" && message === DAILY_TIP_PROMPT;
+
     // Daily chat limit (Manila day boundary) — enforced server-side
     const DAILY_CHAT_LIMIT = 5;
     const manilaDate = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Manila" });
     const dayStartUtc = new Date(`${manilaDate}T00:00:00+08:00`).toISOString();
 
     let remaining = DAILY_CHAT_LIMIT;
-    if (messageType === "chat") {
+    if (messageType === "chat" && !isDailyTip) {
       const { count } = await supabase
         .from("coach_messages")
         .select("id", { count: "exact", head: true })
@@ -170,6 +177,7 @@ Format: [{"name":"food name","quantity_g":100,"calories":200,"protein_g":15,"car
       supabase.from("coach_messages")
         .select("role, content")
         .eq("user_id", userId).eq("message_type", "chat")
+        .neq("content", DAILY_TIP_PROMPT)
         .order("created_at", { ascending: false }).limit(10),
       supabase.from("food_logs")
         .select("quantity_g, food_item:food_items(calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g)")
@@ -275,13 +283,15 @@ RESPONSE RULES:
     const responseText =
       claudeResponse.content[0].type === "text" ? claudeResponse.content[0].text : "";
 
-    // Save both turns to coach_messages
-    const { error: insertError } = await supabase.from("coach_messages").insert([
-      { user_id: userId, role: "user", content: message, message_type: messageType },
-      { user_id: userId, role: "assistant", content: responseText, message_type: messageType },
-    ]);
-    if (insertError) {
-      console.error("coach_messages insert failed:", insertError.message);
+    // Save both turns to coach_messages (daily-tip requests are not persisted)
+    if (!isDailyTip) {
+      const { error: insertError } = await supabase.from("coach_messages").insert([
+        { user_id: userId, role: "user", content: message, message_type: messageType },
+        { user_id: userId, role: "assistant", content: responseText, message_type: messageType },
+      ]);
+      if (insertError) {
+        console.error("coach_messages insert failed:", insertError.message);
+      }
     }
 
     return new Response(JSON.stringify({ response: responseText, remaining }), {

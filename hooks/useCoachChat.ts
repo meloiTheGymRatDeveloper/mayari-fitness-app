@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
+import { DAILY_TIP_PROMPT } from '../lib/coachChat';
 import type { CoachMessage } from '../types/database';
 
 export const DAILY_CHAT_LIMIT = 5;
@@ -18,6 +19,8 @@ export function useCoachChatHistory() {
         .select('*')
         .eq('user_id', userId!)
         .eq('message_type', 'chat')
+        // Hide historical Home-screen daily-tip prompts (server no longer persists them)
+        .neq('content', DAILY_TIP_PROMPT)
         .order('created_at', { ascending: true })
         .limit(100);
       if (error) throw error;
