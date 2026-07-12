@@ -9,6 +9,7 @@ import { useRouter, Stack } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../stores/authStore';
 import { computeAllTargets } from '../../../lib/calories';
+import { requestAndRegisterPush } from '../../../lib/pushNotifications';
 import { isValidBirthdate } from '../../../lib/birthdate';
 import type { CalorieTargets } from '../../../lib/calories';
 import { colors, typography, spacing, fonts } from '../../../constants/theme';
@@ -672,6 +673,7 @@ function StepResults({
 export default function OnboardingStep() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [showNotifModal, setShowNotifModal] = useState(false);
   const { session, fetchProfile } = useAuthStore();
 
   // Step 1
@@ -897,7 +899,7 @@ export default function OnboardingStep() {
       if (error) { setStepError(error.message); return; }
       if (storageKey) AsyncStorage.removeItem(storageKey).catch(() => {});
       await fetchProfile(session.user.id);
-      router.replace('/(tabs)');
+      setShowNotifModal(true);
     } finally {
       setSaving(false);
     }
@@ -1055,6 +1057,40 @@ export default function OnboardingStep() {
           />
         )}
       </View>
+
+      {/* Post-onboarding notification permission ask (with context, not cold at app start) */}
+      <Modal visible={showNotifModal} transparent animationType="fade">
+        <View style={styles.notifModalBackdrop}>
+          <View style={styles.notifModalCard}>
+            <Text style={styles.notifModalEmoji}>🌙</Text>
+            <Text style={styles.notifModalTitle}>Stay on track</Text>
+            <Text style={styles.notifModalBody}>
+              Para ma-remind ka sa goals mo — meal logging, workouts, at streaks.
+            </Text>
+            <Pressable
+              style={styles.fullWidthPressable}
+              onPress={async () => {
+                const token = await requestAndRegisterPush().catch(() => null);
+                if (token) useAuthStore.getState().updatePushToken(token);
+                setShowNotifModal(false);
+                router.replace('/(tabs)');
+              }}
+            >
+              <LinearGradient
+                colors={['#6366F1', '#A78BFA']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.gradientBtn}
+              >
+                <Text style={styles.gradientBtnLabel}>Enable reminders</Text>
+              </LinearGradient>
+            </Pressable>
+            <Pressable onPress={() => { setShowNotifModal(false); router.replace('/(tabs)'); }}>
+              <Text style={styles.notifModalLater}>Later na lang</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -1214,9 +1250,18 @@ const styles = StyleSheet.create({
   adjustHintText: { color: colors.text.secondary, fontSize: typography.sm },
   adjustHintSub: { color: colors.text.muted, fontSize: typography.xs },
 
-  gradientBtn: { borderRadius: 12, paddingVertical: 12, paddingHorizontal: spacing.md, alignItems: 'center', marginBottom: spacing.md },
+  gradientBtn: { alignSelf: 'stretch', borderRadius: 12, paddingVertical: 16, paddingHorizontal: spacing.md, alignItems: 'center', marginBottom: spacing.md },
   gradientBtnLabel: { color: colors.white, fontFamily: fonts.extrabold, fontSize: typography.lg },
   gradientBtnSub: { color: 'rgba(255,255,255,0.75)', fontSize: typography.xs, marginTop: 2 },
+
+  // Post-onboarding notification permission modal
+  notifModalBackdrop: { flex: 1, backgroundColor: 'rgba(10,10,30,0.85)', justifyContent: 'center', padding: spacing.lg },
+  notifModalCard: { backgroundColor: colors.bg.elevated, borderRadius: 16, padding: spacing.lg, alignItems: 'center', gap: spacing.sm },
+  notifModalEmoji: { fontSize: 40 },
+  notifModalTitle: { color: colors.text.primary, fontFamily: fonts.extrabold, fontSize: typography.lg },
+  notifModalBody: { color: colors.text.secondary, fontSize: typography.sm, textAlign: 'center', marginBottom: spacing.sm },
+  notifModalLater: { color: colors.text.muted, fontSize: typography.sm, padding: spacing.sm },
+  fullWidthPressable: { alignSelf: 'stretch' },
 
   // Nav
   nav: { flexDirection: 'row', gap: spacing.sm, marginTop: 'auto' },

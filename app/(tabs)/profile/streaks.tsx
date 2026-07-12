@@ -62,6 +62,16 @@ export default function StreaksScreen() {
   const nutritionLongest = streaks?.nutrition_longest ?? 0;
   const longestOverall = Math.max(workoutLongest, nutritionLongest);
 
+  // Pahinga Pass: show the shield note when a freeze was consumed in the last 7 days
+  function freezeUsedRecently(freezeDate: string | null | undefined): boolean {
+    if (!freezeDate) return false;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    return new Date(freezeDate) >= sevenDaysAgo;
+  }
+  const workoutFreezeUsed = freezeUsedRecently(streaks?.workout_freeze_used_on);
+  const nutritionFreezeUsed = freezeUsedRecently(streaks?.nutrition_freeze_used_on);
+
   const workoutMessage = workoutCurrent > 0
     ? `${workoutCurrent} days na! Tuloy lang! 🔥`
     : 'Magsimula ulit tayo 💪 Ngayon na!';
@@ -84,12 +94,18 @@ export default function StreaksScreen() {
             <Text style={styles.streakNumber}>{workoutCurrent}</Text>
             <Text style={styles.streakTypeLabel}>Workout Streak</Text>
             <Text style={styles.streakMessage}>{workoutMessage}</Text>
+            {workoutFreezeUsed && (
+              <Text style={styles.freezeNote}>🛡️ Pahinga Pass used — streak saved!</Text>
+            )}
           </View>
           <View style={styles.streakCard}>
             <Text style={styles.streakEmoji}>🥗</Text>
             <Text style={styles.streakNumber}>{nutritionCurrent}</Text>
             <Text style={styles.streakTypeLabel}>Nutrition Streak</Text>
             <Text style={styles.streakMessage}>{nutritionMessage}</Text>
+            {nutritionFreezeUsed && (
+              <Text style={styles.freezeNote}>🛡️ Pahinga Pass used — streak saved!</Text>
+            )}
           </View>
         </View>
       )}
@@ -140,6 +156,7 @@ const styles = StyleSheet.create({
   streakNumber: { color: colors.text.primary, fontSize: typography['3xl'], fontFamily: fonts.extrabold },
   streakTypeLabel: { color: colors.text.secondary, fontSize: typography.xs, fontFamily: fonts.semibold, marginTop: 2 },
   streakMessage: { color: colors.brand.secondary, fontSize: typography.xs, fontFamily: fonts.regular, textAlign: 'center', marginTop: 4 },
+  freezeNote: { color: colors.brand.accent, fontSize: typography.xs, fontFamily: fonts.semibold, textAlign: 'center', marginTop: 6 },
   pbRow: {
     backgroundColor: colors.bg.elevated, borderRadius: 12, padding: spacing.sm,
     marginBottom: spacing.lg, alignItems: 'center',

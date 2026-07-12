@@ -1,10 +1,14 @@
+import { useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing, fonts, labelStyle } from '../../../constants/theme';
 import { useAuthStore } from '../../../stores/authStore';
 import { useMyReferrals, calcReferralDiscount } from '../../../hooks/useReferrals';
+import ReferralShareCard from '../../../components/profile/ReferralShareCard';
 
 export default function ReferralScreen() {
   const insets = useSafeAreaInsets();
@@ -14,9 +18,7 @@ export default function ReferralScreen() {
   const { data: referrals } = useMyReferrals();
 
   const activeCount = (referrals ?? []).filter(r => r.status === 'active').length;
-  const discountPct = calcReferralDiscount(referrals);
-  const untilMax = Math.max(0, 5 - activeCount);
-  const progressWidth = `${Math.round((discountPct / 50) * 100)}%` as `${number}%`;
+  const discountPesos = calcReferralDiscount(referrals);
 
   async function copyCode() {
     await Clipboard.setStringAsync(referralCode);
@@ -25,8 +27,20 @@ export default function ReferralScreen() {
 
   async function shareLink() {
     await Share.share({
-      message: `Subukan mo ang Mayari — ang best fitness app para sa Pilipino! Gamitin ang code ko: ${referralCode} para sa discounted subscription 🌙`,
+      message: `Subukan mo ang Mayari — ang best fitness app para sa Pilipino! Gamitin ang code ko: ${referralCode} para sa ₱20 off your first month 🌙`,
     });
+  }
+
+  const cardRef = useRef<View>(null);
+  async function shareCard() {
+    try {
+      const uri = await captureRef(cardRef, { format: 'png', quality: 1 });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share your Mayari code' });
+      }
+    } catch {
+      // sharing cancelled or capture failed — no-op
+    }
   }
 
   return (
@@ -43,10 +57,10 @@ export default function ReferralScreen() {
         {/* Hero */}
         <View style={styles.heroCard}>
           <Text style={styles.heroEmoji}>🎁</Text>
-          <Text style={styles.heroTitle}>Refer friends, earn discounts</Text>
+          <Text style={styles.heroTitle}>You both save! 🎁</Text>
           <Text style={styles.heroSub}>
-            Each active referral earns you{'\n'}
-            <Text style={styles.heroHighlight}>₱20 off</Text> every month while they stay subscribed
+            You get <Text style={styles.heroHighlight}>₱20 off</Text> every month while your friend stays active{'\n'}
+            — and they get <Text style={styles.heroHighlight}>₱20 off</Text> their first month
           </Text>
         </View>
 
@@ -64,6 +78,9 @@ export default function ReferralScreen() {
           <TouchableOpacity style={styles.shareBtn} onPress={shareLink}>
             <Text style={styles.shareBtnText}>📤 Share Link</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.shareBtn} onPress={shareCard}>
+            <Text style={styles.shareBtnText}>🖼️ Share Card</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Stats row */}
@@ -73,25 +90,12 @@ export default function ReferralScreen() {
             <Text style={styles.statLabel}>Friends referred</Text>
           </View>
           <View style={[styles.statCard, styles.statCardAccent]}>
-            <Text style={[styles.statValue, styles.statValueAccent]}>{discountPct}%</Text>
-            <Text style={styles.statLabel}>Discount earned</Text>
+            <Text style={[styles.statValue, styles.statValueAccent]}>₱{discountPesos}</Text>
+            <Text style={styles.statLabel}>Off your bill</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{untilMax}</Text>
-            <Text style={styles.statLabel}>Until max</Text>
-          </View>
-        </View>
-
-        {/* Progress to max */}
-        <View style={styles.progressCard}>
-          <Text style={styles.cardLabel}>PROGRESS TO 50% MAX DISCOUNT</Text>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: progressWidth }]} />
-          </View>
-          <View style={styles.progressLabels}>
-            <Text style={styles.progressLabelLeft}>0%</Text>
-            <Text style={styles.progressLabelMid}>{discountPct}% · {activeCount} referral{activeCount !== 1 ? 's' : ''}</Text>
-            <Text style={styles.progressLabelRight}>50%</Text>
+            <Text style={styles.statValue}>₱20</Text>
+            <Text style={styles.statLabel}>Friend's welcome gift</Text>
           </View>
         </View>
 
@@ -99,11 +103,14 @@ export default function ReferralScreen() {
         <View style={styles.betaNote}>
           <Text style={styles.betaNoteTitle}>ℹ️ How it works</Text>
           <Text style={styles.betaNoteBody}>
-            You earn ₱20 off your monthly bill for each active referral. The discount applies automatically every billing cycle while your referred friend stays subscribed. Max 1 discount per month.
+            You earn ₱20 off your monthly bill while at least one referred friend stays subscribed (max 1 discount per month, applied automatically every billing cycle). Your friend gets ₱20 off their first month when they sign up with your code.
           </Text>
         </View>
 
       </ScrollView>
+
+      {/* Off-screen render target for the shareable card image */}
+      <ReferralShareCard ref={cardRef} code={referralCode} />
     </View>
   );
 }

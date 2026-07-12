@@ -95,6 +95,7 @@ export default function SignupScreen() {
           autoCapitalize="characters"
           placeholder="e.g. ABCD1234"
         />
+        <Text style={styles.referralHint}>May code ka? Get ₱20 off your first month! 🎁</Text>
 
         <Button label="Create Account" onPress={handleSignup} loading={loading} style={styles.btn} />
 
@@ -130,6 +131,7 @@ const styles = StyleSheet.create({
   },
   form: { gap: 0 },
   btn: { marginTop: spacing.sm },
+  referralHint: { color: colors.brand.secondary, fontSize: typography.xs, fontFamily: fonts.medium, marginTop: -spacing.xs, marginBottom: spacing.xs },
   loginLink: {
     color: colors.text.secondary,
     textAlign: 'center',

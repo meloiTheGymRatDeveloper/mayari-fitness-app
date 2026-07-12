@@ -98,6 +98,9 @@ export interface UserProfile {
   notif_workout_time: string;
   notif_weekly_summary: boolean;
   notif_streak_alert: boolean;
+  notif_nutrition_enabled: boolean;
+  notif_winback_enabled: boolean;
+  notif_weighin: 'off' | 'weekly' | 'monthly';
   home_equipment_tier: HomeEquipmentTier;
   created_at: string;
   updated_at: string;
@@ -284,6 +287,8 @@ export interface Streak {
   nutrition_longest: number;
   last_workout_date: string | null;
   last_nutrition_date: string | null;
+  workout_freeze_used_on: string | null;
+  nutrition_freeze_used_on: string | null;
 }
 
 
@@ -435,6 +440,7 @@ export interface ReferralWithUser {
   referred_user_id: string;
   status: ReferralStatus;
   activated_at: string | null;
+  welcome_discount_status: 'available' | 'redeemed';
   created_at: string;
   referred_user: { display_name: string | null; username: string | null } | null;
 }

@@ -32,6 +32,9 @@ export default function SettingsScreen() {
   const [workoutNotif, setWorkoutNotif] = useState(profile?.notif_workout_enabled ?? true);
   const [weeklySummary, setWeeklySummary] = useState(profile?.notif_weekly_summary ?? true);
   const [streakAlert, setStreakAlert] = useState(profile?.notif_streak_alert ?? true);
+  const [nutritionNotif, setNutritionNotif] = useState(profile?.notif_nutrition_enabled ?? true);
+  const [winbackNotif, setWinbackNotif] = useState(profile?.notif_winback_enabled ?? true);
+  const [weighinFreq, setWeighinFreq] = useState<'off' | 'weekly' | 'monthly'>(profile?.notif_weighin ?? 'weekly');
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState(profile?.display_name ?? '');
   const [savingName, setSavingName] = useState(false);
@@ -208,6 +211,32 @@ export default function SettingsScreen() {
         <SettingRow label="Streak Alert">
           <Switch value={streakAlert}
             onValueChange={v => { setStreakAlert(v); saveField({ notif_streak_alert: v }); }}
+            trackColor={{ false: colors.border, true: colors.brand.primary }} thumbColor="#fff" />
+        </SettingRow>
+        <View style={styles.divider} />
+        <SettingRow label="Food Log Reminder">
+          <Switch value={nutritionNotif}
+            onValueChange={v => { setNutritionNotif(v); saveField({ notif_nutrition_enabled: v }); }}
+            trackColor={{ false: colors.border, true: colors.brand.primary }} thumbColor="#fff" />
+        </SettingRow>
+        <View style={styles.divider} />
+        <SettingRow label="Weigh-In Reminder">
+          <View style={styles.segmentControl}>
+            {(['off', 'weekly', 'monthly'] as const).map(freq => (
+              <TouchableOpacity key={freq}
+                style={[styles.segment, weighinFreq === freq && styles.segmentActive]}
+                onPress={() => { setWeighinFreq(freq); saveField({ notif_weighin: freq }); }}>
+                <Text style={[styles.segmentText, weighinFreq === freq && styles.segmentTextActive]}>
+                  {freq === 'off' ? 'Off' : freq === 'weekly' ? 'Weekly' : 'Monthly'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </SettingRow>
+        <View style={styles.divider} />
+        <SettingRow label="Come-Back Nudge">
+          <Switch value={winbackNotif}
+            onValueChange={v => { setWinbackNotif(v); saveField({ notif_winback_enabled: v }); }}
             trackColor={{ false: colors.border, true: colors.brand.primary }} thumbColor="#fff" />
         </SettingRow>
       </View>

@@ -124,6 +124,16 @@ Deno.serve(async (req) => {
 
         if (subRes.error) throw subRes.error;
         if (userRes.error) throw userRes.error;
+
+        // Burn the referred-user welcome discount only when a discounted link is actually paid
+        if (description.includes("[W20]")) {
+          const { error: welcomeErr } = await supabase
+            .from("referrals")
+            .update({ welcome_discount_status: "redeemed" })
+            .eq("referred_user_id", userId)
+            .eq("welcome_discount_status", "available");
+          if (welcomeErr) console.error("welcome discount redeem failed:", welcomeErr.message);
+        }
       }
     }
 
