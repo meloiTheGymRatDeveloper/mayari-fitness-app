@@ -1,0 +1,17 @@
+{
+  "data": {
+    "type": "appStoreVersions",
+    "attributes": {
+      "platform": "IOS",
+      "versionString": "1.1.0"
+    },
+    "relationships": {
+      "app": {
+        "data": { "type": "apps", "id": "6777029338" }
+      },
+      "build": {
+        "data": { "type": "builds", "id": "3134fa54-559d-4d2b-9102-1bb8bffe2ce2" }
+      }
+    }
+  }
+}

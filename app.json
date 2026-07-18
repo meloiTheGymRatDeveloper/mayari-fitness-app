@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mayari: AI Fitness Tracker",
     "slug": "mayari",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "mayari",
@@ -21,7 +21,7 @@
         "NSCameraUsageDescription": "Mayari uses your camera to scan food barcodes for instant nutrition lookup and to take photos of your meals for AI-powered calorie and macro estimation (for example, snapping a plate of adobo to log its calories).",
         "NSPhotoLibraryUsageDescription": "Mayari accesses your photo library so you can pick an existing meal photo for AI calorie estimation (for example, choosing a saved lunch photo to log it) and to set your profile picture."
       },
-      "buildNumber": "4"
+      "buildNumber": "5"
     },
     "android": {
       "adaptiveIcon": {
