@@ -1,8 +1,8 @@
 import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { colors, fonts, typography, spacing, labelStyle } from '../../constants/theme';
 
-const HOTO_URL = '';  // paste affiliate link here when ready
-const MIJIA_URL = ''; // paste affiliate link here when ready
+const HOTO_URL = 'https://s.shopee.ph/18uzGRtuY';  // Shopee affiliate link (Sub_ID mayarihoto)
+const MIJIA_URL = 'https://s.shopee.ph/BSLBpC0Hp'; // Shopee affiliate link (Sub_ID mayarimijia)
 
 interface Product {
   url: string;
